@@ -1,0 +1,509 @@
+<!doctype html><html><head><meta charset=utf8><meta name="robots" content="noindex,nofollow"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PE Toolkit - Add-on COA Mapper</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: ledger workbench. Step 1 load, step 2 mapped ledger (rules first, Claude second, you last), step 3 KPI pack vs platform with exceptions and commentary. */
+:root{
+  --bg:#f6f7f6; --panel:#ffffff; --ink:#18201d; --muted:#5b6762; --line:#dde3e0; --soft:#eef2f0;
+  --accent:#1d6b57; --accent-soft:#e3efea;
+  --good:#1d6b57; --warn:#a46412; --warn-soft:#f7ecdc; --bad:#a83a32; --bad-soft:#f6e1de; --ai:#2f5a8a; --ai-soft:#e2eaf4;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111614; --panel:#18201d; --ink:#e4ebe7; --muted:#97a59f; --line:#2a3531; --soft:#1f2925;
+  --accent:#5fbf9f; --accent-soft:#1e3a31; --good:#5fbf9f; --warn:#e0a457; --warn-soft:#3a2c17; --bad:#ec8a80; --bad-soft:#3e211e; --ai:#8fb4e0; --ai-soft:#1d2a3a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111614; --panel:#18201d; --ink:#e4ebe7; --muted:#97a59f; --line:#2a3531; --soft:#1f2925;
+  --accent:#5fbf9f; --accent-soft:#1e3a31; --good:#5fbf9f; --warn:#e0a457; --warn-soft:#3a2c17; --bad:#ec8a80; --bad-soft:#3e211e; --ai:#8fb4e0; --ai-soft:#1d2a3a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 48px}
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:20px}
+header{display:grid;gap:6px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--f-display);font-weight:600;font-size:clamp(28px,5vw,40px);line-height:1.05;margin:0;text-wrap:balance}
+.lede{color:var(--muted);max-width:68ch;margin:0}
+h2{font-family:var(--f-display);font-weight:600;font-size:19px;margin:0}
+h3{font-family:var(--f-mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:500;margin:0}
+p{margin:0}
+.banner{background:var(--warn-soft);color:var(--ink);border-radius:8px;padding:9px 12px;font-size:13.5px}
+.flow{display:flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
+.flow>*{flex:1 1 170px;padding:9px 14px;border-right:1px solid var(--line);display:grid;gap:1px;text-decoration:none;color:inherit}
+.flow>*:last-child{border-right:0}
+.flow b{font-size:13.5px;font-weight:600}.flow span{font-size:12px;color:var(--muted)}
+.flow .here{background:var(--accent-soft)}.flow .here b{color:var(--accent)}
+.flow a:hover b{text-decoration:underline}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:12px;min-width:0}
+.step{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.grow{flex:1 1 auto}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.field{display:grid;gap:4px;min-width:0}
+label{font-size:13px;color:var(--muted)}
+textarea,input{width:100%;font-family:var(--f-mono);font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+textarea{min-height:150px;resize:vertical}
+select{font-family:var(--f-body);font-size:13px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:4px 6px;max-width:100%}
+button,.filebtn{font-family:var(--f-body);font-size:14px;font-weight:600;border-radius:6px;padding:8px 13px;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);position:relative}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:disabled{opacity:.55;cursor:default}
+.filebtn input{position:absolute;opacity:0;width:1px;height:1px;left:0;top:0}
+:focus-visible,.filebtn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.status{font-size:13px;color:var(--muted)}.status.err{color:var(--bad)}
+.chip{display:inline-block;font-family:var(--f-mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--muted)}
+.chip.ai{background:var(--ai-soft);color:var(--ai)}.chip.ex{background:var(--warn-soft);color:var(--warn)}
+.summary{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--muted)}
+.summary b{color:var(--ink);font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+.map{min-width:760px}
+th{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;font-weight:500;padding:9px 10px;border-bottom:1px solid var(--line);background:var(--bg)}
+td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.acct{font-family:var(--f-mono);color:var(--muted);white-space:nowrap}
+.why{font-size:12.5px;color:var(--muted);margin-top:3px}
+.src{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:4px;white-space:nowrap}
+.src.rules{background:var(--soft);color:var(--muted)}.src.claude{background:var(--ai-soft);color:var(--ai)}.src.you{background:var(--accent-soft);color:var(--accent)}
+.diff{display:block;font-size:11.5px;color:var(--warn);margin-top:3px}
+.pol{display:inline-block;font-size:10.5px;font-weight:600;color:var(--warn);background:var(--warn-soft);border-radius:3px;padding:0 5px;margin-left:6px}
+tr.flag td{background:var(--bad-soft)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.tile{background:var(--panel);padding:12px 14px;display:grid;gap:2px}
+.tile .k{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tile .v{font-family:var(--f-display);font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.tile .s{font-size:12px;color:var(--muted)}
+.tile.key .v{color:var(--accent)}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:820px){.split{grid-template-columns:1fr}}
+.bench td input{width:84px;padding:4px 6px;text-align:right}
+.delta.neg{color:var(--bad)}.delta.pos{color:var(--good)}
+.exc{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.exc li{font-size:13.5px;padding:8px 10px;border-radius:6px;background:var(--soft);display:flex;gap:8px}
+.exc li::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;margin-top:7px;background:var(--warn)}
+.exc li.ok::before{background:var(--good)}
+.commentary{white-space:pre-wrap;font-size:14px;background:var(--soft);border-radius:8px;padding:12px 14px;min-height:70px;max-width:78ch}
+.commentary.empty{color:var(--muted)}
+details{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+details summary{cursor:pointer;font-weight:600}
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:12px}
+.how div{border-top:2px solid var(--ink);padding-top:8px;display:grid;gap:4px;align-content:start}
+.how b{font-family:var(--f-display);font-size:15px}.how p{font-size:13.5px;color:var(--muted)}
+.foot{font-size:12.5px;color:var(--muted);max-width:72ch}
+@media (prefers-reduced-motion:no-preference){button{transition:filter .15s}button:hover:not(:disabled){filter:brightness(1.06)}}
+/* Simple view / Full view. data-view sits on .wrap. Simple view puts the KPI pack first (script moves the sections) and collapses the rest. */
+.headtop{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between}
+.viewsw{display:inline-flex;gap:2px;padding:2px;border:1px solid var(--line);border-radius:7px;background:var(--panel)}
+.viewsw button{border:0;background:transparent;color:var(--muted);font-size:13px;padding:5px 11px;border-radius:5px}
+.viewsw button[aria-pressed="true"]{background:var(--accent);color:var(--panel)}
+.panelbody{display:grid;gap:12px;min-width:0}
+.simpletop{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+.simpletop .banner{flex:1 1 320px}
+.partof{font-size:13px;color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+.disc{border:0;background:transparent;padding:0;text-align:left;justify-self:start;display:inline-flex;align-items:center;gap:9px}
+.disc::before{content:"";flex:none;width:7px;height:7px;margin-left:2px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg)}
+.disc[aria-expanded="true"]::before{transform:rotate(45deg)}
+[data-view="full"] .simple-only{display:none!important}
+[data-view="simple"] .full-only,[data-view="simple"] .step{display:none!important}
+[data-view="simple"]:not([data-allrows]) .ledger-extra{display:none!important}
+[data-view="simple"]:not([data-allrows]) #rows tr[data-attn="0"]{display:none}
+[data-view="simple"]:not([data-allrows]) #rows tr.lastvis td{border-bottom:0}
+[data-view="simple"]:not([data-allrows])[data-norows] #mapBox{display:none}
+[data-view="simple"][data-claude="off"] #checkRow{display:none!important}
+[data-view="simple"][data-claude="denied"] #comment{display:none}
+[data-view="simple"]:not([data-claude="on"]):not([data-claude="denied"]):not([data-hascomm]) #commBlock{display:none!important}
+[data-view="simple"] #loadSec{padding:12px 16px}
+[data-view="simple"] #loadSec:not([data-open]) #loadBody{display:none}
+</style>
+
+<div class="wrap" id="app" data-view="simple">
+  <header>
+    <div class="headtop">
+      <div class="eyebrow">Prototype · Add-on integration</div>
+      <div class="viewsw" role="group" aria-label="Page view">
+        <button type="button" id="viewSimple" aria-pressed="true">Simple view</button>
+        <button type="button" id="viewFull" aria-pressed="false">Full view</button>
+      </div>
+    </div>
+    <h1>Add-on COA Mapper</h1>
+    <p class="lede simple-only">See what an add-on earns on the platform's definitions and where it differs from the platform.</p>
+    <p class="lede full-only">Load an add-on's trial balance. Page rules map every account to the platform's standard chart in code; Claude can check the rules, and you have the last word. The KPI pack then compares the add-on to the platform on the platform's own definitions.</p>
+  </header>
+  <div class="simpletop simple-only">
+    <div class="banner" role="note"><b>Example data.</b> Lakeshore Specialty Foods and every figure here are invented. The page computes the numbers.</div>
+    <a class="partof" href="../">Part of PE AI &amp; Data Tools</a>
+  </div>
+  <div class="banner full-only" role="note"><b>Example data.</b> Lakeshore Specialty Foods and every figure on this page are invented. Numbers are computed by the page, not by Claude. People decide every mapping and every add-back.</div>
+
+  <nav class="flow full-only" aria-label="Related prototypes">
+    <a href="../#thesis-sourcer"><b>1 · Thesis Sourcer</b><span>Find platforms and add-ons</span></a>
+    <a href="../#contract-reader"><b>2 · Contract Reader</b><span>Diligence the agreements</span></a>
+    <div class="here"><b>3 · COA Mapper</b><span>Integrate the add-on</span></div>
+    <a href="../#ai-ranker"><b>4 · AI Ranker</b><span>Find value after close</span></a>
+  </nav>
+
+  <section class="panel" id="loadSec" aria-labelledby="in-h">
+    <button type="button" class="disc simple-only" id="loadToggle" aria-expanded="false" aria-controls="loadBody">Load your own trial balance</button>
+    <div class="panelbody" id="loadBody">
+    <div class="step">Step 1</div>
+    <div class="row"><h2 id="in-h" class="grow">Load the trial balance</h2><span class="chip ex" id="inChip">Example data</span></div>
+    <div class="fields">
+      <div class="field" style="grid-column:span 2"><label for="target">Add-on</label><input id="target" type="text" value="Lakeshore Specialty Foods (illustrative)"></div>
+      <div class="field"><label for="period">Period</label><input id="period" type="text" value="LTM Sep-26, $"></div>
+    </div>
+    <div class="field">
+      <label for="tb">One account per line: account number, account name, amount. Revenue and expenses as positive numbers.</label>
+      <textarea id="tb" spellcheck="false"></textarea>
+    </div>
+    <div class="row">
+      <button class="primary" id="apply">Map with page rules</button>
+      <label class="filebtn">Upload CSV<input type="file" id="file" accept=".csv,.txt,text/csv,text/plain"></label>
+      <button id="reset">Load example</button>
+      <span class="status" id="inStatus" role="status"></span>
+    </div>
+    <p class="status simple-only">The KPI pack and the ledger above update when you map.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="mapSec" aria-labelledby="map-h">
+    <div class="step">Step 2</div>
+    <div class="row"><h2 id="map-h" class="grow">Mapped ledger</h2><span class="chip" id="mapChip">Mapped by page rules</span></div>
+    <div class="summary ledger-extra" id="summary"></div>
+    <div class="row ledger-extra" id="checkRow">
+      <button id="check">Check the mapping with Claude</button>
+      <button id="stop" hidden>Stop</button>
+      <span class="status" id="mapStatus" role="status"></span>
+    </div>
+    <div class="row simple-only" id="attnRow">
+      <p class="grow" id="attnLine" role="status"></p>
+      <button type="button" id="showAll" aria-expanded="false" aria-controls="mapBox">Show all accounts</button>
+    </div>
+    <div class="tablebox" id="mapBox">
+      <table class="map">
+        <thead><tr><th>Acct</th><th>Add-on account</th><th class="num">Amount</th><th>Platform line</th><th>Mapped by</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p class="status">Highlighted rows need a person: unmapped, low Claude confidence, or Claude disagrees with the rules. <span class="pol">Policy</span> marks accounts whose line depends on platform accounting policy.</p>
+    <div class="row ledger-extra">
+      <button id="download">Download mapping CSV</button>
+      <button id="copy">Copy mapping</button>
+      <span class="status" id="outStatus" role="status"></span>
+    </div>
+  </section>
+
+  <section class="panel" id="kpiSec" aria-labelledby="kpi-h">
+    <div class="step">Step 3</div>
+    <div class="row"><h2 id="kpi-h" class="grow">KPI pack on platform definitions</h2><span class="status simple-only" id="kpiFor"></span></div>
+    <div class="tiles" id="tiles"></div>
+    <div class="split">
+      <div style="display:grid;gap:8px;min-width:0">
+        <h3>Add-on vs platform</h3>
+        <div class="tablebox"><table class="bench"><thead><tr><th>Measure</th><th class="num">Add-on</th><th class="num">Platform</th><th class="num">Gap</th></tr></thead><tbody id="bench"></tbody></table></div>
+        <p class="status">Platform figures are editable examples. Replace them with the platform's latest KPI pack.</p>
+      </div>
+      <div style="display:grid;gap:8px;min-width:0;align-content:start">
+        <h3>Exceptions</h3>
+        <ul class="exc" id="exc"></ul>
+      </div>
+    </div>
+    <div style="display:grid;gap:8px" id="commBlock">
+      <div class="row"><h3 class="grow">Integration commentary</h3><span class="status simple-only" id="commStatus" role="status"></span><button id="comment">Draft with Claude</button><button id="ccopy">Copy</button></div>
+      <div class="commentary empty" id="commentary" aria-live="polite">Claude drafts a short note from the figures above. It reads the computed KPIs only, not the raw ledger.</div>
+    </div>
+  </section>
+
+  <details id="how">
+    <summary>How it works</summary>
+    <div class="how">
+      <div><b>Rules first</b><p>A keyword rule set maps each account in code, so the page works without Claude. Accounts whose line depends on policy (warehouse labor, freight-out, owner pay, recall costs) are marked.</p></div>
+      <div><b>Claude checks</b><p>Claude maps the same accounts independently. Where it disagrees with the rules, the row is highlighted with both answers; the rules' answer stays until you choose.</p></div>
+      <div><b>You decide</b><p>Every dropdown is yours. Add-backs mapped to 7200 are candidates for the QoE, never accepted adjustments.</p></div>
+      <div><b>Numbers from code</b><p>Roll-ups, margins, gaps and exceptions are arithmetic on the mapped rows. Claude only drafts words around them.</p></div>
+    </div>
+  </details>
+
+  <p class="foot">Prototype for discussion · JD Elder · invented data. Claude features run on the viewer's own Claude account and ask permission the first time.</p>
+</div>
+
+<script>
+(() => {
+"use strict";
+const CHART=[
+ ["4000","Product revenue","rev"],["4100","Service revenue","rev"],["4900","Rebates, returns & allowances","contra"],
+ ["5000","COGS: materials & product","cogs"],["5100","COGS: direct labor","cogs"],["5200","Freight-in & logistics","cogs"],
+ ["6000","Sales comp & commissions","opex"],["6100","Marketing & trade shows","opex"],["6200","G&A salaries & benefits","opex"],
+ ["6300","Rent & occupancy","opex"],["6400","IT & software","opex"],["6500","Professional fees","opex"],
+ ["6600","Regulatory & quality","opex"],["6700","Insurance","opex"],["7000","Depreciation & amortization","da"],
+ ["7100","Interest expense","int"],["7200","Non-recurring / one-time (candidate add-back)","onetime"]];
+const byCode=Object.fromEntries(CHART.map(c=>[c[0],c]));
+// [regex, code, policy-dependent?] — order matters: specific before general
+const RULES=[
+ [/owner|officer comp|shareholder comp/i,"7200",true],
+ [/recall|litigation|settlement|transaction (cost|expense)s?|deal (cost|fee)s?|severance|one[- ]time|non[- ]recurring/i,"7200",true],
+ [/depreciation|amortization/i,"7000"],[/interest(?!.*income)/i,"7100"],
+ [/rebate|gpo|allowance|return|(?<!purchase |vendor )discount|chargeback/i,"4900"],
+ [/(repair|service|install|training|maintenance|freight|shipping|handling).*(income|revenue|sales)|(income|revenue|sales).*(repair|service)/i,"4100"],
+ [/cost of (goods|sales)|cogs/i,"5000"],
+ [/\b(sales|revenue)\b(?!.*(mgr|manager|salar|comp|commission|expense|cost|tax|travel|training|team|dept))/i,"4000"],
+ [/commission|sales (mgr|manager|salar|comp|expense|travel|training|team|dept)|rep (pay|comp)/i,"6000"],
+ [/purchase|inventory|(?<!marketing |promotional |training |sales )material|product cost/i,"5000"],
+ [/warehouse|fulfil/i,"5100",true],[/direct labor|production|assembly|manufactur/i,"5100"],
+ [/freight out|outbound|delivery/i,"5200",true],[/freight|shipping|inbound|logistics/i,"5200"],
+ [/marketing|advertis|trade show|booth|conference|aaos|promotion/i,"6100"],
+ [/\biso\b|fda|regulatory|quality|registration|\budi\b|food safety|\bsqf\b|haccp/i,"6600"],
+ [/health (ins|plan|benefit)|medical ins|dental|vision ins|life ins|401\(?k\)?|group (life|ins)/i,"6200"],
+ [/insurance|\bins\b/i,"6700"],
+ [/\brents?\b|rental|\blease|occupancy|utilit|facility|property tax/i,"6300"],
+ [/software|\berp\b|(?<!dues (&|and) )subscription|computer|hosting|\bit\b|network/i,"6400"],
+ [/legal|accounting|audit|tax (prep|advis|return|compliance|service)|consult|professional (fee|service)/i,"6500"],
+ [/salar|wages|payroll|benefit|bonus/i,"6200"]];
+const ruleMap=name=>{for(const [re,code,pol] of RULES) if(re.test(name)) return {code,pol:!!pol}; return {code:"",pol:false};};
+
+const EXAMPLE_TB=`4010, Sales - Imported Cheese, 8420000
+4020, Sales - Charcuterie & Dry Goods, 5310000
+4050, Delivery & Handling Fee Income, 640000
+4090, Customer Rebates & Allowances, 410000
+5010, Purchases - Inventory, 9650000
+5030, Inbound Freight, 295000
+5040, Warehouse Wages, 610000
+6010, Rep Commissions, 520000
+6020, Sales Mgr Salary, 180000
+6110, Fancy Food Show Booth & Travel, 65000
+6210, Office Salaries, 520000
+6215, Owner Comp, 450000
+6310, Rent - Elk Grove Facility, 310000
+6410, ERP Subscription, 88000
+6510, Legal - Product Recall Matter, 140000
+6520, Accounting & Tax, 72000
+6610, SQF Food Safety & Quality Audit, 38000
+6710, Product Liability Ins, 115000
+7010, Depreciation, 160000
+7110, Interest - Line of Credit, 95000`;
+const EXAMPLE_BENCH={gm:27.0,em:8.3,sales:3.0,ga:6.5,addback:5.0};
+
+const $=id=>document.getElementById(id);
+const root=$("app");
+let lines=[], M={}, bench={...EXAMPLE_BENCH}, isExample=true, ctl=null;
+const fmt=n=>(n<0?"(":"")+"$"+Math.abs(Math.round(n)).toLocaleString("en-US")+(n<0?")":"");
+const fmtM=n=>(n<0?"−":"")+"$"+(Math.abs(n)/1e6).toFixed(2)+"M";
+const pct=(a,b)=>b?a/b*100:0;
+
+function parseTB(text){
+  const out=[],seen=new Set();
+  for(const raw of text.split(/\r?\n/)){
+    const t=raw.trim(); if(!t||/^acct|^account/i.test(t)) continue;
+    const parts=t.split(/\t|,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(s=>s.trim().replace(/^"|"$/g,""));
+    if(parts.length<3) continue;
+    const a=parts[parts.length-1], neg=/^\(.*\)$/.test(a)||/^-/.test(a);
+    const amt=Math.abs(Number(a.replace(/[$,()\s-]/g,"")))*(neg?-1:1);
+    if(!isFinite(amt)) continue;
+    let acct=parts[0]; while(seen.has(acct)) acct+="'"; seen.add(acct);
+    out.push({acct,name:parts.slice(1,-1).join(", "),amount:amt});
+  }
+  return out;
+}
+function mapByRules(){
+  M={};
+  lines.forEach(l=>{const r=ruleMap(l.name); M[l.acct]={code:r.code,rule:r.code,pol:r.pol,src:"rules",claude:null,conf:null,why:""};});
+}
+function needsReview(m){return !m.code || (m.claude && m.claude!==m.code && m.src!=="you") || (m.src==="claude" && m.conf!=null && m.conf<0.7);}
+
+function render(){
+  const tb=$("rows"); tb.textContent="";
+  let review=0, nClaude=0, nYou=0, total=0, mapped=0;
+  lines.forEach(l=>{
+    const m=M[l.acct]; total+=Math.abs(l.amount); if(m.code) mapped+=Math.abs(l.amount);
+    if(m.src==="claude") nClaude++; if(m.src==="you") nYou++;
+    const tr=document.createElement("tr"); if(needsReview(m)){tr.className="flag";review++}
+    tr.innerHTML=`<td class="acct"></td><td><span class="nm"></span></td><td class="num"></td><td></td><td></td>`;
+    tr.children[0].textContent=l.acct; tr.querySelector(".nm").textContent=l.name;
+    if(m.pol){const p=document.createElement("span");p.className="pol";p.textContent="Policy";tr.children[1].append(p)}
+    tr.children[2].textContent=fmt(l.amount);
+    const sel=document.createElement("select"); sel.id="map-"+l.acct.replace(/[^\w]/g,"_"); sel.setAttribute("aria-label","Platform line for "+l.name);
+    sel.innerHTML=`<option value="">Unmapped</option>`+CHART.map(x=>`<option value="${x[0]}">${x[0]} ${x[1]}</option>`).join("");
+    sel.value=m.code;
+    sel.onchange=()=>{m.code=sel.value; m.src="you"; render();};
+    tr.children[3].append(sel);
+    if(m.why){const w=document.createElement("div");w.className="why";w.textContent=m.why;tr.children[3].append(w)}
+    const s=document.createElement("span"); s.className="src "+(m.src==="claude"?"claude":m.src==="you"?"you":"rules");
+    s.textContent=m.src==="claude"?"Claude"+(m.conf!=null?" "+Math.round(m.conf*100)+"%":""):m.src==="you"?"You":"Rules";
+    tr.children[4].append(s);
+    if(m.claude && m.claude!==m.code){const d=document.createElement("span");d.className="diff";
+      d.textContent=(m.src==="rules"?"Claude says ":"Claude said ")+m.claude+" "+(byCode[m.claude]?byCode[m.claude][1]:"");tr.children[4].append(d)}
+    else if(m.src!=="rules" && m.rule && m.rule!==m.code){const d=document.createElement("span");d.className="diff";d.textContent="Rules said "+m.rule;tr.children[4].append(d)}
+    tb.append(tr);
+  });
+  const S=$("summary"); S.textContent="";
+  [["Accounts",lines.length],["Need review",review],["Claude-mapped",nClaude],["Your edits",nYou],["Dollar coverage",total?Math.round(mapped/total*100)+"%":"—"]]
+   .forEach(([k,v])=>{const sp=document.createElement("span");sp.append(k+": ");const b=document.createElement("b");b.textContent=v;sp.append(b);S.append(sp)});
+  const chip=$("mapChip");
+  chip.className="chip"+(nClaude?" ai":""); chip.textContent=nClaude?"Rules checked by Claude":"Mapped by page rules";
+  kpis(review);
+  simpleSync();
+}
+
+function totals(){
+  const t={rev:0,contra:0,cogs:0,opex:0,da:0,int:0,onetime:0,by:{}};
+  lines.forEach(l=>{const m=M[l.acct]; if(m.code&&byCode[m.code]){t[byCode[m.code][2]]+=l.amount; t.by[m.code]=(t.by[m.code]||0)+l.amount;}});
+  t.net=t.rev-t.contra; t.gp=t.net-t.cogs; t.ebitda=t.gp-t.opex-t.onetime; t.adj=t.ebitda+t.onetime;
+  return t;
+}
+function kpis(review){
+  const t=totals();
+  const gm=pct(t.gp,t.net), em=pct(t.adj,t.net), sales=pct((t.by["6000"]||0)+(t.by["6100"]||0),t.net), ga=pct((t.by["6200"]||0)+(t.by["6300"]||0)+(t.by["6400"]||0)+(t.by["6500"]||0),t.net), ab=pct(t.onetime,t.adj);
+  const T=$("tiles"); T.textContent="";
+  [["Net revenue",fmtM(t.net),""],["Gross profit",fmtM(t.gp),gm.toFixed(1)+"% margin"],["Reported EBITDA",fmtM(t.ebitda),pct(t.ebitda,t.net).toFixed(1)+"% margin · platform definitions, before add-backs",true],
+   ["Candidate add-backs",fmtM(t.onetime),"not accepted; for QoE review"],["Adjusted EBITDA, with candidate add-backs",fmtM(t.adj),em.toFixed(1)+"% margin · only if every candidate is accepted"]]
+   .forEach(([k,v,s,key])=>{const d=document.createElement("div");d.className="tile"+(key?" key":"");d.innerHTML=`<span class="k"></span><span class="v"></span><span class="s"></span>`;
+     d.children[0].textContent=k;d.children[1].textContent=v;d.children[2].textContent=s||" ";T.append(d)});
+  const rows=[["Gross margin %","gm",gm,true],["Adj. EBITDA margin %","em",em,true],["Sales & marketing % of revenue","sales",sales,false],["G&A % of revenue","ga",ga,false],["Add-backs % of adj. EBITDA","addback",ab,false]];
+  const B=$("bench"); B.textContent="";
+  rows.forEach(([lab,k,v,upGood])=>{
+    const tr=document.createElement("tr"); const gap=v-bench[k];
+    tr.innerHTML=`<td></td><td class="num"></td><td class="num"><input type="number" step="0.1" inputmode="decimal"></td><td class="num delta"></td>`;
+    tr.children[0].textContent=lab; tr.children[1].textContent=v.toFixed(1);
+    const inp=tr.querySelector("input"); inp.id="bench-"+k; inp.value=bench[k]; inp.setAttribute("aria-label","Platform "+lab);
+    inp.onchange=()=>{const n=Number(inp.value); if(isFinite(n)){bench[k]=n; render();}};
+    const good=upGood?gap>=0:gap<=0; const c=tr.children[3]; c.textContent=(gap>0?"+":gap<0?"−":"")+Math.abs(gap).toFixed(1)+" pts"; c.className="num delta "+(Math.abs(gap)<0.05?"":good?"pos":"neg");
+    B.append(tr);
+  });
+  const ex=[];
+  if(bench.gm-gm>2) ex.push(`Gross margin ${gm.toFixed(1)}% is ${(bench.gm-gm).toFixed(1)} pts below the platform. Check purchase pricing against the platform's supplier contracts.`);
+  if(bench.em-em>3) ex.push(`Adjusted EBITDA margin ${em.toFixed(1)}% trails the platform by ${(bench.em-em).toFixed(1)} pts.`);
+  if(sales-bench.sales>2) ex.push(`Sales and marketing run ${sales.toFixed(1)}% of revenue vs ${bench.sales.toFixed(1)}% at the platform; review rep overlap and commission plans.`);
+  if(ab>bench.addback) ex.push(`Candidate add-backs are ${ab.toFixed(1)}% of adjusted EBITDA, above the ${bench.addback.toFixed(1)}% flag. Each needs QoE support before it reaches pro forma EBITDA.`);
+  const pol=lines.filter(l=>M[l.acct].pol); if(pol.length) ex.push(`${pol.length} policy-dependent account${pol.length>1?"s":""} (${pol.map(l=>l.name).join("; ")}). Confirm the platform's policy before locking the mapping.`);
+  if(review) ex.push(`${review} row${review>1?"s":""} still need a person before this pack is final.`);
+  if(t.contra>0 && pct(t.contra,t.rev)>2.5) ex.push(`Rebates and allowances are ${pct(t.contra,t.rev).toFixed(1)}% of gross sales. Confirm accrued but unpaid amounts for the debt-like schedule.`);
+  const E=$("exc"); E.textContent="";
+  (ex.length?ex:["No exceptions against the platform benchmarks."]).forEach(s=>{const li=document.createElement("li");li.textContent=s;if(!ex.length)li.className="ok";E.append(li)});
+  window.__kpi={addon:$("target").value,period:$("period").value,net_revenue:Math.round(t.net),gross_margin_pct:+gm.toFixed(1),reported_ebitda:Math.round(t.ebitda),
+    candidate_addbacks:Math.round(t.onetime),adjusted_ebitda:Math.round(t.adj),adj_ebitda_margin_pct:+em.toFixed(1),platform:bench,exceptions:ex};
+}
+
+function setInput(text,example){$("tb").value=text; isExample=example; $("inChip").hidden=!example;}
+function loadFromBox(){
+  const parsed=parseTB($("tb").value);
+  if(!parsed.length){$("inStatus").className="status err";$("inStatus").textContent="No accounts found. Use one line per account: number, name, amount.";return false}
+  lines=parsed; mapByRules(); $("inStatus").className="status"; $("inStatus").textContent="Mapped "+parsed.length+" accounts with page rules.";
+  $("commentary").className="commentary empty"; $("commentary").textContent="Claude drafts a short note from the figures above. It reads the computed KPIs only, not the raw ledger.";
+  render(); return true;
+}
+function loadExample(){setInput(EXAMPLE_TB,true); bench={...EXAMPLE_BENCH}; $("target").value="Lakeshore Specialty Foods (illustrative)"; $("period").value="LTM Sep-26, $"; loadFromBox(); $("inStatus").textContent="";}
+
+$("apply").onclick=loadFromBox;
+$("reset").onclick=loadExample;
+$("tb").addEventListener("input",()=>{if(isExample){isExample=false;$("inChip").hidden=true}});
+$("file").onchange=async e=>{const f=e.target.files[0]; if(!f) return;
+  if(f.size>2e6){$("inStatus").className="status err";$("inStatus").textContent="That file is over 2 MB. Export the trial balance only.";return}
+  setInput(await f.text(),false); e.target.value=""; if(loadFromBox()) $("inStatus").textContent="Loaded "+f.name+" and mapped it with page rules.";};
+
+function errCopy(c){return({not_granted:"Claude wasn't allowed for this page. Rules and your edits still work.",sampling_disabled:"Claude isn't available on this account. Rules and your edits still work.",rate_limited:"Too many requests right now. Wait a minute, then try again.",session_expired:"Your session expired. Sign in again, then retry.",invalid_json:"Claude's reply couldn't be read. Try again.",prompt_too_large:"That trial balance is too long for one check. Paste fewer accounts.",refused:"Claude declined this input. Check the pasted text."})[c]||"That didn't work. Try again in a moment.";}
+const samplePromise=window.claude?claude.use("sample"):Promise.resolve(null);
+const offIf=e=>{if(e&&(e.code==="not_granted"||e.code==="sampling_disabled")){root.dataset.claude="denied";$("check").disabled=true;$("comment").disabled=true;$("check").dataset.off="1"}};
+samplePromise.then(s=>{root.dataset.claude=s?"on":"off"; if(!s){$("check").disabled=true;$("comment").disabled=true;$("check").dataset.off="1";$("mapStatus").textContent="The AI double-check is switched off on this hosted copy. Page rules and your edits still work."}});
+
+$("check").onclick=async()=>{
+  const sample=await samplePromise; if(!sample||!lines.length) return;
+  ctl=new AbortController(); $("check").disabled=true; $("stop").hidden=false; $("mapStatus").className="status"; $("mapStatus").textContent="Claude is mapping "+lines.length+" accounts…";
+  const prompt=`You are a private equity finance integration analyst. Map each add-on trial balance account to exactly one line of the platform's standard chart.
+
+Platform chart (code | line | section):
+${CHART.map(c=>c.join(" | ")).join("\n")}
+
+Rules: use 7200 only for items a buyer would typically add back (owner pay above market, litigation or recall costs, transaction fees). Rebates, allowances, returns and discounts go to 4900. confidence is 0 to 1; go below 0.7 when the line depends on accounting policy. reason is at most 12 words.
+
+Add-on: ${$("target").value}
+Accounts (acct | name | amount):
+${lines.map(l=>`${l.acct} | ${l.name} | ${l.amount}`).join("\n")}
+
+Reply with only a JSON array: [{"acct":"4010","code":"4000","confidence":0.95,"reason":"Product sales"}]`;
+  try{
+    const res=await sample.json(prompt,{signal:ctl.signal});
+    if(!Array.isArray(res)) throw {code:"invalid_json"};
+    let agree=0,dis=0,filled=0;
+    res.forEach(r=>{const a=String(r.acct??""),code=String(r.code??""),m=M[a]; if(!m||!byCode[code]) return;
+      m.claude=code; m.conf=Math.max(0,Math.min(1,Number(r.confidence)||0)); m.why=String(r.reason??"").slice(0,120);
+      if(m.src==="you") return;
+      if(!m.code){m.code=code; m.src="claude"; filled++;}
+      else if(m.code===code){agree++; m.src="claude";}
+      else dis++;});
+    $("mapStatus").textContent=`Claude agrees with the rules on ${agree}, disagrees on ${dis}${filled?`, and filled ${filled} the rules left unmapped`:""}. Disagreements keep the rules' answer until you choose.`;
+  }catch(e){ if(!(e&&e.code==="cancelled")){$("mapStatus").className="status err";$("mapStatus").textContent=errCopy(e&&e.code)} else $("mapStatus").textContent="Stopped."; offIf(e); }
+  finally{$("stop").hidden=true; $("check").disabled=!!$("check").dataset.off; render();}
+};
+$("stop").onclick=()=>ctl&&ctl.abort();
+
+$("comment").onclick=async()=>{
+  const sample=await samplePromise; if(!sample) return;
+  const box=$("commentary"); box.className="commentary"; box.textContent="Thinking…"; $("comment").disabled=true;
+  const prompt=`You are an operating partner at a private equity firm writing a short integration note on an add-on for the deal team. Use only the figures given; do not compute new numbers or invent facts. Four to six sentences, plain prose, no headings. Cover: how the add-on compares with the platform, what the exceptions mean for integration priorities, and what must be confirmed before its EBITDA enters pro forma figures. Call add-backs candidates, not accepted adjustments.
+
+KPIs (computed by the page): ${JSON.stringify(window.__kpi)}`;
+  try{ await sample(prompt,{onText:({text})=>{box.textContent=text}}); }
+  catch(e){ box.textContent=e&&e.text?e.text:""; if(!(e&&e.code==="cancelled")){ box.className="commentary empty"; box.textContent=errCopy(e&&e.code);} offIf(e); }
+  finally{ $("comment").disabled=!!$("check").dataset.off; }
+};
+
+function mappingCSV(){
+  const rows=[["acct","addon_account","amount","platform_code","platform_line","mapped_by","rules_said","claude_said","claude_confidence","policy_dependent","needs_review"]];
+  lines.forEach(l=>{const m=M[l.acct];rows.push([l.acct,l.name,l.amount,m.code,m.code?byCode[m.code][1]:"",m.src,m.rule,m.claude||"",m.conf==null?"":m.conf,m.pol?"yes":"",needsReview(m)?"yes":""])});
+  return rows.map(r=>r.map(v=>{v=String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(",")).join("\n");
+}
+const copyText=txt=>{
+  const blocked=()=>{const simple=root.dataset.view==="simple"; if(simple) openLoad(true); $("tb").value=txt;$("tb").select();$("outStatus").textContent=simple?"Clipboard blocked here. The CSV is in the trial balance box below, selected.":"Clipboard blocked here. The CSV is in the input box above, selected."};
+  if(!(navigator.clipboard&&navigator.clipboard.writeText)){blocked(); return;}
+  navigator.clipboard.writeText(txt).then(()=>{$("outStatus").textContent="Copied "+lines.length+" rows."}).catch(blocked);};
+$("copy").onclick=()=>copyText(mappingCSV());
+const dlPromise=Promise.resolve({save:async({filename,data})=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:"text/csv"}));a.download=filename;document.body.appendChild(a);a.click();a.remove();}});
+dlPromise.then(d=>{if(!d) $("download").hidden=true});
+$("download").onclick=async()=>{const d=await dlPromise; if(!d) return;
+  try{await d.save({filename:"addon-coa-mapping.csv",data:mappingCSV()}); $("outStatus").textContent="Saved.";}
+  catch(e){$("outStatus").textContent="The file wasn't saved. Use Copy instead.";}};
+const cSay=t=>{$("outStatus").textContent=t;$("commStatus").textContent=t};
+$("ccopy").onclick=()=>{
+  const blocked=()=>{const el=$("commentary"); if(el){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);} cSay("Copy is blocked here; the commentary is selected.")};
+  if(!(navigator.clipboard&&navigator.clipboard.writeText)){blocked(); return;}
+  navigator.clipboard.writeText($("commentary").textContent).then(()=>{cSay("Commentary copied.")}).catch(blocked);};
+
+// Simple view / Full view. Nothing is removed; simple view reorders the sections and collapses the rest.
+function simpleSync(){
+  const N=lines.length, trs=$("rows").children; let n=0, shown=0, last=null;
+  lines.forEach((l,i)=>{const m=M[l.acct], tr=trs[i]; if(!tr) return;
+    const need=needsReview(m)||m.pol, on=need||m.src==="you";
+    if(need) n++; tr.dataset.attn=on?"1":"0"; if(on){shown++; last=tr}});
+  if(last) last.classList.add("lastvis");
+  root.toggleAttribute("data-norows",!shown);
+  const kept=shown-n, pl=N===1?"":"s";
+  $("attnLine").textContent=(n?`${n} of ${N} account${pl} need${n===1?"s":""} a decision.`:`No account needs a decision. ${N} mapped.`)+(kept?` ${kept} you changed stay${kept===1?"s":""} listed.`:"");
+  $("showAll").textContent=root.hasAttribute("data-allrows")?"Show only accounts that need a decision":`Show all ${N} account${pl}`;
+  $("kpiFor").textContent=[$("target").value.trim(),$("period").value.trim()].filter(Boolean).join(" · ");
+}
+$("showAll").onclick=()=>{const all=root.toggleAttribute("data-allrows"); $("showAll").setAttribute("aria-expanded",all); simpleSync();};
+function openLoad(open){$("loadSec").toggleAttribute("data-open",open); $("loadToggle").setAttribute("aria-expanded",open);}
+$("loadToggle").onclick=()=>openLoad(!$("loadSec").hasAttribute("data-open"));
+["target","period"].forEach(id=>$(id).addEventListener("input",simpleSync));
+const commSync=()=>{const b=$("commentary"); root.toggleAttribute("data-hascomm",!b.classList.contains("empty")&&!!b.textContent.trim())};
+new MutationObserver(commSync).observe($("commentary"),{attributes:true,attributeFilter:["class"],childList:true,characterData:true,subtree:true});
+function setView(v,save){
+  root.dataset.view=v;
+  $("viewSimple").setAttribute("aria-pressed",v==="simple"); $("viewFull").setAttribute("aria-pressed",v==="full");
+  const load=$("loadSec"), map=$("mapSec"), kpi=$("kpiSec"), how=$("how");
+  if(v==="simple"){root.insertBefore(kpi,map); root.insertBefore(load,how);}
+  else{root.insertBefore(load,map); root.insertBefore(kpi,how);}
+  if(save){try{localStorage.setItem("ws-coa-view",v)}catch(e){}}
+}
+$("viewSimple").onclick=()=>setView("simple",true);
+$("viewFull").onclick=()=>setView("full",true);
+let view0="simple"; try{if(localStorage.getItem("ws-coa-view")==="full") view0="full"}catch(e){}
+setView(view0,false);
+
+loadExample();
+})();
+</script>
+
+</body></html>

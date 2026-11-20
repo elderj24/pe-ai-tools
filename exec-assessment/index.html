@@ -1,0 +1,309 @@
+<!doctype html><html><head><meta charset=utf8><meta name="robots" content="noindex,nofollow"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PE Toolkit - Executive Assessment</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Schibsted+Grotesk:wght@600;700&display=swap">
+<style>
+/* Concept: an investment-committee view of a hire. Scorecard from the plan, panel ratings against anchors,
+   references as a second source, and a sensitivity test on the weights. One blue ramp for ratings; status colors only for flags. */
+:root{
+  --bg:#f6f6f4; --surface:#fcfcfb; --raised:#fff; --ink:#111315; --ink2:#52514e; --muted:#6f6d67; --axis:#898781;
+  --line:#e1e0d9; --line2:#c3c2b7; --accent:#256abf; --accent-ink:#fff; --accent-soft:#e6f0fc; --s1:#2a78d6;
+  --h1:#cde2fb; --h2:#86b6ef; --h3:#3987e5; --h4:#184f95; --hi1:#111315; --hi2:#111315; --hi3:#fff; --hi4:#fff;
+  --good:#0a6b0a; --good-bg:#e4f3e4; --warn:#7a4f00; --warn-bg:#fdf1d3; --ser:#9a3b12; --ser-bg:#fde6da; --crit:#b02a2a; --crit-bg:#fbe5e3;
+  --f-head:"Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-body:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d0d0d; --surface:#1a1a19; --raised:#222220; --ink:#f0efec; --ink2:#c3c2b7; --muted:#a3a198; --axis:#898781;
+  --line:#2c2c2a; --line2:#383835; --accent:#6da7ec; --accent-ink:#0d0d0d; --accent-soft:#16263a; --s1:#3987e5;
+  --h1:#16263a; --h2:#1c5cab; --h3:#3987e5; --h4:#86b6ef; --hi1:#f0efec; --hi2:#fff; --hi3:#fff; --hi4:#0b0b0b;
+  --good:#5fd35f; --good-bg:#12301a; --warn:#f0b948; --warn-bg:#33270b; --ser:#f3a07c; --ser-bg:#3a2216; --crit:#f08a85; --crit-bg:#3a1816; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d0d0d; --surface:#1a1a19; --raised:#222220; --ink:#f0efec; --ink2:#c3c2b7; --muted:#a3a198; --axis:#898781;
+  --line:#2c2c2a; --line2:#383835; --accent:#6da7ec; --accent-ink:#0d0d0d; --accent-soft:#16263a; --s1:#3987e5;
+  --h1:#16263a; --h2:#1c5cab; --h3:#3987e5; --h4:#86b6ef; --hi1:#f0efec; --hi2:#fff; --hi3:#fff; --hi4:#0b0b0b;
+  --good:#5fd35f; --good-bg:#12301a; --warn:#f0b948; --warn-bg:#33270b; --ser:#f3a07c; --ser-bg:#3a2216; --crit:#f08a85; --crit-bg:#3a1816; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--f-body);margin:0;padding-block:0 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-head);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:26px;line-height:1.15;font-weight:700} h2{font-size:18px;font-weight:600} h3{font-size:14px;font-weight:600}
+button,select,input{font:inherit;color:inherit}
+.wrap{max-width:1360px;margin:0 auto}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500}
+header{padding:28px 0 14px} header p{margin:6px 0 0;color:var(--ink2);max-width:74ch}
+.banner{background:var(--warn-bg);color:var(--warn);border:1px solid var(--line);border-radius:6px;padding:8px 12px;font-size:12.5px;margin-bottom:14px}
+nav.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto}
+nav.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:10px 14px;cursor:pointer;color:var(--ink2);font-weight:500;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+section[hidden]{display:none!important}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.hint{font-size:12px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:16px}
+.row{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;align-items:start}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:500;text-align:left;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
+td.r,th.r{text-align:right} td.c,th.c{text-align:center}
+.btn{background:var(--surface);border:1px solid var(--line2);border-radius:6px;padding:6px 12px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--ink2)} .btn.small{padding:4px 9px;font-size:12px}
+.btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:500;white-space:nowrap}
+.st-good{background:var(--good-bg);color:var(--good)} .st-warn{background:var(--warn-bg);color:var(--warn)} .st-ser{background:var(--ser-bg);color:var(--ser)} .st-crit{background:var(--crit-bg);color:var(--crit)} .st-off{background:var(--line);color:var(--muted)}
+.wt{display:grid;grid-template-columns:minmax(0,1fr) 140px 44px;gap:4px 12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.wt input{accent-color:var(--accent);width:100%}
+.wt .n{font-weight:500} .wt small{display:block;color:var(--muted);font-size:12px}
+.sum{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:13px}
+.anch{margin:4px 0 0;padding-left:16px;font-size:12px;color:var(--ink2)} .anch li{margin:1px 0}
+details summary{cursor:pointer;color:var(--accent);font-size:12px;margin-top:2px}
+.cands{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.rsel{background:var(--surface);border:1px solid var(--line2);border-radius:6px;padding:3px 6px;font-family:var(--f-mono)}
+.hm td.cell{padding:3px;text-align:center}
+.hm td.cell span{display:block;white-space:nowrap;border-radius:4px;padding:7px 4px;font-family:var(--f-mono);font-size:12.5px;position:relative}
+.hm td.cell span.lc{display:inline;padding:0;border-radius:0;font-size:10.5px}
+.z1{background:var(--h1);color:var(--hi1)} .z2{background:var(--h2);color:var(--hi2)} .z3{background:var(--h3);color:var(--hi3)} .z4{background:var(--h4);color:var(--hi4)}
+.lc{font-family:var(--f-body);font-size:10.5px;font-weight:600;margin-left:3px}
+.ref{border:1px solid var(--line);border-left:3px solid var(--line2);border-radius:6px;padding:8px 10px;margin:6px 0;font-size:13px}
+.ref.confirms{border-left-color:var(--good)} .ref.mixed{border-left-color:var(--warn)} .ref.contradicts{border-left-color:var(--crit)} .ref.flag{border-left-color:var(--ser)}
+.ref b{display:block;font-weight:600}
+.ref q{display:block;color:var(--ink2);margin-top:2px}
+.strike{text-decoration:line-through;color:var(--crit)}
+.chart{position:relative} .chart svg{width:100%;height:auto;display:block}
+.tip{position:absolute;pointer-events:none;background:var(--raised);border:1px solid var(--line2);border-radius:6px;padding:7px 10px;font-size:12.5px;box-shadow:0 4px 14px rgba(0,0,0,.12);z-index:5;min-width:170px}
+.tip .t{font-weight:600;margin-bottom:3px}.tip .r{display:flex;justify-content:space-between;gap:14px}
+.toggle{display:flex;gap:10px;align-items:flex-start;background:var(--accent-soft);border-radius:8px;padding:10px 12px;margin-bottom:14px}
+.toggle input{width:18px;height:18px;accent-color:var(--accent);margin-top:2px;flex:none}
+.memo{background:var(--raised);border:1px solid var(--line2);border-radius:6px;padding:12px 14px;font-size:13px;white-space:pre-wrap;font-family:var(--f-body);line-height:1.55;max-height:420px;overflow:auto}
+ul.clean{margin:6px 0;padding-left:18px} ul.clean li{margin:3px 0}
+.flow{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.step{flex:1 1 150px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.step b{display:block;font-family:var(--f-head);margin-bottom:2px}.step small{color:var(--ink2);display:block}
+.step.mock{border-style:dashed}
+.tag{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.tag.real{color:var(--good)} .tag.mockt{color:var(--warn)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:max(18px,env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:13px;z-index:50}
+footer{color:var(--muted);font-size:12px;margin-top:24px;max-width:90ch}
+@media (max-width:1000px){.row{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:560px){h1{font-size:22px}.wt{grid-template-columns:minmax(0,1fr) 90px 38px}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Beta · executive assessment</div>
+  <h1>CEO search: Ivy (behavioral health)</h1>
+  <p>Four finalists, rated by the panel against a scorecard built from Ivy's plan.</p>
+</header>
+<div class="banner" role="note"><b>Synthetic data.</b> The AI organizes evidence; it never rates or ranks a person.</div>
+
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <button role="tab" id="t-cmp" aria-selected="true" aria-controls="p-cmp">Compare and decide</button>
+  <button role="tab" id="t-ev" aria-selected="false" aria-controls="p-ev">Evidence by candidate</button>
+  <button role="tab" id="t-sc" aria-selected="false" aria-controls="p-sc">Scorecard and weights</button>
+</nav>
+
+<section id="p-sc" role="tabpanel" aria-labelledby="t-sc" hidden>
+  <div class="row">
+    <div class="card">
+      <h2>What the CEO must deliver, and how much each part matters</h2>
+      <p class="hint" style="margin:4px 0 6px">Drafted by AI from the value-creation plan, then edited and approved by the deal team and the board before any interview. Weights must total 100.</p>
+      <div id="weights"></div>
+      <div class="sum"><span id="wsum"></span><button class="btn small" id="wreset" type="button">Reset weights</button></div>
+    </div>
+    <div class="card">
+      <h3>Mission</h3>
+      <p style="margin:4px 0 12px">Take Ivy from founder-led to a professionally run, multi-state platform with measurable clinical quality, ready for a sale in 2029.</p>
+      <h3>Outcomes in three years</h3>
+      <ul class="clean">
+        <li>EBITDA from $7M to $13M, with at least half from existing sites</li>
+        <li>12 new sites, each at break-even within 12 months</li>
+        <li>Measured clinical outcomes on every patient, reported to the board quarterly</li>
+        <li>A CFO and a clinical leader hired and retained</li>
+        <li>Founder moved to a board seat with a clean handover in year one</li>
+      </ul>
+      <p class="hint">Source: Ivy value-creation plan (synthetic). Each competency on the left traces to one or more outcomes.</p>
+    </div>
+  </div>
+</section>
+
+<section id="p-ev" role="tabpanel" aria-labelledby="t-ev" hidden>
+  <div class="cands" id="cands" role="group" aria-label="Candidate"></div>
+  <div class="row">
+    <div class="card">
+      <div id="candhead"></div>
+      <h3 style="margin-top:12px">Panel ratings, 1 to 4 against the anchors</h3>
+      <p class="hint" style="margin:2px 0 6px">Each rater scores alone before the debrief. Change any rating to see everything downstream update.</p>
+      <div class="tablewrap" id="ratings"></div>
+    </div>
+    <div class="card">
+      <h3>References, filed against the scorecard</h3>
+      <p class="hint" style="margin:2px 0 6px">Calls are summarized by AI and checked against the call notes by the search partner. Each item says whether it confirms, complicates or contradicts the panel's view.</p>
+      <div id="refs"></div>
+    </div>
+  </div>
+</section>
+
+<section id="p-cmp" role="tabpanel" aria-labelledby="t-cmp">
+  <label class="toggle"><input type="checkbox" id="adj"><span><b>Apply the committee's reference rule</b><br><span class="hint">Where a reference contradicts the panel on a competency, cap that rating at 2 until the panel re-tests it. The rule is set by the hiring committee, not the model.</span></span></label>
+  <div class="grid2">
+    <div class="card">
+      <h2>Weighted panel score</h2>
+      <p class="hint" style="margin:2px 0 6px">Dot = average of the three raters' weighted scores. Bar = lowest to highest rater, so a long bar means the panel disagrees.</p>
+      <div class="chart" id="dots"></div>
+    </div>
+    <div class="card">
+      <h2>Does the answer depend on the weights?</h2>
+      <p class="hint" style="margin:2px 0 6px">500 alternative weightings, each weight moved up or down by as much as half. Share of weightings in which each candidate comes out on top.</p>
+      <div class="chart" id="wins"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2>Where each candidate is strong and where the evidence is thin</h2>
+    <p class="hint" style="margin:2px 0 8px">Average panel rating. <b>⚠</b> = low confidence: raters two or more points apart, a contradicting reference, or no reference on a competency weighted 15 or more.</p>
+    <div class="tablewrap"><table class="hm" id="heat"></table></div>
+  </div>
+  <div class="grid2" style="margin-top:16px">
+    <div class="card">
+      <h2>If the committee chooses…</h2>
+      <div style="margin:6px 0 10px"><label class="hint" for="pick">Finalist</label> <select class="rsel" id="pick"></select></div>
+      <div id="risks"></div>
+    </div>
+    <div class="card">
+      <h2>Decision record</h2>
+      <p class="hint" style="margin:2px 0 8px">Ratings, references and the weighting test for the finalist above, ready for the committee to add its decision.</p>
+      <div class="memo" id="memo"></div>
+      <p style="margin-top:8px"><button class="btn small" id="copymemo" type="button">Copy decision record</button></p>
+    </div>
+  </div>
+</section>
+
+<footer>Executive Assessment · prototype prepared by JD Elder · invented data to show the workflow. Not legal advice. Companion to the Leadership Bench, where the Ivy CEO seat shows as at risk with a search open. <a href="../" style="color:inherit">Part of PE AI &amp; Data Tools</a></footer>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function(){
+"use strict";
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2200)}
+function copyText(txt,ok){const fb=()=>{const ta=document.createElement("textarea");ta.value=txt;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();let r=false;try{r=document.execCommand("copy")}catch(e){}ta.remove();toast(r?ok:"Select the text and copy it manually")};if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>toast(ok)).catch(fb);else fb()}
+
+const COMP=[
+ {k:"scale",n:"Scaling multi-site operations",short:"Scaling sites",w:25,src:"12 new sites; EBITDA growth from existing sites",a:["Has run one site or one region","Has run 10+ sites but not grown the footprint","Has grown a multi-site network by half or more","Has doubled a network with repeatable site economics"]},
+ {k:"clin",n:"Clinical quality and regulatory leadership",short:"Clinical quality",w:20,src:"Measured outcomes on every patient",a:["Delegates quality entirely","Maintains compliance; no outcome measurement","Has built outcome measurement into operations","Has used outcome data to win payer contracts or referrals"]},
+ {k:"talent",n:"Hiring and keeping a leadership team",short:"Leadership team",w:20,src:"CFO and clinical leader hired and retained",a:["Has inherited teams only","Has hired leaders; mixed retention","Has built a team that stayed through a growth phase","Has built teams whose members went on to bigger roles"]},
+ {k:"ma",n:"Growth through new sites and acquisitions",short:"Growth execution",w:15,src:"12 new sites; possible add-ons",a:["No growth execution","Supported deals or openings led by others","Led openings or acquisitions with results on plan","Led a repeatable growth program across markets"]},
+ {k:"board",n:"Working with a private equity board",short:"Sponsor board",w:10,src:"Sale-ready by 2029",a:["No board exposure","Presented to a board","Reported to a sponsor board for several years","Led a sponsor-backed company through a sale"]},
+ {k:"change",n:"Leading a founder transition",short:"Founder transition",w:10,src:"Clean handover in year one",a:["No transition experience","Joined after a transition","Led a team through a leadership change","Succeeded a founder and kept the team and culture intact"]}
+];
+const RATERS=["Operating partner","Deal partner","Independent director"];
+const CANDS={
+ A:{label:"Candidate A",bg:"Chief operating officer of a larger multi-site behavioral health platform",r:[[4,3,3,2,2,3],[4,3,3,2,2,2],[4,3,4,2,2,3]],
+   refs:{scale:["confirms","Former CEO (provided)","Opened 30 sites in four years and ran the opening playbook personally."],talent:["confirms","Former direct report (backdoor)","Hired well and protected the team; most of the leaders are still there."],ma:["mixed","Former board member (provided)","Integrated two acquisitions, but the CEO led the deals themselves."]},flags:[]},
+ B:{label:"Candidate B",bg:"Sitting CEO of a smaller sponsor-backed outpatient therapy group; one exit",r:[[3,2,4,4,4,2],[3,2,4,4,4,3],[3,3,3,4,4,2]],
+   refs:{talent:["contradicts","Former direct report (backdoor)","Went through three CFOs in four years. Strong at recruiting, but leaders did not stay."],ma:["confirms","Former sponsor partner (provided)","Closed six add-ons and integrated them on schedule."],board:["confirms","Former sponsor partner (provided)","Excellent with the board; no surprises."],clin:["mixed","Former clinical director (backdoor)","Supported quality work but saw it as compliance rather than a growth lever."]},flags:[]},
+ C:{label:"Candidate C",bg:"Chief clinical officer at a regional health system",r:[[2,4,3,1,2,3],[1,4,3,2,2,3],[2,4,2,1,1,3]],
+   refs:{clin:["confirms","Former CEO (provided)","Built the outcomes program that the health system now uses in payer negotiations."],scale:["mixed","Former peer (backdoor)","Ran a service line across eight hospitals, but did not own the P&L."]},
+   flags:[["Former peer (backdoor)","Great clinician, though at this stage of career probably looking to wind down in a few years.","Assumption about age or career stage","Age is protected, and a guess about retirement plans is not evidence. Excluded from the record; if tenure matters, ask every finalist the same question about commitment to the plan's timeline."]]},
+ D:{label:"Candidate D",bg:"Internal: Ivy's chief operating officer",r:[[3,3,2,2,2,4],[2,3,2,1,2,4],[3,3,3,2,2,4]],
+   refs:{change:["confirms","Founder (provided)","Staff trust them; they held the team together through two leadership changes."],scale:["mixed","Regional director (backdoor)","Runs our 20 sites well, but hasn't opened a new market."]},flags:[]}
+};
+const DEFW=COMP.map(c=>c.w);
+let W=DEFW.slice();
+let R={};Object.keys(CANDS).forEach(k=>R[k]=CANDS[k].r.map(x=>x.slice()));
+try{const s=JSON.parse(localStorage.getItem("ea-state")||"null");if(s&&s.W&&s.R){W=s.W;R=s.R}}catch(e){}
+const save=()=>{try{localStorage.setItem("ea-state",JSON.stringify({W,R}))}catch(e){}};
+let CUR="A",ADJ=false,PICK=null;
+
+function compMean(k,ci,adj){const v=R[k].map(r=>r[ci]);let m=v.reduce((a,b)=>a+b,0)/v.length;if(adj){const ref=CANDS[k].refs[COMP[ci].k];if(ref&&ref[0]==="contradicts")m=Math.min(m,2)}return m}
+function raterScores(k,w,adj){const sw=w.reduce((a,b)=>a+b,0)||1;return R[k].map(r=>r.reduce((a,v,ci)=>{let x=v;const ref=CANDS[k].refs[COMP[ci].k];if(adj&&ref&&ref[0]==="contradicts")x=Math.min(x,2);return a+w[ci]*x},0)/sw)}
+function wScore(k,w,adj){const sw=w.reduce((a,b)=>a+b,0)||1;return COMP.reduce((a,c,ci)=>a+w[ci]*compMean(k,ci,adj),0)/sw}
+function lowConf(k,ci){const v=R[k].map(r=>r[ci]);const ref=CANDS[k].refs[COMP[ci].k];return (Math.max(...v)-Math.min(...v)>=2)||(ref&&ref[0]==="contradicts")||(!ref&&W[ci]>=15)}
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function winShare(adj){const r=rng(11),wins={};Object.keys(CANDS).forEach(k=>wins[k]=0);for(let i=0;i<500;i++){const w=W.map(x=>x*(0.5+r()));let best=null,bs=-1;Object.keys(CANDS).forEach(k=>{const s=wScore(k,w,adj);if(s>bs){bs=s;best=k}});wins[best]++}Object.keys(wins).forEach(k=>wins[k]/=500);return wins}
+
+/* scorecard */
+function drawWeights(){
+  $("#weights").innerHTML=COMP.map((c,i)=>`<div class="wt"><div><span class="n">${esc(c.n)}</span><small>From: ${esc(c.src)}</small><details><summary>Rating anchors</summary><ol class="anch">${c.a.map(x=>`<li>${esc(x)}</li>`).join("")}</ol></details></div><input type="range" min="0" max="40" step="5" value="${W[i]}" data-i="${i}" aria-label="Weight for ${esc(c.n)}"><b class="num">${W[i]}</b></div>`).join("");
+  $("#weights").querySelectorAll("input").forEach(inp=>inp.addEventListener("input",()=>{W[+inp.dataset.i]=+inp.value;inp.nextElementSibling.textContent=inp.value;save();updSum();drawCmp()}));
+  updSum();
+}
+function updSum(){const s=W.reduce((a,b)=>a+b,0);$("#wsum").innerHTML=s===100?`<span class="pill st-good">✓ Weights total 100</span>`:`<span class="pill st-warn">! Weights total ${s}; scores are normalized, but agree on 100 before interviews</span>`}
+$("#wreset").addEventListener("click",()=>{W=DEFW.slice();save();drawWeights();drawCmp()});
+
+/* evidence */
+$("#cands").innerHTML=Object.keys(CANDS).map(k=>`<button class="btn small" type="button" data-k="${k}" aria-pressed="${k===CUR}">${CANDS[k].label}</button>`).join("");
+$("#cands").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{CUR=b.dataset.k;$("#cands").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.k===CUR));drawEv()}));
+const REFQ={scale:"Walk me through a site that underperformed. What did they do in the first 90 days?",clin:"How did they use outcome data, and did it change any contract or referral?",talent:"Name the leaders they hired. Who is still there, and why did the others leave?",ma:"Which openings or acquisitions did they lead personally, and how did each perform against plan?",board:"How did they handle a quarter that missed plan with the board?",change:"How did the team react to them in their first six months, and who left?"};
+function drawEv(){
+  const C=CANDS[CUR];
+  $("#candhead").innerHTML=`<div class="eyebrow">${C.label}</div><h2 style="font-size:16px">${esc(C.bg)}</h2>`;
+  $("#ratings").innerHTML=`<table><thead><tr><th>Competency</th>${RATERS.map(r=>`<th class="c">${r}</th>`).join("")}<th class="c">Spread</th></tr></thead><tbody>${COMP.map((c,ci)=>{const v=R[CUR].map(r=>r[ci]),sp=Math.max(...v)-Math.min(...v);
+    return `<tr><td>${esc(c.short)} <span class="hint num">(${W[ci]})</span></td>${R[CUR].map((r,ri)=>`<td class="c"><select class="rsel" data-ri="${ri}" data-ci="${ci}" aria-label="${RATERS[ri]} rating for ${esc(c.n)}">${[1,2,3,4].map(x=>`<option${r[ci]===x?" selected":""}>${x}</option>`).join("")}</select></td>`).join("")}<td class="c">${sp>=2?`<span class="pill st-warn">! ${sp}</span>`:`<span class="num hint">${sp}</span>`}</td></tr>`}).join("")}</tbody></table>`;
+  $("#ratings").querySelectorAll("select").forEach(s=>s.addEventListener("change",()=>{R[CUR][+s.dataset.ri][+s.dataset.ci]=+s.value;save();drawEv();drawCmp()}));
+  const L={confirms:["✓ Confirms","st-good"],mixed:["! Complicates","st-warn"],contradicts:["▲ Contradicts the panel","st-crit"]};
+  let h="";
+  COMP.forEach((c,ci)=>{const ref=C.refs[c.k];if(ref){const m=compMean(CUR,ci,false);h+=`<div class="ref ${ref[0]}"><b>${esc(c.short)} <span class="pill ${L[ref[0]][1]}" style="margin-left:6px">${L[ref[0]][0]}</span></b><q>${esc(ref[2])}</q><span class="hint">${esc(ref[1])} · panel average ${m.toFixed(1)}</span></div>`}});
+  const gaps=COMP.filter(c=>!C.refs[c.k]);
+  if(gaps.length)h+=`<h3 style="margin-top:12px">Not yet covered by any reference</h3><p class="hint" style="margin:2px 0">Suggested questions for the next calls, drafted by AI.</p>`+gaps.map(c=>`<div class="ref"><b>${esc(c.short)}</b><span class="hint">Ask: ${esc(REFQ[c.k])}</span></div>`).join("");
+  if(C.flags.length)h+=`<h3 style="margin-top:12px">Kept out of the record</h3>`+C.flags.map(f=>`<div class="ref flag"><b>${esc(f[2])} · ${esc(f[0])}</b><span class="strike">${esc(f[1])}</span><br><span class="hint">${esc(f[3])}</span></div>`).join("");
+  $("#refs").innerHTML=h;
+}
+
+/* compare */
+$("#adj").addEventListener("change",e=>{ADJ=e.target.checked;drawCmp()});
+function order(){return Object.keys(CANDS).sort((a,b)=>wScore(b,W,ADJ)-wScore(a,W,ADJ))}
+function drawCmp(){
+  const ord=order();if(!PICK)PICK=ord[0];
+  // dot plot
+  const Wd=560,rh=46,m={l:110,r:60,t:10,b:30},H=m.t+m.b+ord.length*rh,lo=1,hi=4,x=v=>m.l+(v-lo)/(hi-lo)*(Wd-m.l-m.r);
+  let g="";[1,1.5,2,2.5,3,3.5,4].forEach(v=>g+=`<line x1="${x(v)}" x2="${x(v)}" y1="${m.t}" y2="${H-m.b}" stroke="${Number.isInteger(v)?"var(--line2)":"var(--line)"}"/>${Number.isInteger(v)?`<text x="${x(v)}" y="${H-10}" text-anchor="middle" font-size="11" fill="var(--axis)">${v}</text>`:""}`);
+  ord.forEach((k,i)=>{const y=m.t+i*rh+rh/2,rs=raterScores(k,W,ADJ),s=wScore(k,W,ADJ),a=Math.min(...rs),b=Math.max(...rs);
+    g+=`<text x="${m.l-12}" y="${y+4}" text-anchor="end" font-size="12.5" fill="var(--ink2)">${CANDS[k].label}</text><rect x="${x(a)}" y="${y-3}" width="${Math.max(2,x(b)-x(a))}" height="6" rx="3" fill="var(--h2)"/><circle cx="${x(s)}" cy="${y}" r="7" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/><text x="${x(b)+12}" y="${y+4}" font-size="12" fill="var(--ink)" class="num">${s.toFixed(2)}</text><rect class="hb" data-k="${k}" x="0" y="${y-rh/2}" width="${Wd}" height="${rh}" fill="transparent"/>`});
+  $("#dots").innerHTML=`<svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="Weighted panel score by candidate with rater range">${g}</svg><div class="tip" hidden></div>`;
+  const tip=$("#dots .tip");$("#dots").querySelectorAll(".hb").forEach(r=>{const k=r.dataset.k;r.addEventListener("pointermove",ev=>{const rs=raterScores(k,W,ADJ);tip.hidden=false;tip.textContent="";const t=document.createElement("div");t.className="t";t.textContent=CANDS[k].label;tip.appendChild(t);RATERS.forEach((nm,i)=>{const row=document.createElement("div");row.className="r";const a=document.createElement("span");a.textContent=nm;const b=document.createElement("b");b.className="num";b.style.fontWeight="500";b.textContent=rs[i].toFixed(2);row.appendChild(a);row.appendChild(b);tip.appendChild(row)});const box=$("#dots").getBoundingClientRect();tip.style.left=Math.min(ev.clientX-box.left+14,box.width-200)+"px";tip.style.top=(ev.clientY-box.top+12)+"px"});r.addEventListener("pointerleave",()=>tip.hidden=true)});
+  // wins
+  const ws=winShare(ADJ),wo=Object.keys(CANDS).sort((a,b)=>ws[b]-ws[a]);
+  const W2=520,m2={l:110,r:60,t:6},H2=m2.t+wo.length*40+6;let s2="";
+  wo.forEach((k,i)=>{const y=m2.t+i*40+10,w=Math.max(ws[k]>0?6:0,ws[k]*(W2-m2.l-m2.r)),h=20;s2+=`<text x="${m2.l-12}" y="${y+14}" text-anchor="end" font-size="12.5" fill="var(--ink2)">${CANDS[k].label}</text>${w?`<path d="M${m2.l} ${y}h${w-4}a4 4 0 0 1 4 4v${h-8}a4 4 0 0 1-4 4h-${w-4}z" fill="var(--s1)"/>`:`<line x1="${m2.l}" x2="${m2.l}" y1="${y}" y2="${y+h}" stroke="var(--line2)"/>`}<text x="${m2.l+w+8}" y="${y+14}" font-size="12" fill="var(--ink)" class="num">${Math.round(ws[k]*100)}%</text>`});
+  $("#wins").innerHTML=`<svg viewBox="0 0 ${W2} ${H2}" role="img" aria-label="Share of alternative weightings in which each candidate ranks first">${s2}</svg><p class="hint" style="margin:6px 0 0">${ws[wo[0]]>=0.8?CANDS[wo[0]].label+" leads under almost any reasonable weighting.":ws[wo[0]]>=0.55?CANDS[wo[0]].label+" leads under most weightings, but the result is sensitive. Agree the weights before the debrief.":"No clear leader: the choice depends on how the committee weighs the competencies."}</p>`+(()=>{const lead=wo[0],c=COMP.filter(cc=>{const rf=CANDS[lead].refs[cc.k];return rf&&rf[0]==="contradicts"});return !ADJ&&c.length?`<div class="ref contradicts" style="margin-top:10px"><b>▲ ${CANDS[lead].label}'s lead leans on a rating a reference contradicts</b>${esc(c.map(x=>x.short).join(", "))}: the panel rated it highly, a backdoor reference says otherwise. Turn on the committee's reference rule above to see whether the answer holds.</div>`:"";})();
+  // heat
+  $("#heat").innerHTML=`<thead><tr><th>Candidate</th>${COMP.map((c,ci)=>`<th class="c" style="white-space:normal;min-width:84px">${esc(c.short)}<br><span class="num">${W[ci]}</span></th>`).join("")}<th class="r">Score</th></tr></thead><tbody>${ord.map(k=>`<tr><td style="white-space:nowrap">${CANDS[k].label}</td>${COMP.map((c,ci)=>{const m=compMean(k,ci,ADJ),z=Math.max(1,Math.min(4,Math.round(m)));const lcf=lowConf(k,ci);return `<td class="cell"><span class="z${z}" title="${esc(c.n)}: ${m.toFixed(1)}${lcf?" (low confidence)":""}">${m.toFixed(1)}${lcf?'<span class="lc">⚠</span>':""}</span></td>`}).join("")}<td class="r num"><b>${wScore(k,W,ADJ).toFixed(2)}</b></td></tr>`).join("")}</tbody>`;
+  // pick
+  $("#pick").innerHTML=Object.keys(CANDS).map(k=>`<option value="${k}"${k===PICK?" selected":""}>${CANDS[k].label}</option>`).join("");
+  drawRisks();drawMemo(ord,ws);
+}
+const ONB={scale:"Pair with an operating partner on the first three openings; set a site scorecard reviewed monthly.",clin:"Hire or promote a chief clinical officer in the first 90 days; adopt an outcomes measure across all sites.",talent:"Board approves the first two leadership hires; add a 12-month retention check on each.",ma:"Assign a deal-team sponsor for growth; run the first opening from the existing playbook before new markets.",board:"Monthly sponsor check-in for the first two quarters; agree a board reporting pack in the first 30 days.",change:"Agree the founder's role and decision rights in writing before day one; plan a staff listening tour in month one."};
+function drawRisks(){
+  const k=PICK,ci=COMP.map((c,i)=>i).sort((a,b)=>compMean(k,a,ADJ)-compMean(k,b,ADJ)||W[b]-W[a]).slice(0,2);
+  const lc=COMP.map((c,i)=>i).filter(i=>lowConf(k,i));
+  $("#risks").innerHTML=`<p style="margin:0 0 8px">${esc(CANDS[k].bg)}</p><h3>Two biggest risks to manage</h3>${ci.map(i=>`<div class="ref mixed"><b>${esc(COMP[i].n)} · panel ${compMean(k,i,ADJ).toFixed(1)} of 4</b>${esc(ONB[COMP[i].k])}</div>`).join("")}
+   <h3 style="margin-top:12px">Test before an offer</h3>${lc.length?`<ul class="clean">${lc.map(i=>`<li>${esc(COMP[i].short)}: ${esc(REFQ[COMP[i].k])}</li>`).join("")}</ul>`:'<p class="hint">No low-confidence competencies.</p>'}`;
+}
+$("#pick").addEventListener("change",e=>{PICK=e.target.value;drawRisks();drawMemo(order(),winShare(ADJ))});
+function memoText(ord,ws){
+  const k=PICK,C=CANDS[k];
+  const L=["Ivy CEO search · decision record (synthetic data)","","Role: Chief Executive Officer, Ivy (behavioral health)","Scorecard approved before interviews; weights: "+COMP.map((c,i)=>c.short+" "+W[i]).join(", "),"Reference rule applied: "+(ADJ?"yes (contradicted ratings capped at 2)":"no"),"","Panel results (weighted, 1 to 4):"];
+  ord.forEach(x=>{const rs=raterScores(x,W,ADJ);L.push("  "+CANDS[x].label+": "+wScore(x,W,ADJ).toFixed(2)+" (raters "+Math.min(...rs).toFixed(2)+" to "+Math.max(...rs).toFixed(2)+"); top under "+Math.round(ws[x]*100)+"% of alternative weightings")});
+  L.push("","Finalist under discussion: "+C.label+" ("+C.bg+")","Evidence:");
+  COMP.forEach((c,i)=>{const ref=C.refs[c.k];L.push("  - "+c.short+": panel "+compMean(k,i,ADJ).toFixed(1)+(ref?"; reference "+ref[0]+" ("+ref[1]+")":"; no reference yet")+(lowConf(k,i)?"; LOW CONFIDENCE":""))});
+  if(C.flags.length)L.push("","Excluded from the record: "+C.flags.length+" remark(s) not related to the job.");
+  L.push("","Committee decision: [to be written by the committee]","Reasons and conditions: [to be written by the committee]","Decided by: [names] on [date]","","Ratings are the panel's. The AI filed evidence and drafted questions; it did not rate or recommend.");
+  return L.join("\n");
+}
+function drawMemo(ord,ws){$("#memo").textContent=memoText(ord,ws)}
+$("#copymemo").addEventListener("click",()=>copyText($("#memo").textContent,"Decision record copied"));
+
+const TABS=["cmp","ev","sc"];
+function showTab(n){TABS.forEach(t=>{$("#p-"+t).hidden=t!==n;$("#t-"+t).setAttribute("aria-selected",t===n)})}
+TABS.forEach(t=>$("#t-"+t).addEventListener("click",()=>showTab(t)));
+drawWeights();drawEv();drawCmp();
+window.__dbg=()=>({off:Object.keys(CANDS).map(k=>[k,wScore(k,W,false).toFixed(2)]),on:Object.keys(CANDS).map(k=>[k,wScore(k,W,true).toFixed(2)]),wOff:winShare(false),wOn:winShare(true)});
+})();
+</script>
+
+</body></html>

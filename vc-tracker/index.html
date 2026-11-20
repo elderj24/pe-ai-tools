@@ -1,0 +1,319 @@
+<!doctype html><html><head><meta charset=utf8><meta name="robots" content="noindex,nofollow"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PE Toolkit - Value Creation Tracker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Schibsted+Grotesk:wght@600;700&display=swap">
+<style>
+/* Concept: the operating partners' portfolio review. Every initiative from every plan in one register, read out of monthly reports and board decks;
+   status checked against progress; patterns across companies surfaced so the team knows where shared help pays off. */
+:root{
+  --bg:#f6f6f4; --surface:#fcfcfb; --raised:#fff; --ink:#111315; --ink2:#52514e; --muted:#6f6d67; --axis:#898781;
+  --line:#e1e0d9; --line2:#c3c2b7; --accent:#256abf; --accent-ink:#fff; --accent-soft:#e6f0fc; --s1:#2a78d6; --plan:#d6d5cf;
+  --good:#0a6b0a; --good-bg:#e4f3e4; --warn:#7a4f00; --warn-bg:#fdf1d3; --ser:#9a3b12; --ser-bg:#fde6da; --crit:#b02a2a; --crit-bg:#fbe5e3;
+  --mark:#fff2b8; --mark-ink:#111315;
+  --f-head:"Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-body:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d0d0d; --surface:#1a1a19; --raised:#222220; --ink:#f0efec; --ink2:#c3c2b7; --muted:#a3a198; --axis:#898781;
+  --line:#2c2c2a; --line2:#383835; --accent:#6da7ec; --accent-ink:#0d0d0d; --accent-soft:#16263a; --s1:#3987e5; --plan:#383835;
+  --good:#5fd35f; --good-bg:#12301a; --warn:#f0b948; --warn-bg:#33270b; --ser:#f3a07c; --ser-bg:#3a2216; --crit:#f08a85; --crit-bg:#3a1816;
+  --mark:#4a3f0f; --mark-ink:#f0efec; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d0d0d; --surface:#1a1a19; --raised:#222220; --ink:#f0efec; --ink2:#c3c2b7; --muted:#a3a198; --axis:#898781;
+  --line:#2c2c2a; --line2:#383835; --accent:#6da7ec; --accent-ink:#0d0d0d; --accent-soft:#16263a; --s1:#3987e5; --plan:#383835;
+  --good:#5fd35f; --good-bg:#12301a; --warn:#f0b948; --warn-bg:#33270b; --ser:#f3a07c; --ser-bg:#3a2216; --crit:#f08a85; --crit-bg:#3a1816;
+  --mark:#4a3f0f; --mark-ink:#f0efec; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--f-body);margin:0;padding-block:0 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-head);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:26px;line-height:1.15;font-weight:700} h2{font-size:18px;font-weight:600} h3{font-size:14px;font-weight:600}
+button,select,input{font:inherit;color:inherit}
+.wrap{max-width:1360px;margin:0 auto}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500}
+header{padding:28px 0 14px;display:flex;flex-wrap:wrap;gap:10px 30px;justify-content:space-between;align-items:flex-end} header p{margin:6px 0 0;color:var(--ink2);max-width:74ch}
+.banner{background:var(--warn-bg);color:var(--warn);border:1px solid var(--line);border-radius:6px;padding:8px 12px;font-size:12.5px;margin-bottom:14px}
+nav.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto}
+nav.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:10px 14px;cursor:pointer;color:var(--ink2);font-weight:500;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+section[hidden]{display:none!important}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.hint{font-size:12px;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.kpi .l{font-size:12px;color:var(--muted)} .kpi .v{font-family:var(--f-head);font-size:24px;font-weight:600;line-height:1.2;margin-top:2px} .kpi .s{font-size:12px;color:var(--ink2)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:16px}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:500;text-align:left;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+td.r,th.r{text-align:right} td.c,th.c{text-align:center}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:500;white-space:nowrap}
+.s-G{background:var(--good-bg);color:var(--good)} .s-A{background:var(--warn-bg);color:var(--warn)} .s-R{background:var(--crit-bg);color:var(--crit)} .s-D{background:var(--accent-soft);color:var(--accent)}
+.mx td.cell{padding:3px;text-align:center}
+.mx .cb{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;min-width:62px;border:1px solid transparent;border-radius:5px;padding:6px 4px;font-size:12px;font-weight:500;cursor:pointer}
+.mx .cb:hover{border-color:var(--ink2)}
+.mx th.c{white-space:normal;min-width:70px;font-size:10.5px;line-height:1.2;vertical-align:bottom}
+.chart{position:relative} .chart svg{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--ink2);margin:6px 0}
+.legend span{display:inline-flex;align-items:center;gap:6px} .legend i{width:14px;height:10px;border-radius:2px;display:inline-block}
+.tip{position:absolute;pointer-events:none;background:var(--raised);border:1px solid var(--line2);border-radius:6px;padding:7px 10px;font-size:12.5px;box-shadow:0 4px 14px rgba(0,0,0,.12);z-index:5;min-width:190px}
+.tip .t{font-weight:600;margin-bottom:3px}.tip .r{display:flex;justify-content:space-between;gap:14px}
+.ins{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:6px;padding:10px 12px;margin:8px 0;font-size:13px}
+.ins.risk{border-left-color:var(--crit)} .ins.good{border-left-color:var(--good)}
+.ins b{display:block;font-size:14px;margin-bottom:2px}
+.ins .act{margin-top:6px;color:var(--ink2)}
+.cos{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.btn{background:var(--surface);border:1px solid var(--line2);border-radius:6px;padding:5px 11px;cursor:pointer;font-weight:500;font-size:13px}
+.btn:hover{border-color:var(--ink2)} .btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.small{padding:3px 9px;font-size:12px}
+.prog{display:block;width:110px;height:8px;border-radius:4px;background:var(--plan);position:relative}
+.prog i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--s1)}
+.prog u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);text-decoration:none}
+.hist{display:inline-flex;gap:3px}
+.hist span{width:18px;height:18px;border-radius:4px;font-size:10px;display:inline-flex;align-items:center;justify-content:center;font-weight:600}
+.flag{border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:6px;padding:8px 10px;margin:6px 0;font-size:13px}
+.flag.crit{border-left-color:var(--crit)} .flag b{display:block}
+.src{font-size:12px;color:var(--muted)}
+.doc{background:var(--raised);border:1px solid var(--line2);border-radius:6px;padding:14px 16px;font-size:13px;line-height:1.6}
+.doc h4{margin:0 0 6px;font-family:var(--f-head);font-size:14px}
+.doc .pg{float:right;font-size:11px;color:var(--muted)}
+mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2px}
+mark sup{font-size:9px;font-weight:600;margin-left:2px}
+ul.clean{margin:6px 0;padding-left:18px} ul.clean li{margin:3px 0}
+.flow{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.step{flex:1 1 150px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.step b{display:block;font-family:var(--f-head);margin-bottom:2px}.step small{color:var(--ink2);display:block}
+.step.mock{border-style:dashed}
+.tag{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.tag.real{color:var(--good)} .tag.mockt{color:var(--warn)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:max(18px,env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:13px;z-index:50}
+footer{color:var(--muted);font-size:12px;margin-top:24px;max-width:90ch}
+@media (max-width:560px){h1{font-size:22px}}
+</style>
+
+<div class="wrap">
+<header>
+  <div>
+    <div class="eyebrow">Beta · portfolio operations</div>
+    <h1>Value creation plan tracker</h1>
+    <p>Every value creation initiative in one register, checked against actual progress.</p>
+  </div>
+  <div class="hint num">Through Q3 2026 board decks and September reports</div>
+</header>
+<div class="banner" role="note"><b>Synthetic data.</b> Companies, people and figures are invented.</div>
+
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <button role="tab" id="t-port" aria-selected="true" aria-controls="p-port">Portfolio view</button>
+  <button role="tab" id="t-themes" aria-selected="false" aria-controls="p-themes">Where to focus</button>
+  <button role="tab" id="t-co" aria-selected="false" aria-controls="p-co">Company detail</button>
+</nav>
+
+<section id="p-port" role="tabpanel" aria-labelledby="t-port">
+  <div class="kpis" id="kpis"></div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline">
+      <h2>Initiative status by company and lever</h2>
+      <div class="cos" role="group" aria-label="Status basis" style="margin:0"><button class="btn small" id="b-rep" type="button" aria-pressed="false">As reported by management</button><button class="btn small" id="b-ev" type="button" aria-pressed="true">Based on progress</button></div>
+    </div>
+    <p class="hint" style="margin:4px 0 8px">Worst status in each cell. "Based on progress" compares EBITDA delivered with time elapsed against the plan date. Click a cell for the company detail.</p>
+    <div class="tablewrap"><table class="mx" id="mx"></table></div>
+    <div class="legend"><span class="pill s-G">✓ On track</span><span class="pill s-A">! Behind</span><span class="pill s-R">▲ Off track</span><span class="pill s-D">● Done</span><span class="hint">Blank = lever not in that company's plan</span></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2>EBITDA from the plans: planned against delivered, by lever</h2>
+    <div class="legend"><span><i style="background:var(--plan);border:1px solid var(--line2)"></i>Planned by exit</span><span><i style="background:var(--s1)"></i>Delivered to date (run-rate)</span></div>
+    <div class="chart" id="levbars" style="max-width:760px"></div>
+  </div>
+</section>
+
+<section id="p-themes" role="tabpanel" aria-labelledby="t-themes" hidden>
+  <div class="grid2">
+    <div class="card"><h2>Patterns across companies</h2><p class="hint" style="margin:2px 0 6px">Levers and blockers that repeat across companies.</p><div id="insights"></div></div>
+    <div class="card">
+      <h2>What's holding initiatives back</h2>
+      <p class="hint" style="margin:2px 0 6px">Blockers named in reports and decks, tagged to a common list. EBITDA at risk = planned minus delivered for initiatives behind or off track.</p>
+      <div class="chart" id="blockbars"></div>
+      <div class="tablewrap" id="blocktbl" style="margin-top:10px"></div>
+    </div>
+  </div>
+</section>
+
+<section id="p-co" role="tabpanel" aria-labelledby="t-co" hidden>
+  <div class="cos" id="cosel" role="group" aria-label="Company"></div>
+  <div class="grid2" style="grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)">
+    <div class="card"><div id="cohead"></div><div class="tablewrap" id="cotbl" style="margin-top:10px"></div></div>
+    <div class="card"><h2>For the next board meeting</h2><p class="hint" style="margin:2px 0 8px">Questions drafted from the gaps between what the deck says and what the numbers show.</p><div id="coqs"></div><p style="margin-top:8px"><button class="btn small" id="copyqs" type="button">Copy questions</button></p></div>
+  </div>
+</section>
+
+
+<footer>Value Creation Tracker · prototype prepared by JD Elder · invented data to show the workflow. Companion to the Leadership Bench, Portfolio Close and Fund Metrics Hub, which use the same ten invented companies. <a href="../" style="color:inherit">Part of PE AI &amp; Data Tools</a></footer>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function(){
+"use strict";
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2200)}
+function copyText(txt,ok){const fb=()=>{const ta=document.createElement("textarea");ta.value=txt;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();let r=false;try{r=document.execCommand("copy")}catch(e){}ta.remove();toast(r?ok:"Select the text and copy it manually")};if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>toast(ok)).catch(fb);else fb()}
+const LEV={price:"Pricing and contracts",labor:"Workforce and labor",rcm:"Billing and collections",proc:"Procurement",growth:"New sites and sales growth",ma:"Acquisitions and integration",sys:"Systems and data",ops:"Operations and productivity",org:"Leadership and organization"};
+const LEVS={price:"Pricing",labor:"Workforce",rcm:"Billing",proc:"Procurement",growth:"Growth",ma:"M&A",sys:"Systems / data",ops:"Operations",org:"Leadership"};
+const BLK={hire:"Skilled staff hiring",sys:"Systems and data",lead:"Leadership gap",payer:"Payer and customer timelines",integ:"Integration capacity",vendor:"Vendor delays"};
+const NOW=2026.75, START=2025.5;
+const QE={"Q4 26":2027.0,"Q1 27":2027.25,"Q2 27":2027.5,"Q3 27":2027.75,"Q4 27":2028.0};
+// [name, lever, planned, delivered, due, reported history Q1..Q3, blockers, latest update, source]
+const CO={
+ Aspen:{t:"Multi-site dental",i:[
+  ["De novo program: 15 new practices","growth",4.0,1.6,"Q4 27","GGG",[],"6 of 15 de novos open; average time to break-even 10 months against 12 planned.","Q3 board deck, p.5"],
+  ["Payer fee schedule renegotiation","price",1.5,1.1,"Q1 27","GGG",[],"Three of four target payers re-signed at higher rates.","Q3 board deck, p.6"],
+  ["Hygienist retention program","labor",1.2,0.3,"Q2 27","AAA",["hire"],"Hygienist turnover 31% annualized against a 20% target.","September monthly report, p.3"],
+  ["Central purchasing","proc",0.8,0.8,"Q4 26","GGD",[],"Completed; savings in run-rate.","Q3 board deck, p.8"],
+  ["Practice management system rollout","sys",0.6,0.1,"Q4 26","AAR",["sys","vendor"],"Vendor migration tool failed at two pilot practices; go-live moved six months.","Q3 board deck, p.9"]]},
+ Birch:{t:"Infusion centers",i:[
+  ["Payer contract renegotiation","price",2.0,0.6,"Q2 27","GAA",["payer"],"Two of five contracts signed; the largest payer pushed its decision to the first quarter.","Q3 board deck, p.4"],
+  ["Central prior authorization team","rcm",1.0,0.2,"Q1 27","GGG",["payer"],"Team fully staffed; turnaround on authorizations at 6.5 days against 3 targeted.","September monthly report, p.2"],
+  ["New centers","growth",2.5,1.0,"Q4 27","GGG",[],"Two of five new centers open and ahead of volume plan.","Q3 board deck, p.6"],
+  ["Nurse scheduling and overtime","labor",0.8,0.0,"Q4 26","AAR",["hire"],"Overtime at 14% of nursing hours against an 8% target.","September monthly report, p.4"]]},
+ Cypress:{t:"Residential HVAC and plumbing",i:[
+  ["Technician recruiting and retention","labor",2.0,0.2,"Q4 26","ARR",["hire","lead"],"Subcontractor spend up 40% on last year; HR leader search not started.","Q3 board deck, p.3"],
+  ["New market launches","growth",2.5,0.5,"Q2 27","GAA",["hire"],"One of three markets launched; the second is waiting on licensed technicians.","Q3 board deck, p.5"],
+  ["Field documentation automation","ops",0.7,0.1,"Q1 27","GGA",["sys"],"Pilot live in one branch; integration with the dispatch system behind schedule.","September monthly report, p.5"],
+  ["Invoicing at job close","rcm",0.6,0.5,"Q4 26","GGG",[],"Days sales outstanding down 9 days.","Q3 board deck, p.7"]]},
+ Dogwood:{t:"Specialty food distribution",i:[
+  ["Exclusive brand wins","growth",3.0,2.4,"Q2 27","GGG",[],"Two new exclusive brands added; the summer launch is ramping faster than plan.","Q3 board deck, p.4"],
+  ["Purchasing and group contract","proc",1.2,1.0,"Q4 26","GGG",[],"New purchasing contract live from August.","Q3 board deck, p.6"],
+  ["Order-to-cash automation","rcm",0.8,0.3,"Q2 27","GGA",["payer"],"Automation covers 40% of orders; two large customers' portals not yet supported.","September monthly report, p.2"],
+  ["Warehouse pick-path redesign","labor",0.5,0.3,"Q1 27","GGG",[],"Lines picked per labor hour up 11%.","Q3 board deck, p.7"]]},
+ Elm:{t:"Precision components manufacturing",i:[
+  ["Add-on #1 integration","ma",2.5,1.8,"Q4 26","GGG",["integ"],"Combined purchasing in place; plant consolidation on schedule for December.","Q3 board deck, p.4"],
+  ["Add-on #2","ma",2.0,0.0,"Q3 27","GAA",["integ","lead"],"Letter of intent signed; diligence paused until the CFO seat is filled.","Q3 board deck, p.5"],
+  ["ERP migration","sys",1.0,0.0,"Q2 27","ARR",["sys","lead"],"Go-live moved from Q4 2026 to Q3 2027 after the systems integrator changed team leads.","September monthly report, p.6"],
+  ["Scheduling and changeover","ops",1.2,0.6,"Q2 27","GGG",[],"Changeover hours down 22% on the pilot line.","September monthly report, p.4"],
+  ["Procurement consolidation","proc",0.8,0.5,"Q1 27","GGG",[],"Resin and packaging contracts consolidated.","Q3 board deck, p.7"]]},
+ Fir:{t:"Receivables management services",i:[
+  ["Collections follow-up automation","ops",2.5,1.9,"Q2 27","GGG",[],"Automation handles 55% of follow-up touches; recovery per FTE up 18%.","Q3 board deck, p.3"],
+  ["New enterprise contracts","growth",2.0,1.4,"Q4 26","GGG",[],"Four new enterprise clients live.","Q3 board deck, p.4"],
+  ["Offshore team build","labor",1.0,0.8,"Q4 26","GGG",[],"120 offshore staff hired; quality scores at parity.","Q3 board deck, p.6"],
+  ["Contingency fee pricing","price",0.6,0.2,"Q2 27","GAA",[],"Two renewals deferred to next year.","September monthly report, p.2"],
+  ["Data platform","sys",0.5,0.1,"Q1 27","AAA",["lead","sys"],"Head of technology seat vacant; work led by an outside firm.","Q3 board deck, p.8"]]},
+ Ginkgo:{t:"Testing and inspection services",i:[
+  ["Client diversification","growth",1.5,0.3,"Q4 27","GAA",[],"Two new mid-size clients; top client still 41% of revenue.","Q3 board deck, p.4"],
+  ["Lab network expansion","growth",1.2,0.4,"Q2 27","GGA",["hire"],"Eight labs added against 15 planned; technician hiring slow.","Q3 board deck, p.5"],
+  ["Project start-up cycle time","ops",0.6,0.1,"Q1 27","GGG",["sys"],"New contracting workflow designed; start-up time unchanged at 96 days.","September monthly report, p.3"]]},
+ Hawthorn:{t:"Food contract manufacturing",i:[
+  ["Line 3 capacity expansion","growth",3.0,1.5,"Q1 27","GGG",[],"Line 3 qualified; running at 60% of rate.","Q3 board deck, p.4"],
+  ["Pricing pass-through","price",1.5,1.5,"Q4 26","GGD",[],"Completed; all major contracts index raw material costs.","Q3 board deck, p.5"],
+  ["Freight and procurement","proc",0.7,0.3,"Q2 27","GAA",["vendor"],"Carrier bid delayed; freight surcharges partly offset savings.","September monthly report, p.3"],
+  ["Exit readiness: reporting and KPIs","sys",0.3,0.1,"Q2 27","GGA",["sys","lead"],"Monthly KPI pack still assembled by hand.","Q3 board deck, p.9"]]},
+ Ivy:{t:"Behavioral health",i:[
+  ["Founder transition and CEO hire","org",0,0,"Q2 27","ARR",["lead"],"Search launched in September; four finalists.","Q3 board deck, p.3"],
+  ["Clinical outcomes program","ops",0.8,0.0,"Q4 27","AAR",["lead"],"Measurement tool selected; rollout waits for clinical leadership.","Q3 board deck, p.6"],
+  ["Payer contracting","price",1.5,0.3,"Q2 27","GAA",["payer","lead"],"One payer renegotiated; others want outcome data first.","Q3 board deck, p.5"],
+  ["New sites","growth",2.0,0.4,"Q4 27","GGA",["lead","hire"],"Two of eight sites open.","Q3 board deck, p.4"]]},
+ Juniper:{t:"Marketing services",i:[
+  ["Offshore delivery center","labor",1.8,0.9,"Q2 27","GGA",["integ"],"Delivery center at 140 staff; client approvals for offshore work slower than planned.","Q3 board deck, p.5"],
+  ["AI-assisted content production","ops",1.5,0.5,"Q4 27","GGG",[],"Hours per deliverable down 15% on three accounts.","Q3 board deck, p.6"],
+  ["Pricing and scope discipline","price",1.0,0.2,"Q1 27","AAA",[],"Change orders captured on 35% of overruns against 80% targeted.","September monthly report, p.2"],
+  ["Client diversification","growth",1.0,0.3,"Q4 27","GAA",[],"Top client 28% of revenue, down from 31%.","Q3 board deck, p.4"]]}
+};
+const I=[];
+Object.entries(CO).forEach(([co,c])=>c.i.forEach((x,k)=>{
+  const [n,lev,pl,dl,due,hist,blk,upd,src]=x;
+  const tl=Math.min(1,(NOW-START)/(QE[due]-START)),el=(lev==="growth"||lev==="ma")?Math.pow(tl,1.4):tl;const pace=pl>0?dl/(pl*el):null;
+  let ev;if(pl>0&&dl>=pl)ev="D";else if(pl===0)ev=hist[2]==="G"?"G":hist[2];else ev=pace>=0.8?"G":pace>=0.45?"A":"R";
+  const rep=hist[2];const rank={D:0,G:1,A:2,R:3};
+  I.push({co,k,n,lev,pl,dl,due,hist,blk,upd,src,el,pace,ev,rep,opt:rank[ev]-rank[rep]>=2&&rep!=="D",gap:rank[ev]-rank[rep],tl});
+}));
+const ST={G:["✓","On track"],A:["!","Behind"],R:["▲","Off track"],D:["●","Done"]};
+const rank={D:0,G:1,A:2,R:3};
+const atRisk=x=>(x.ev==="A"||x.ev==="R")?Math.max(0,x.pl-x.dl):0;
+let BASIS="ev",SEL="Birch";
+const M=v=>"$"+v.toFixed(1)+"M";
+
+function drawKpis(){
+  const pl=I.reduce((a,x)=>a+x.pl,0),dl=I.reduce((a,x)=>a+x.dl,0);
+  const off=I.filter(x=>x.ev==="R").length,opt=I.filter(x=>x.opt).length;
+  $("#kpis").innerHTML=[["EBITDA planned by exit",M(pl),I.length+" initiatives, 10 companies"],["Delivered so far (run-rate)",M(dl),Math.round(dl/pl*100)+"% of plan, "+Math.round((NOW-START)/((2027.75)-START)*100)+"% of the way through a typical plan"],["Off track on progress",off+" initiatives",M(I.filter(x=>x.ev==="R").reduce((a,x)=>a+x.pl-x.dl,0))+" of EBITDA still to deliver"],["Reported on track, off track on progress",opt+" initiatives","the conversation to have at the board"]]
+   .map(k=>`<div class="kpi"><div class="l">${k[0]}</div><div class="v num">${k[1]}</div><div class="s">${k[2]}</div></div>`).join("");
+}
+function drawMx(){
+  const levs=Object.keys(LEV);
+  $("#mx").innerHTML=`<thead><tr><th>Company</th>${levs.map(l=>`<th class="c">${LEVS[l]}</th>`).join("")}</tr></thead><tbody>${Object.keys(CO).map(co=>`<tr><td style="white-space:nowrap"><b>${co}</b><span class="hint" style="display:block">${esc(CO[co].t)}</span></td>${levs.map(l=>{const xs=I.filter(x=>x.co===co&&x.lev===l);if(!xs.length)return `<td class="cell"></td>`;
+    const s=xs.map(x=>BASIS==="ev"?x.ev:x.rep).sort((a,b)=>rank[b]-rank[a])[0];const optf=BASIS==="ev"&&xs.some(x=>x.opt);
+    return `<td class="cell"><button type="button" class="cb s-${s}" data-co="${co}" title="${esc(xs.map(x=>x.n+": "+ST[BASIS==="ev"?x.ev:x.rep][1]).join("; "))}" aria-label="${co}, ${LEV[l]}: ${ST[s][1]}${optf?", reported better than progress":""}">${ST[s][0]} ${xs.length>1?xs.length:""}${optf?'<span title="Reported better than progress shows">*</span>':""}</button></td>`}).join("")}</tr>`).join("")}</tbody>`;
+  $("#mx").querySelectorAll(".cb").forEach(b=>b.addEventListener("click",()=>{SEL=b.dataset.co;drawCo();showTab("co")}));
+}
+["rep","ev"].forEach(k=>$("#b-"+k).addEventListener("click",()=>{BASIS=k;$("#b-rep").setAttribute("aria-pressed",k==="rep");$("#b-ev").setAttribute("aria-pressed",k==="ev");drawMx()}));
+function hbar(el,rows,opts){
+  const W=640,rh=34,m={l:190,r:120,t:4,b:24},H=m.t+m.b+rows.length*rh,mx=Math.max(...rows.map(r=>r.a))*1.05,x=v=>m.l+v/mx*(W-m.l-m.r);
+  let g="";const step=mx>12?4:mx>6?2:1;for(let v=0;v<=mx;v+=step)g+=`<line x1="${x(v)}" x2="${x(v)}" y1="${m.t}" y2="${H-m.b}" stroke="var(--line)"/><text x="${x(v)}" y="${H-6}" text-anchor="middle" font-size="10.5" fill="var(--axis)">$${v}M</text>`;
+  rows.forEach((r,i)=>{const y=m.t+i*rh+8,h=18;
+    g+=`<text x="${m.l-10}" y="${y+13}" text-anchor="end" font-size="12.5" fill="var(--ink2)">${esc(r.l)}</text>`;
+    if(r.b!=null)g+=`<rect x="${m.l}" y="${y}" width="${Math.max(2,x(r.a)-m.l)}" height="${h}" rx="3" fill="var(--plan)" stroke="var(--line2)" stroke-width=".5"/><rect x="${m.l}" y="${y+4}" width="${Math.max(r.b>0?2:0,x(r.b)-m.l)}" height="${h-8}" rx="2" fill="var(--s1)"/>`;
+    else g+=`<path d="M${m.l} ${y}h${Math.max(2,x(r.a)-m.l-4)}a4 4 0 0 1 4 4v${h-8}a4 4 0 0 1-4 4h-${Math.max(2,x(r.a)-m.l-4)}z" fill="var(--s1)"/>`;
+    g+=`<text x="${x(r.a)+8}" y="${y+13}" font-size="12" fill="var(--ink2)">${esc(r.lab)}</text><rect class="hb" data-i="${i}" x="0" y="${m.t+i*rh}" width="${W}" height="${rh}" fill="transparent"/>`});
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.aria)}">${g}</svg><div class="tip" hidden></div>`;
+  const tip=el.querySelector(".tip");el.querySelectorAll(".hb").forEach(hb=>{const r=rows[+hb.dataset.i];hb.addEventListener("pointermove",ev=>{tip.hidden=false;tip.textContent="";const t=document.createElement("div");t.className="t";t.textContent=r.l;tip.appendChild(t);r.tip.forEach(a=>{const d=document.createElement("div");d.className="r";const k=document.createElement("span");k.textContent=a[0];const v=document.createElement("b");v.className="num";v.style.fontWeight="500";v.textContent=a[1];d.appendChild(k);d.appendChild(v);tip.appendChild(d)});const box=el.getBoundingClientRect();tip.style.left=Math.min(ev.clientX-box.left+14,box.width-220)+"px";tip.style.top=(ev.clientY-box.top+12)+"px"});hb.addEventListener("pointerleave",()=>tip.hidden=true)});
+}
+function levStats(){return Object.keys(LEV).map(l=>{const xs=I.filter(x=>x.lev===l&&x.pl>0);const cos=[...new Set(xs.map(x=>x.co))];return{l,xs,cos,pl:xs.reduce((a,x)=>a+x.pl,0),dl:xs.reduce((a,x)=>a+x.dl,0),risk:xs.reduce((a,x)=>a+atRisk(x),0),behind:xs.filter(x=>x.ev==="A"||x.ev==="R"),pace:xs.length?xs.reduce((a,x)=>a+x.dl,0)/xs.reduce((a,x)=>a+x.pl*x.el,0):0}}).filter(s=>s.xs.length)}
+function blkStats(){return Object.keys(BLK).map(b=>{const xs=I.filter(x=>x.blk.includes(b));const bh=xs.filter(x=>x.ev==="A"||x.ev==="R");return{b,xs,bh,cos:[...new Set(bh.map(x=>x.co))],risk:bh.reduce((a,x)=>a+atRisk(x),0)}}).sort((a,b)=>b.risk-a.risk)}
+function drawLev(){
+  const ls=levStats().sort((a,b)=>b.pl-a.pl);
+  hbar($("#levbars"),ls.map(s=>({l:LEV[s.l],a:s.pl,b:s.dl,lab:M(s.dl)+" of "+M(s.pl),tip:[["Companies",String(s.cos.length)],["Initiatives",String(s.xs.length)],["Behind or off track",String(s.behind.length)],["EBITDA at risk",M(s.risk)]]})),{aria:"Planned and delivered EBITDA by lever"});
+}
+function drawThemes(){
+  const bs=blkStats().filter(b=>b.bh.length);
+  hbar($("#blockbars"),bs.map(b=>({l:BLK[b.b],a:b.risk,lab:M(b.risk)+" · "+b.cos.length+" cos",tip:[["Initiatives behind",String(b.bh.length)],["Companies",b.cos.join(", ")],["EBITDA at risk",M(b.risk)]]})),{aria:"EBITDA at risk by blocker"});
+  $("#blocktbl").innerHTML=`<table><thead><tr><th>Blocker</th><th>Companies affected</th><th class="r">Initiatives</th></tr></thead><tbody>${bs.map(b=>`<tr><td>${BLK[b.b]}</td><td>${b.cos.join(", ")}</td><td class="r num">${b.bh.length}</td></tr>`).join("")}</tbody></table>`;
+  const ls=levStats();
+  const ACT={hire:"A shared skilled-labor recruiting and retention program: one recruiting partner, common retention bonuses, shared agency-rate benchmarks. Owner: operating partner for talent.",sys:"A systems bench: one pre-vetted integrator and a go-live checklist used across companies, with an operating partner reviewing every major cutover.",lead:"Fill the open seats first. Several initiatives here are waiting on a hire; see the Leadership Bench for the same seats.",payer:"Pool contract intelligence: share contract timelines, approval turnaround and negotiation outcomes by payer and large customer across the portfolio.",integ:"Add integration capacity: a shared integration lead for add-ons and offshore transitions.",vendor:"Escalate vendor performance at the sponsor level where several companies use the same vendor."};
+  let h="";
+  bs.slice(0,3).forEach(b=>{h+=`<div class="ins risk"><b>${BLK[b.b]}: ${M(b.risk)} of EBITDA at risk across ${b.cos.length} companies</b>${b.cos.join(", ")}</div>`});
+  const worst=ls.filter(s=>s.cos.length>=3).sort((a,b)=>b.risk-a.risk)[0];
+  if(worst)h+=`<div class="ins risk"><b>${LEV[worst.l]} is the lever most behind: ${worst.behind.length} of ${worst.xs.length} initiatives behind or off track</b>${M(worst.dl)} delivered of ${M(worst.pl)} planned.</div>`;
+  const best=ls.filter(s=>s.cos.length>=2&&s.l!=="org").sort((a,b)=>b.pace-a.pace)[0];
+  if(best){const lead=best.xs.slice().sort((a,b)=>(b.dl/b.pl)-(a.dl/a.pl))[0];h+=`<div class="ins good"><b>Bright spot: ${LEV[best.l]}, ahead of pace across ${best.cos.length} companies</b>Furthest along: ${lead.co}, ${esc(lead.n.toLowerCase())}.</div>`}
+  const opt=I.filter(x=>x.opt);
+  h+=`<div class="ins"><b>${opt.length} initiatives are reported on track but are off track on progress</b>${opt.map(x=>x.co).join(", ")}.</div>`;
+  $("#insights").innerHTML=h;
+}
+$("#cosel").innerHTML=Object.keys(CO).map(co=>`<button class="btn small" type="button" data-co="${co}">${co}</button>`).join("");
+$("#cosel").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{SEL=b.dataset.co;drawCo()}));
+const pill=s=>`<span class="pill s-${s}">${ST[s][0]} ${ST[s][1]}</span>`;
+function qs(co){
+  const out=[];
+  I.filter(x=>x.co===co).forEach(x=>{
+    if(x.opt)out.push(`${x.n}: the deck shows ${ST[x.rep][1].toLowerCase()}, but ${M(x.dl)} of ${M(x.pl)} is delivered with ${Math.round(x.tl*100)}% of the time to ${x.due} gone. What has to happen next quarter to stay on plan, and should the date or the target move?`);
+    else if(x.ev==="R"&&x.pl>0)out.push(`${x.n} is off track (${M(x.dl)} of ${M(x.pl)}). ${x.blk.length?"The blocker named is "+x.blk.map(b=>BLK[b].toLowerCase()).join(" and ")+". What would remove it, and who owns that?":"What is the recovery plan and its date?"}`);
+    else if(x.pl===0&&x.ev!=="G")out.push(`${x.n}: other initiatives depend on it. What is the date, and what is the plan if it slips?`);
+  });
+  if(!out.length)out.push("No gaps between reported status and progress. Use the time on what could accelerate the plan.");
+  return out;
+}
+function drawCo(){
+  $("#cosel").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.co===SEL));
+  const c=CO[SEL],xs=I.filter(x=>x.co===SEL),pl=xs.reduce((a,x)=>a+x.pl,0),dl=xs.reduce((a,x)=>a+x.dl,0);
+  $("#cohead").innerHTML=`<div class="eyebrow">${esc(c.t)}</div><h2>${SEL}: ${M(dl)} of ${M(pl)} delivered</h2>`;
+  $("#cotbl").innerHTML=`<table><thead><tr><th>Initiative</th><th>Progress</th><th>Due</th><th>Reported, Q1 to Q3</th><th>Based on progress</th></tr></thead><tbody>${xs.map(x=>`<tr><td style="min-width:220px"><span style="font-weight:500">${esc(x.n)}</span><span class="hint" style="display:block">${LEV[x.lev]}${x.blk.length?" · blocked by "+x.blk.map(b=>BLK[b].toLowerCase()).join(", "):""}</span><span class="src" style="display:block;margin-top:2px">"${esc(x.upd)}" · ${esc(x.src)}</span></td>
+    <td style="white-space:nowrap">${x.pl>0?`<span class="prog" title="Delivered ${M(x.dl)} of ${M(x.pl)}; marker = expected by now"><i style="width:${Math.min(100,x.dl/x.pl*100)}%"></i><u style="left:${x.el*100}%"></u></span><span class="hint num">${M(x.dl)} of ${M(x.pl)}</span>`:'<span class="hint">Enabler, no direct EBITDA</span>'}</td>
+    <td class="num">${x.due}</td><td><span class="hist">${x.hist.split("").map((s,i)=>`<span class="s-${s}" title="Q${i+1}: ${ST[s][1]}">${ST[s][0]}</span>`).join("")}</span></td>
+    <td>${pill(x.ev)}${x.opt?'<span class="hint" style="display:block">* reported better</span>':""}</td></tr>`).join("")}</tbody></table><p class="hint" style="margin-top:8px">Progress bar: blue = delivered; black marker = where the plan should be today (straight line, or back-loaded for growth and acquisitions).</p>`;
+  const q=qs(SEL);$("#coqs").innerHTML=q.map((t,i)=>`<div class="flag ${/off track|deck shows/.test(t)?"crit":""}"><b>Question ${i+1}</b>${esc(t)}</div>`).join("");
+}
+$("#copyqs").addEventListener("click",()=>copyText(SEL+": questions for the next board meeting (synthetic)\n\n"+qs(SEL).map((q,i)=>(i+1)+". "+q).join("\n\n"),"Questions copied"));
+
+const TABS=["port","themes","co"];
+function showTab(n){TABS.forEach(t=>{$("#p-"+t).hidden=t!==n;$("#t-"+t).setAttribute("aria-selected",t===n)});window.scrollTo(0,0)}
+TABS.forEach(t=>$("#t-"+t).addEventListener("click",()=>showTab(t)));
+drawKpis();drawMx();drawLev();drawThemes();drawCo();
+window.__v={n:I.length,opt:I.filter(x=>x.opt).map(x=>x.co+":"+x.n+" "+x.rep+"->"+x.ev),blk:blkStats().map(b=>[b.b,b.risk.toFixed(1),b.cos.join("/")]),pl:I.reduce((a,x)=>a+x.pl,0).toFixed(1),dl:I.reduce((a,x)=>a+x.dl,0).toFixed(1)};
+})();
+</script>
+
+</body></html>

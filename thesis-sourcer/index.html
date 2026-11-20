@@ -1,0 +1,428 @@
+<!doctype html><html><head><meta charset=utf8><meta name="robots" content="noindex,nofollow"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PE Toolkit - Thesis Sourcer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: thesis and list inputs, then a pipeline sorted into action buckets beside the selected company's facts, read, portfolio check and draft; filtered-out log below. */
+:root{
+  --bg:#f6f7f6; --panel:#ffffff; --ink:#18201d; --muted:#5b6762; --line:#dde3e0; --soft:#eef2f0;
+  --accent:#1d6b57; --accent-soft:#e3efea; --plat:#2f5a8a; --plat-soft:#e2eaf4;
+  --warn:#a46412; --warn-soft:#f7ecdc; --bad:#a83a32; --bad-soft:#f6e1de;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111614; --panel:#18201d; --ink:#e4ebe7; --muted:#97a59f; --line:#2a3531; --soft:#1f2925; --accent:#5fbf9f; --accent-soft:#1e3a31;
+  --plat:#8fb4e0; --plat-soft:#1d2a3a; --warn:#e0a457; --warn-soft:#3a2c17; --bad:#ec8a80; --bad-soft:#3e211e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111614; --panel:#18201d; --ink:#e4ebe7; --muted:#97a59f; --line:#2a3531; --soft:#1f2925; --accent:#5fbf9f; --accent-soft:#1e3a31;
+  --plat:#8fb4e0; --plat-soft:#1d2a3a; --warn:#e0a457; --warn-soft:#3a2c17; --bad:#ec8a80; --bad-soft:#3e211e; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 48px}
+.wrap{max-width:1200px;margin:0 auto;display:grid;gap:20px}
+header{display:grid;gap:6px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--f-display);font-weight:600;font-size:clamp(28px,5vw,40px);line-height:1.05;margin:0;text-wrap:balance}
+.lede{color:var(--muted);max-width:70ch;margin:0}
+h2{font-family:var(--f-display);font-weight:600;font-size:19px;margin:0}
+h3{font-family:var(--f-mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:500;margin:0}
+p{margin:0}
+.banner{background:var(--warn-soft);border-radius:8px;padding:9px 12px;font-size:13.5px}
+.flow{display:flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
+.flow>*{flex:1 1 170px;padding:9px 14px;border-right:1px solid var(--line);display:grid;gap:1px;text-decoration:none;color:inherit}
+.flow>*:last-child{border-right:0}
+.flow b{font-size:13.5px;font-weight:600}.flow span{font-size:12px;color:var(--muted)}
+.flow .here{background:var(--accent-soft)}.flow .here b{color:var(--accent)}
+.flow a:hover b{text-decoration:underline}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:12px;min-width:0;align-content:start}
+.inputs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:16px}
+@media (max-width:900px){.inputs{grid-template-columns:1fr}}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.grow{flex:1 1 auto}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:grid;gap:4px;min-width:0}
+label{font-size:13px;color:var(--muted)}
+input,textarea{width:100%;font-family:var(--f-body);font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+textarea{resize:vertical}
+textarea.mono{font-family:var(--f-mono);font-size:12.5px;min-height:230px}
+button{font-family:var(--f-body);font-size:14px;font-weight:600;border-radius:6px;padding:8px 13px;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:disabled{opacity:.55;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.status{font-size:13px;color:var(--muted)}.status.err{color:var(--bad)}
+.chip{display:inline-block;font-family:var(--f-mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:var(--warn-soft);color:var(--warn)}
+.summary{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:baseline}
+.summary span{font-size:13px;color:var(--muted)}
+.summary b{font-family:var(--f-mono);font-size:19px;color:var(--ink);margin-right:4px;font-variant-numeric:tabular-nums}
+.main{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:16px;align-items:start}
+@media (max-width:980px){.main{grid-template-columns:1fr}}
+.list{display:grid;gap:14px;min-width:0}
+.bucket{display:grid;gap:7px}
+.bhead{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.dec{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:500;border-radius:4px;padding:2px 8px;white-space:nowrap}
+.d-now{background:var(--accent-soft);color:var(--accent)}.d-rel{background:var(--plat-soft);color:var(--plat)}.d-watch{background:var(--warn-soft);color:var(--warn)}.d-pass{background:var(--soft);color:var(--muted)}.d-un{background:var(--soft);color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;text-align:left;cursor:pointer;display:grid;grid-template-columns:46px minmax(0,1fr);gap:12px;width:100%;font:inherit;color:inherit}
+.card:hover{border-color:var(--muted)}
+.card[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.sc{font-family:var(--f-display);font-size:24px;font-weight:600;line-height:1;text-align:center;font-variant-numeric:tabular-nums}
+.sc small{display:block;font-family:var(--f-mono);font-size:9.5px;color:var(--muted);font-weight:400;margin-top:3px;letter-spacing:.06em}
+.card b{font-size:14.5px;font-weight:600}
+.card .s{font-size:12.5px;color:var(--muted);display:block;line-height:1.35;margin-top:2px}
+.flags{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
+.fl{font-size:10.5px;font-weight:600;border-radius:3px;padding:0 6px;background:var(--soft);color:var(--muted)}
+.fl.sig{background:var(--accent-soft);color:var(--accent)}.fl.conf{background:var(--bad-soft);color:var(--bad)}.fl.ov{background:var(--warn-soft);color:var(--warn)}.fl.fit{background:var(--plat-soft);color:var(--plat)}
+.empty{font-size:13px;color:var(--muted)}
+.detail{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px;display:grid;gap:15px;min-width:0;position:sticky;top:12px}
+@media (max-width:980px){.detail{position:static}}
+.drow{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.score{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+@media (max-width:480px){.score{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.score div{background:var(--panel);padding:8px 10px;display:grid;gap:1px}
+.score span{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.score b{font-family:var(--f-display);font-size:20px;font-variant-numeric:tabular-nums}
+.score i{font-style:normal;font-size:11px;color:var(--muted)}
+.tag{font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.05em;border-radius:3px;padding:0 6px;margin-left:6px;vertical-align:1px}
+.tag.fact{background:var(--accent-soft);color:var(--accent)}.tag.ours{background:var(--warn-soft);color:var(--warn)}.tag.code{background:var(--plat-soft);color:var(--plat)}
+ul.f{margin:6px 0 0;padding-left:1.1em;display:grid;gap:3px;font-size:14px}
+ul.f.read{color:var(--muted)}
+.pc{border-left:3px solid var(--line);background:var(--soft);padding:8px 12px;border-radius:0 6px 6px 0;font-size:14px;display:grid;gap:2px}
+.pc.conflict{border-color:var(--bad);background:var(--bad-soft)}.pc.overlap{border-color:var(--warn);background:var(--warn-soft)}.pc.fit{border-color:var(--plat);background:var(--plat-soft)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 16px}
+.two div{display:grid;gap:2px}.two span{font-size:14px}
+.draft{white-space:pre-wrap;font-size:14px;background:var(--soft);border-radius:6px;padding:11px 13px}
+.crm{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.crm .ch{background:var(--accent-soft);color:var(--accent);padding:6px 12px;font-size:13px;font-weight:600}
+.crm dl{display:grid;grid-template-columns:minmax(100px,max-content) minmax(0,1fr);gap:4px 14px;padding:10px 12px;margin:0;font-size:13.5px}
+.crm dt{color:var(--muted);font-size:12px}.crm dd{margin:0}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;font-weight:500;padding:8px 10px;border-bottom:1px solid var(--line);background:var(--bg)}
+td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+details{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+details summary{cursor:pointer;font-weight:600}
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:12px}
+.how div{border-top:2px solid var(--ink);padding-top:8px;display:grid;gap:4px;align-content:start}
+.how b{font-family:var(--f-display);font-size:15px}.how p{font-size:13.5px;color:var(--muted)}
+.foot{font-size:12.5px;color:var(--muted);max-width:72ch}
+/* Simple view and Full view. The .wrap root carries data-view. Simple hides, collapses or reorders; Full is the complete page. */
+.wrap[data-view="full"] .only-simple,.wrap[data-view="simple"] .only-full{display:none}
+.wrap[data-view="simple"]{gap:16px}
+.wrap[data-view="simple"] .crm .ch{display:none}
+.headtop{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 16px}
+.viewsw{display:inline-flex;gap:2px;padding:2px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.viewsw button{border:0;border-radius:5px;padding:5px 11px;font-size:13px;background:transparent;color:var(--muted)}
+.viewsw button[aria-pressed="true"]{background:var(--accent);color:var(--panel)}
+.topline{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 16px}
+.suite{font-size:13px;font-weight:500;color:var(--accent)}
+.hint{font-size:13px;color:var(--muted)}
+.disc{display:inline-flex;align-items:center;gap:7px;justify-self:start;font-size:13px;padding:5px 11px 5px 9px;color:var(--accent);text-align:left}
+.disc::before{content:"";flex:none;border-left:5px solid currentColor;border-top:4px solid transparent;border-bottom:4px solid transparent}
+.disc[aria-expanded="true"]::before{transform:rotate(90deg)}
+.fitline{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px}
+.fitline b{font-family:var(--f-display);font-size:30px;line-height:1;font-variant-numeric:tabular-nums;margin-right:6px}
+.fitline span{font-size:13px;color:var(--muted)}
+.own{display:grid;gap:12px}
+.own .disc{font-size:14px;padding:8px 13px 8px 11px;color:var(--ink)}
+</style>
+
+<div class="wrap" data-view="simple">
+  <header>
+    <div class="headtop">
+      <div class="eyebrow">Prototype · Proactive origination</div>
+      <div class="viewsw" role="group" aria-label="Page view">
+        <button type="button" id="vSimple" aria-pressed="true">Simple view</button>
+        <button type="button" id="vFull" aria-pressed="false">Full view</button>
+      </div>
+    </div>
+    <h1>Thesis Sourcer</h1>
+    <p class="lede only-simple">This tool scores a company list against a sector thesis and tells you what to do with each company: reach out now, build a relationship, watch or pass.</p>
+    <p class="lede only-full">Set a sector thesis, name the platform and the current portfolio, and paste a company list from PitchBook, Grata or a conference roster. The page applies hard filters and scores size and ownership in code; Claude judges thesis and platform fit and checks the portfolio; the page then sorts each company into an action.</p>
+  </header>
+  <div class="topline only-simple">
+    <div class="banner" role="note"><b>Invented data.</b> Every company, signal and portfolio name here is fictional.</div>
+    <a class="suite" href="../">Part of PE AI &amp; Data Tools</a>
+  </div>
+  <div class="banner only-full" role="note"><b>Invented companies.</b> Every company, signal and portfolio name in the example is fictional. Facts come only from the list you paste; Claude does not look anything up. Nothing is sent to anyone.</div>
+
+  <nav class="flow only-full" aria-label="Related prototypes">
+    <div class="here"><b>1 · Thesis Sourcer</b><span>Find platforms and add-ons</span></div>
+    <a href="../#contract-reader"><b>2 · Contract Reader</b><span>Diligence the agreements</span></a>
+    <a href="../#coa-mapper"><b>3 · COA Mapper</b><span>Integrate the add-on</span></a>
+    <a href="../#ai-ranker"><b>4 · AI Ranker</b><span>Find value after close</span></a>
+  </nav>
+
+  <div class="inputs" id="inputs">
+    <section class="panel" aria-labelledby="t-h">
+      <div class="row"><h2 id="t-h" class="grow">Thesis</h2><span class="chip" id="tChip">Example</span></div>
+      <div class="field"><label for="thesis">Investment thesis</label><textarea id="thesis" rows="4"></textarea></div>
+      <div class="pair">
+        <div class="field"><label for="rmin">Revenue floor ($M)</label><input id="rmin" type="number" inputmode="decimal"></div>
+        <div class="field"><label for="rmax">Revenue ceiling ($M)</label><input id="rmax" type="number" inputmode="decimal"></div>
+      </div>
+      <div class="field"><label for="excl">Exclusions (comma-separated terms; a match filters the company out)</label><input id="excl" type="text"></div>
+      <div class="field"><label for="plat">Platform for add-on fit</label><input id="plat" type="text"></div>
+      <div class="field"><label for="port">Current portfolio, one per line (for the conflict check)</label><textarea id="port" rows="3"></textarea></div>
+    </section>
+    <section class="panel" aria-labelledby="l-h">
+      <div class="row"><h2 id="l-h" class="grow">Company list</h2><span class="chip" id="lChip">Invented</span></div>
+      <div class="field"><label for="list">One per line: name | description | location | revenue ($34M, $1,500K or 34; a bare number up to 1,000 is read as $M, above that as $K) | ownership | recent signal (optional) | source (optional)</label><textarea id="list" class="mono" spellcheck="false" placeholder="Corvane Foods | Imported Mediterranean oils and olives | Minneapolis, MN | $34M | Founder-owned | Named a COO (Oct 2026) | PitchBook
+Revenue: write the unit ($34M, $1.5B, $1,500K). A bare number up to 1,000 is read as $M; 1,001 to 999,999 as $K; 1,000,000 or more as dollars."></textarea></div>
+      <div class="row">
+        <button class="primary" id="run">Score with Claude</button>
+        <button id="prescreen">Filter and pre-score only</button>
+        <button id="reset">Load example</button>
+      </div>
+      <span class="status" id="status" role="status"></span>
+    </section>
+  </div>
+
+  <div class="summary" id="summary"></div>
+  <p class="hint only-simple">Select a company to see the reasoning and a draft first-touch note.</p>
+
+  <div class="main">
+    <div class="list" id="buckets"></div>
+    <article class="detail" id="detail" aria-live="polite"></article>
+  </div>
+
+  <details open id="filtBox">
+    <summary><span class="only-full">Filtered out by the page's rules</span><span class="only-simple" id="filtCount"></span></summary>
+    <div class="tablebox" style="margin-top:10px"><table><thead><tr><th>Company</th><th>Why it was dropped</th></tr></thead><tbody id="filtered"></tbody></table></div>
+  </details>
+
+  <div class="row"><button id="crmAll">Copy pipeline for the CRM</button><span class="status" id="copyStatus" role="status"></span></div>
+
+  <section class="own only-simple" aria-label="Try your own thesis and list">
+    <div class="row"><button type="button" class="disc" id="ownBtn" aria-expanded="false" aria-controls="ownBody">Try your own thesis and list</button><span class="status">Edit the thesis, paste a company list, then score it.</span></div>
+    <div id="ownBody" hidden></div>
+  </section>
+
+  <details>
+    <summary>How the scoring works</summary>
+    <div class="how">
+      <div><b>Hard filters, in code</b><p>An exclusion term in the description, no revenue, or revenue above 1.5 times the ceiling drops the company, with the reason logged.</p></div>
+      <div><b>Size and ownership, in code</b><p>Size fit (out of 20) from revenue against the range: 20 inside it, at most 8 below the floor, sliding down above the ceiling. Ownership readiness (out of 15) from the ownership field: founder or family highest (15), privately held 12, sponsor-owned long enough to be in an exit window 10, venture-backed 9, corporate division 8, recently sponsor-backed 4, public company lowest (3).</p></div>
+      <div><b>Judgment, by Claude</b><p>Thesis fit (out of 40), platform or add-on fit (out of 25), role, the portfolio check, the next trigger and a first-call draft. Its read is labeled as a draft, never as fact.</p></div>
+      <div><b>Action, in code</b><p>70+ with a recent signal and no conflict: Reach out now. 70+ otherwise: Build relationship. 50–69: Watch. Under 50 or a pass: Pass. A portfolio conflict, or revenue below the floor, caps the action at Build relationship.</p></div>
+    </div>
+  </details>
+
+  <p class="foot">Prototype for discussion · JD Elder · invented data. Verify every fact, size and ownership before outreach. Claude scoring runs on the viewer's own Claude account and asks permission the first time.</p>
+</div>
+
+<script>
+(() => {
+"use strict";
+const EX={thesis:"Specialty and imported food distribution to independent restaurants and regional grocers. Demand for specialty, imported and better-for-you products is outgrowing broadline; the distributor base is fragmented and founder-owned; consolidate regional specialists onto one purchasing, pricing and warehouse platform with exclusive brands.",
+ rmin:10,rmax:80,excl:"broadline, pre-revenue, restaurant operator",plat:"Dogwood (illustrative): specialty cheese, charcuterie and imported dry goods",
+ port:"Dogwood (illustrative): specialty food distribution; cheese, charcuterie and imported dry goods\nHawthorn (illustrative): food contract manufacturing; private-label sauces and dressings\nCypress (illustrative): residential HVAC and plumbing services"};
+const EXL=`Corvane Foods | Importer and distributor of Mediterranean oils, olives and antipasti, sold to about 600 independent restaurants | Minneapolis, MN | $34M | Founder-owned | Founder, 64, named an outside COO (Oct 2026) | Illustrative
+Tessaline Inc. | Exclusive distributor of plant-based and better-for-you snack brands to regional grocers | Irvine, CA | $18M | VC-backed, profitable | Signed two new exclusive brands (Sep 2026) | Illustrative
+Lumaris Cold Chain | Third-party refrigerated warehousing and last-mile delivery, 9 depots | Dallas, TX | $48M | Founder-owned | | Illustrative
+Ardell Provisions | Private-label specialty meats and deli items for regional grocers | Nashville, TN | $27M | Founder-owned | | Illustrative
+Kestrow Cheese Co. | Specialty cheese and charcuterie distribution to restaurants | Raleigh, NC | $9M | Founder-owned | Lost a regional grocery chain account (Aug 2026) | Illustrative
+Pellbrook Kitchens | Private-label sauce and dressing co-packer | Akron, OH | $22M | Family-owned | | Illustrative
+Northway Foodservice | Broadline foodservice distribution to chains and institutions | Toronto, ON | $61M | PE-owned (2019) | | Illustrative
+Brightfen Beverage | Pre-revenue fermented beverage brand | Boston, MA | $0 | VC-backed | | Illustrative`;
+const EXR={
+"corvane foods":{thesis:37,platform:23,role:"addon",why:"Imported Mediterranean lines fill a direct gap in the platform catalog, with existing restaurant reach.",flags:"Check customer overlap with the platform's largest restaurant accounts.",pc:["fit","Fits Dogwood as an add-on: adjacent specialty categories, no product overlap."],trigger:"COO's first 100 days; any banker hired",angle:"Founder planning succession may want scale and purchasing power without losing the brand.",draft:"Congratulations on bringing in a new COO. We back founders in specialty food distribution and would value 30 minutes to learn how you're thinking about the next phase of growth."},
+"tessaline inc.":{thesis:35,platform:22,role:"addon",why:"Exclusive brands are a repeat, higher-margin line the platform can carry across its accounts.",flags:"VC owners may push for a fast process; confirm how long the brand exclusives run.",pc:["fit","Fits Dogwood as an add-on; adds grocer accounts and exclusive brands."],trigger:"Renewal dates on the exclusives; next VC fund's exit timing",angle:"Lead with distribution: platform trucks and reps can widen account coverage quickly.",draft:"Congratulations on the two new brands. We invest in specialty food distribution and would welcome a short call on how you're bringing them to market and what broader distribution could do for them."},
+"lumaris cold chain":{thesis:24,platform:14,role:"platform",why:"Scaled recurring service revenue with a depot network; could anchor an adjacent cold-chain logistics platform.",flags:"Logistics is a service, not distribution; a stretch from the thesis. Capital intensity is higher.",pc:["none","No overlap with the current portfolio."],trigger:"Founder succession; a large customer bringing delivery in-house",angle:"Frame around specialty suppliers outsourcing cold storage as warehouse labor tightens.",draft:"We follow food distribution closely and admire what you've built across nine depots. Would you be open to an introductory conversation about where cold-chain logistics is heading?"},
+"ardell provisions":{thesis:26,platform:16,role:"addon",why:"Specialty deli products through a similar buyer, though grocers rather than restaurants.",flags:"Private label may mean thin margin and little brand value.",pc:["none","No overlap with the current portfolio."],trigger:"Loss or win of a major private-label contract",angle:"Ask how they win private-label contracts and what a broader catalog would add.",draft:"We invest in specialty food distribution and would welcome a short introduction to learn how Ardell wins and serves its private-label customers."},
+"kestrow cheese co.":{thesis:30,platform:20,role:"addon",why:"Natural tuck-in to the platform's cheese and charcuterie line.",flags:"Below the revenue floor; value is mainly a new metro. The lost account needs explaining.",pc:["overlap","Overlaps Dogwood's cheese and charcuterie lines: a consolidation add-on, not a new category. Plan supplier and SKU rationalization."],trigger:"The lost account's rebid date",angle:"A founder who just lost a large account may welcome a partner with stronger purchasing.",draft:"We work with specialty cheese distributors on purchasing and logistics and would welcome a short call to learn about Kestrow's products and customers."},
+"pellbrook kitchens":{thesis:8,platform:5,role:"pass",why:"Manufacturing runs against the distribution thesis.",flags:"",pc:["conflict","Competes directly with Hawthorn in the portfolio. Do not approach without the Hawthorn team."],trigger:"None",angle:"",draft:""}};
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let cos=[], filtered=[], judg={}, SEL=null, source="example";
+// Simple view is the default. Full view is remembered per viewer when storage allows it.
+const WRAP=document.querySelector(".wrap"), VIEW_KEY="ws-sourcer-view";
+let view="simple"; try{ if(localStorage.getItem(VIEW_KEY)==="full") view="full"; }catch(e){}
+const open={score:false,crm:false,own:false};
+const B={now:["Reach out now","d-now","Fit plus a recent signal"],rel:["Build relationship","d-rel","Fit with no trigger yet, or capped by a conflict or the revenue floor"],watch:["Watch","d-watch","Partial fit"],pass:["Pass","d-pass","Not for this thesis"],un:["Not yet scored","d-un","Run Claude for thesis and platform fit"]};
+const ORDER=["now","rel","watch","pass","un"];
+
+function parseRev(s){ if(!s) return null; const t=String(s).toLowerCase(); if(/pre-?revenue/.test(t)) return 0;
+  const m=t.match(/([\d.,]+)\s*(b|m|k)?/); if(!m) return null; let v=Number(m[1].replace(/,/g,"")); if(!isFinite(v)) return null;
+  // Bare numbers (no b/m/k): up to 1,000 read as $M; 1,001-999,999 as $K (so "1500" is $1.5M); 1,000,000+ as dollars.
+  const u=m[2]||(v>=1e6?"":v>1000?"k":"m"); if(u==="b") v*=1000; else if(u==="k") v/=1000; else if(u==="") v/=1e6; return v; }
+function ownScore(o){ const t=(o||"").toLowerCase(), yr=(t.match(/(19|20)\d{2}/)||[])[0], age=yr?new Date().getFullYear()-Number(yr):null;
+  if(/founder|family/.test(t)) return [15,"founder or family owned"];
+  if(/pe-owned|sponsor|private equity/.test(t)) return age!=null&&age>=4?[10,`sponsor-owned since ${yr}, likely in exit window`]:[4,"recently sponsor-backed"];
+  if(/vc|venture/.test(t)) return [9,"venture-backed"];
+  if(/public|nasdaq|nyse/.test(t)) return [3,"public company"];
+  if(/division|subsidiary|carve/.test(t)) return [8,"corporate division (carve-out)"];
+  if(/private|independent/.test(t)) return [12,"privately held"];
+  return [7,"ownership unknown"]; }
+function sizeScore(rev,min,max){ if(rev==null) return [10,"revenue unknown"]; if(rev>=min&&rev<=max) return [20,"inside the range"];
+  if(rev<min) return [Math.round(8*rev/min),"below the floor: at most 8, and capped at Build relationship"]; return [Math.max(0,Math.round(20*(1-(rev-max)/(max*0.5)))),"above the ceiling"]; }
+
+function readInputs(){
+  const min=Number($("rmin").value)||0, max=Number($("rmax").value)||1e9;
+  const excl=$("excl").value.split(",").map(s=>s.trim().toLowerCase()).filter(Boolean);
+  const rows=$("list").value.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>{const p=l.split("|").map(s=>s.trim());
+    return {name:p[0],desc:p[1]||"",loc:p[2]||"",revTxt:p[3]||"",own:p[4]||"",signal:p[5]||"",src:p[6]||""}}).filter(c=>c.name);
+  cos=[]; filtered=[];
+  rows.forEach(c=>{
+    c.rev=parseRev(c.revTxt); c.key=c.name.toLowerCase();
+    const hit=excl.find(e=>(c.desc+" "+c.own).toLowerCase().includes(e.replace(/^pre-?revenue$/,"pre-revenue")));
+    if(hit) return filtered.push([c.name,`Matches exclusion "${hit}"`]);
+    if(c.rev===0) return filtered.push([c.name,"No revenue"]);
+    if(c.rev!=null&&c.rev>max*1.5) return filtered.push([c.name,`Revenue $${c.rev}M is above 1.5× the ceiling`]);
+    const [ss,sw]=sizeScore(c.rev,min,max), [os,ow]=ownScore(c.own);
+    c.size=ss; c.sizeWhy=sw; c.ownS=os; c.ownWhy=ow; c.small=c.rev!=null&&c.rev<min; cos.push(c);
+  });
+}
+function bucket(c){ const j=judg[c.key]; if(!j) return "un";
+  const total=c.size+c.ownS+j.thesis+j.platform; c.total=total;
+  if(j.role==="pass"||total<50) return "pass";
+  const conflict=j.pc&&j.pc[0]==="conflict";
+  if(total>=70&&c.signal&&!conflict&&!c.small) return "now";
+  if(total>=70) return "rel"; return "watch"; }
+
+function render(){
+  cos.forEach(c=>{c.b=bucket(c); if(c.b==="un") c.total=c.size+c.ownS;});
+  const count=k=>cos.filter(c=>c.b===k).length;
+  $("summary").innerHTML=[["Screened",cos.length+filtered.length],["Reach out now",count("now")],["Build relationship",count("rel")],["Watch",count("watch")],["Pass",count("pass")],["Filtered out",filtered.length],["Portfolio flags",cos.filter(c=>judg[c.key]&&judg[c.key].pc&&["conflict","overlap"].includes(judg[c.key].pc[0])).length]]
+    .map(([k,v])=>`<span><b>${v}</b>${esc(k)}</span>`).join("");
+  if(!cos.find(c=>c.key===SEL)) SEL=(cos.slice().sort((a,b)=>ORDER.indexOf(a.b)-ORDER.indexOf(b.b)||b.total-a.total)[0]||{}).key||null;
+  $("buckets").innerHTML=ORDER.map(k=>{const ls=cos.filter(c=>c.b===k).sort((a,b)=>b.total-a.total); if(!ls.length) return "";
+    return `<section class="bucket" aria-label="${B[k][0]}"><div class="bhead"><span class="dec ${B[k][1]}">${B[k][0]}</span><span class="status">${B[k][2]}</span></div>${ls.map(c=>{const j=judg[c.key];
+      const fl=[]; if(c.signal) fl.push(`<span class="fl sig">Signal</span>`);
+      if(j&&j.pc){const t=j.pc[0]; if(t==="conflict") fl.push(`<span class="fl conf">Conflict</span>`); else if(t==="overlap") fl.push(`<span class="fl ov">Overlap</span>`); else if(t==="fit") fl.push(`<span class="fl fit">Fits platform</span>`);}
+      if(j) fl.push(`<span class="fl">${j.role==="addon"?"Add-on":j.role==="platform"?"Platform":"Pass"}</span>`);
+      return `<button type="button" class="card" data-k="${esc(c.key)}" aria-pressed="${c.key===SEL}"><span class="sc">${c.total}<small>${j?"/100":"PRE"}</small></span><span><b>${esc(c.name)}</b><span class="s">${esc(c.desc)}</span><span class="flags">${fl.join("")}</span></span></button>`}).join("")}</section>`}).join("")||`<p class="empty">No companies left after the filters.</p>`;
+  $("buckets").querySelectorAll(".card").forEach(b=>b.onclick=()=>{SEL=b.dataset.k; render(); if(matchMedia("(max-width:980px)").matches) $("detail").scrollIntoView({block:"start",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});});
+  detail();
+  $("filtCount").textContent=`${filtered.length} filtered out by the page's rules`;
+  $("filtered").innerHTML=filtered.length?filtered.map(r=>`<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join(""):`<tr><td colspan="2" class="empty">Nothing filtered.</td></tr>`;
+}
+function crmFields(c){const j=judg[c.key]||{};return [["Company",`${c.name} · ${c.loc}`],["Stage",B[c.b][0]],["Role",j.role==="addon"?`Add-on to ${$("plat").value.split(":")[0]}`:j.role==="platform"?"Platform":j.role==="pass"?"Pass":"Unscored"],["Fit score",`${c.total}/100`],["Revenue",c.revTxt||"unknown"],["Ownership",c.own||"unknown"],["Signal",c.signal||"none"],["Portfolio check",j.pc?j.pc[1]:"not run"],["Next trigger",j.trigger||"—"],["Source",c.src||"pasted list"]];}
+function detail(){
+  const c=cos.find(x=>x.key===SEL), D=$("detail");
+  if(!c){D.innerHTML=`<p class="empty">Choose a company.</p>`;return}
+  const j=judg[c.key];
+  const facts=[c.desc,c.loc&&`Location: ${c.loc}`,c.revTxt&&`Revenue: ${c.revTxt}`,c.own&&`Ownership: ${c.own}`,c.signal&&`Recent signal: ${c.signal}`].filter(Boolean);
+  D.innerHTML=`
+    <div class="drow"><h2>${esc(c.name)}</h2><span class="dec ${B[c.b][1]}">${B[c.b][0]}</span></div>
+    <div class="fitline only-simple"><span><b>${c.total}</b>${j?"of 100 · fit score":"of 35 · size and ownership only, not yet scored by Claude"}</span><button type="button" class="disc" id="scoreBtn" aria-expanded="false" aria-controls="scoreBox">How this score adds up</button></div>
+    <div class="score" id="scoreBox">
+      <div><span>Thesis fit</span><b>${j?j.thesis:"—"}</b><i>of 40 · Claude</i></div>
+      <div><span>Platform fit</span><b>${j?j.platform:"—"}</b><i>of 25 · Claude</i></div>
+      <div><span>Size</span><b>${c.size}</b><i>of 20 · ${esc(c.sizeWhy)}</i></div>
+      <div><span>Ownership</span><b>${c.ownS}</b><i>of 15 · ${esc(c.ownWhy)}</i></div>
+    </div>
+    <div><h3>From the list<span class="tag fact">Fact</span></h3><ul class="f">${facts.map(f=>`<li>${esc(f)}</li>`).join("")}</ul></div>
+    ${j?`<div><h3>Our read<span class="tag ours">Draft</span></h3><ul class="f read"><li>${esc(j.why)}</li>${j.flags?`<li>Watch: ${esc(j.flags)}</li>`:""}${j.angle?`<li>First-call angle: ${esc(j.angle)}</li>`:""}</ul></div>
+    <div class="pc ${esc(j.pc[0])}"><b>Portfolio check: ${j.pc[0]==="none"?"no overlap":esc(j.pc[0])}</b><span>${esc(j.pc[1])}</span></div>
+    <div class="two"><div><h3>Next trigger to watch</h3><span>${esc(j.trigger||"—")}</span></div><div><h3>Action rule<span class="tag code">Code</span></h3><span>${c.total}/100${c.signal?" with a signal":", no signal"}${j.pc[0]==="conflict"?", conflict":""}${c.small?", below the revenue floor (capped at Build relationship)":""} → ${B[c.b][0]}</span></div></div>
+    ${j.draft?`<div><h3>Draft first-touch note</h3><div class="draft" id="draft">${esc(j.draft)}</div></div>`:""}`
+    :`<p class="status">Size and ownership are scored. Run Claude to score thesis and platform fit, check the portfolio and draft a note.</p>`}
+    <button type="button" class="disc only-simple" id="crmBtn" aria-expanded="false" aria-controls="crmBox">CRM record preview</button>
+    <div class="crm" id="crmBox"><div class="ch">CRM record preview</div><dl>${crmFields(c).map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl></div>
+    <div class="row" id="copyRow">${j&&j.draft?`<button id="cDraft">Copy draft</button>`:""}<span class="status" id="dStatus" role="status"></span></div>`;
+  $("scoreBtn").onclick=()=>{open.score=!open.score; layoutDetail();};
+  $("crmBtn").onclick=()=>{open.crm=!open.crm; layoutDetail();};
+  layoutDetail();
+  const cd=$("cDraft"); if(cd) cd.onclick=()=>{
+    const say=m=>{const e=$("dStatus"); if(e) e.textContent=m;};
+    const fallback=()=>{const el=$("draft"); if(!el){say("Copy is blocked here."); return;} const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);say("Copy is blocked here; the text is selected.")};
+    if(!(navigator.clipboard&&navigator.clipboard.writeText)){fallback(); return;}
+    navigator.clipboard.writeText(j.draft).then(()=>say("Copied.")).catch(fallback);};
+}
+
+// Simple view: the score breakdown and the CRM preview sit behind their buttons, and the copy button moves up under the draft.
+function layoutDetail(){
+  const simple=view==="simple", sb=$("scoreBox"), cb=$("crmBox"); if(!sb||!cb) return;
+  sb.hidden=simple&&!open.score; cb.hidden=simple&&!open.crm;
+  $("scoreBtn").setAttribute("aria-expanded",String(open.score)); $("crmBtn").setAttribute("aria-expanded",String(open.crm));
+  if(simple) $("detail").insertBefore($("copyRow"),$("crmBtn"));
+}
+function applyView(){
+  const simple=view==="simple", inputs=$("inputs");
+  WRAP.dataset.view=view;
+  $("vSimple").setAttribute("aria-pressed",String(simple)); $("vFull").setAttribute("aria-pressed",String(!simple));
+  if(simple){ if(inputs.parentNode!==$("ownBody")) $("ownBody").appendChild(inputs); }
+  else if(inputs.parentNode!==WRAP) WRAP.insertBefore(inputs,$("summary"));
+  $("ownBody").hidden=!open.own; $("ownBtn").setAttribute("aria-expanded",String(open.own));
+  $("filtBox").open=!simple;
+}
+function setView(v){ view=v; try{localStorage.setItem(VIEW_KEY,v)}catch(e){} applyView(); detail(); }
+// In simple view the inputs sit below the result, so bring the new result into view after a run.
+function toResults(){ if(view!=="simple") return; $("summary").scrollIntoView({block:"start",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"}); }
+$("vSimple").onclick=()=>setView("simple");
+$("vFull").onclick=()=>setView("full");
+$("ownBtn").onclick=()=>{open.own=!open.own; applyOwn();};
+function applyOwn(){ $("ownBody").hidden=!open.own; $("ownBtn").setAttribute("aria-expanded",String(open.own)); }
+
+function setEx(){ $("thesis").value=EX.thesis; $("rmin").value=EX.rmin; $("rmax").value=EX.rmax; $("excl").value=EX.excl; $("plat").value=EX.plat; $("port").value=EX.port; $("list").value=EXL;
+  ["tChip","lChip"].forEach(i=>$(i).hidden=false); readInputs(); judg={...EXR}; source="example"; $("status").className="status"; $("status").textContent="Example result: Claude's judgments were pre-filled so the page opens complete."; render(); }
+["thesis","rmin","rmax","excl","plat","port"].forEach(i=>$(i).addEventListener("input",()=>$("tChip").hidden=true));
+$("list").addEventListener("input",()=>$("lChip").hidden=true);
+$("prescreen").onclick=()=>{readInputs(); judg={}; source="pre"; $("status").className="status"; $("status").textContent=`Filtered ${filtered.length} and pre-scored ${cos.length} in code. Run Claude for thesis and platform fit.`; render();};
+$("reset").onclick=setEx;
+$("prescreen").addEventListener("click",toResults);
+$("reset").addEventListener("click",toResults);
+
+function errCopy(c){return({not_granted:"Claude wasn't allowed for this page. Filters and pre-scores still work.",sampling_disabled:"Claude isn't available on this account. Filters and pre-scores still work.",rate_limited:"Too many requests right now. Wait a minute, then try again.",session_expired:"Your session expired. Sign in again, then retry.",invalid_json:"Claude's reply couldn't be read as scores. Try again.",prompt_too_large:"That list is too long. Score up to about 150 companies at a time.",refused:"Claude declined this input. Check the list."})[c]||"Scoring failed. Try again in a moment.";}
+const samplePromise=window.claude?claude.use("sample"):Promise.resolve(null);
+samplePromise.then(s=>{if(!s){$("run").disabled=true;$("status").textContent="Live scoring is switched off on this hosted copy. Filters and pre-scores still work."}});
+$("run").onclick=async()=>{
+  const sample=await samplePromise; if(!sample) return;
+  readInputs(); judg={}; render();
+  if(!cos.length){$("status").className="status err";$("status").textContent="No companies left to score after the filters.";return}
+  if(cos.length>150){$("status").className="status err";$("status").textContent="Score up to 150 companies at a time.";return}
+  $("run").disabled=true; $("status").className="status"; $("status").textContent=`Claude is scoring ${cos.length} companies…`;
+  const prompt=`You are a sourcing associate at a lower-middle-market private equity firm that builds platforms through add-ons. Judge each company using only the details given plus general industry knowledge. Never invent facts about a company; say "unknown" where the list is silent.
+
+Thesis: ${$("thesis").value}
+Platform for add-on fit: ${$("plat").value||"none"}
+Current portfolio (for the conflict check):
+${$("port").value||"none given"}
+
+Companies (name | description | location | revenue | ownership | recent signal):
+${cos.map(c=>[c.name,c.desc,c.loc,c.revTxt,c.own,c.signal].join(" | ")).join("\n")}
+
+For each company give:
+- name: exactly as given
+- thesis: integer 0-40, fit with the thesis
+- platform: integer 0-25, fit as an add-on to the platform or as a new platform
+- role: "addon", "platform" or "pass"
+- why: one sentence, max 22 words
+- flags: main diligence concern, max 16 words, or ""
+- pc: ["none"|"fit"|"overlap"|"conflict", "max 22 words naming the portfolio company involved"]. conflict = competes with a portfolio company; overlap = same products or customers; fit = complements the platform.
+- trigger: the next event worth watching, max 10 words
+- angle: first-call angle tied to the owner's likely motivation, max 18 words, or "" for passes
+- draft: a first-touch note, max 55 words, or "" for passes
+
+Reply with only a JSON array: [{"name":"...","thesis":30,"platform":20,"role":"addon","why":"...","flags":"...","pc":["fit","..."],"trigger":"...","angle":"...","draft":"..."}]`;
+  try{
+    const r=await sample.json(prompt);
+    if(!Array.isArray(r)||!r.length) throw {code:"invalid_json"};
+    let n=0;
+    r.forEach(x=>{const k=String(x.name||"").toLowerCase(); if(!cos.find(c=>c.key===k)) return; n++;
+      const pc=Array.isArray(x.pc)&&["none","fit","overlap","conflict"].includes(x.pc[0])?[x.pc[0],String(x.pc[1]||"")]:["none","Not assessed."];
+      judg[k]={thesis:Math.max(0,Math.min(40,Math.round(Number(x.thesis)||0))),platform:Math.max(0,Math.min(25,Math.round(Number(x.platform)||0))),
+        role:["addon","platform","pass"].includes(x.role)?x.role:"pass",why:String(x.why||""),flags:String(x.flags||""),pc,trigger:String(x.trigger||""),angle:String(x.angle||""),draft:String(x.draft||"")};});
+    source="claude"; $("status").textContent=`Scored ${n} of ${cos.length}. Totals and actions are computed by the page.`; toResults();
+  }catch(e){$("status").className="status err";$("status").textContent=errCopy(e&&e.code);if(e&&(e.code==="not_granted"||e.code==="sampling_disabled"))$("run").dataset.off="1"}
+  finally{$("run").disabled=!!$("run").dataset.off; render();}
+};
+$("crmAll").onclick=()=>{
+  const head=["Company","Location","Stage","Role","Fit score","Thesis","Platform","Size","Ownership score","Revenue","Ownership","Signal","Portfolio check","Next trigger","Why","Watch","Source"];
+  const rows=cos.slice().sort((a,b)=>ORDER.indexOf(a.b)-ORDER.indexOf(b.b)||b.total-a.total).map(c=>{const j=judg[c.key]||{};return [c.name,c.loc,B[c.b][0],j.role||"",c.total,j.thesis??"",j.platform??"",c.size,c.ownS,c.revTxt,c.own,c.signal,j.pc?j.pc[0]+": "+j.pc[1]:"",j.trigger||"",j.why||"",j.flags||"",c.src]});
+  filtered.forEach(f=>rows.push([f[0],"","Filtered out","","","","","","","","","","","",f[1],"",""]));
+  const tsv=[head,...rows].map(r=>r.map(v=>String(v).replace(/\s+/g," ")).join("\t")).join("\n");
+  const blocked=()=>{$("copyStatus").textContent="Clipboard blocked in this view."};
+  if(!(navigator.clipboard&&navigator.clipboard.writeText)){blocked(); return;}
+  navigator.clipboard.writeText(tsv).then(()=>{$("copyStatus").textContent=`Copied ${rows.length} rows. Paste into the CRM import or a sheet.`}).catch(blocked);
+};
+applyView();
+setEx();
+})();
+</script>
+
+</body></html>

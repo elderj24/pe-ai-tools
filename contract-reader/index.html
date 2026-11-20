@@ -1,0 +1,604 @@
+<!doctype html><html><head><meta charset=utf8><meta name="robots" content="noindex,nofollow"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PE Toolkit - Diligence Contract Reader</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;1,400&display=swap">
+<style>
+/* Layout: findings register on the left, the agreement on the right with cited clauses marked; stacks on phones. */
+:root{
+  --bg:#f6f7f6; --panel:#ffffff; --ink:#18201d; --muted:#5b6762; --line:#dde3e0;
+  --accent:#1d6b57; --accent-soft:#e3efea; --mark:#fbe7b5;
+  --hi:#a83a32; --hi-soft:#f6e1de; --med:#a46412; --med-soft:#f7ecdc; --lo:#1d6b57; --lo-soft:#e3efea;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-doc:"IBM Plex Serif",Georgia,"Times New Roman",serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111614; --panel:#18201d; --ink:#e4ebe7; --muted:#97a59f; --line:#2a3531; --accent:#5fbf9f; --accent-soft:#1e3a31; --mark:#5a4a1c;
+  --hi:#ec8a80; --hi-soft:#3e211e; --med:#e0a457; --med-soft:#3a2c17; --lo:#5fbf9f; --lo-soft:#1e3a31; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111614; --panel:#18201d; --ink:#e4ebe7; --muted:#97a59f; --line:#2a3531; --accent:#5fbf9f; --accent-soft:#1e3a31; --mark:#5a4a1c;
+  --hi:#ec8a80; --hi-soft:#3e211e; --med:#e0a457; --med-soft:#3a2c17; --lo:#5fbf9f; --lo-soft:#1e3a31; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 48px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--f-display);font-weight:600;font-size:clamp(28px,5vw,40px);line-height:1.05;margin:0;text-wrap:balance}
+.lede{color:var(--muted);max-width:68ch;margin:0}
+h2{font-family:var(--f-display);font-weight:600;font-size:19px;margin:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:12px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.grow{flex:1 1 auto}
+label{font-size:13px;color:var(--muted)}
+textarea{width:100%;min-height:150px;resize:vertical;font-family:var(--f-mono);font-size:12.5px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px}
+input.tin{font-family:var(--f-body);font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;flex:1 1 220px;max-width:360px}
+button,.filebtn{font-family:var(--f-body);font-size:14px;font-weight:600;border-radius:6px;padding:9px 14px;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:disabled{opacity:.55;cursor:default}
+button:focus-visible,textarea:focus-visible,input.tin:focus-visible,.finding:focus-visible,.filebtn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.filebtn input{position:absolute;opacity:0;width:1px;height:1px}
+.status{font-size:13px;color:var(--muted)}
+.status.err{color:var(--hi)}
+.badge{display:inline-block;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.badge.example{background:var(--med-soft);color:var(--med)}
+.work{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:860px){.work{grid-template-columns:1fr}}
+.tally{display:flex;gap:8px;flex-wrap:wrap}
+.pill{font-family:var(--f-mono);font-size:12px;padding:3px 9px;border-radius:999px;font-variant-numeric:tabular-nums}
+.pill.high{background:var(--hi-soft);color:var(--hi)} .pill.medium{background:var(--med-soft);color:var(--med)} .pill.low{background:var(--lo-soft);color:var(--lo)}
+.verdict{font-size:14px;margin:0;padding:12px 14px;border-left:3px solid var(--accent);background:var(--bg);border-radius:0 6px 6px 0}
+.list{display:grid;gap:8px}
+.finding{display:grid;grid-template-columns:4px minmax(0,1fr);gap:12px;padding:12px 12px 12px 0;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%}
+.finding .stripe{border-radius:8px 0 0 8px}
+.finding.high .stripe{background:var(--hi)} .finding.medium .stripe{background:var(--med)} .finding.low .stripe{background:var(--lo)}
+.finding.active{border-color:var(--accent)}
+.fhead{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.fterm{font-weight:600}
+.fsec{font-family:var(--f-mono);font-size:11.5px;color:var(--muted)}
+.frisk{margin-left:auto;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase}
+.high .frisk{color:var(--hi)} .medium .frisk{color:var(--med)} .low .frisk{color:var(--lo)}
+.fbody{font-size:14px;margin-top:2px}
+.fnote{font-size:13px;color:var(--muted);margin-top:4px}
+.fnote b{color:var(--ink);font-weight:600}
+.doc{font-family:var(--f-doc);font-size:14.5px;line-height:1.65;white-space:pre-wrap;max-height:78vh;overflow:auto;padding:4px 6px 4px 0;max-width:72ch}
+.doc mark{background:var(--mark);color:inherit;border-radius:2px;padding:0 1px}
+.doc mark.active{outline:2px solid var(--accent)}
+.foot{font-size:12.5px;color:var(--muted);max-width:72ch}
+.banner{background:var(--med-soft);border-radius:8px;padding:9px 12px;font-size:13.5px}
+.flow{display:flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
+.flow>*{flex:1 1 170px;padding:9px 14px;border-right:1px solid var(--line);display:grid;gap:1px;text-decoration:none;color:inherit}
+.flow>*:last-child{border-right:0}
+.flow b{font-size:13.5px;font-weight:600}.flow span{font-size:12px;color:var(--muted)}
+.flow .here{background:var(--accent-soft)}.flow .here b{color:var(--accent)}
+.flow a:hover b{text-decoration:underline}
+.tabs{display:flex;gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;width:max-content;max-width:100%;flex-wrap:wrap}
+.tabs button{border:0;border-radius:0;border-right:1px solid var(--line);background:var(--panel);font-weight:600}
+.tabs button:last-child{border-right:0}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--panel)}
+.mode{display:grid;gap:22px}
+.rb{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.rb button{text-align:left;display:grid;gap:2px;font-weight:400;padding:10px 12px}
+.rb button b{font-weight:600}
+.rb button span{font-size:12.5px;color:var(--muted)}
+.rb button[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.two-in{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:860px){.two-in{grid-template-columns:1fr}}
+.two-in label{display:block;margin-bottom:4px}
+.pill.supported{background:var(--lo-soft);color:var(--lo)}.pill.revise{background:var(--med-soft);color:var(--med)}.pill.block{background:var(--hi-soft);color:var(--hi)}
+.claim{display:grid;grid-template-columns:4px minmax(0,1fr);gap:12px;padding:12px 12px 12px 0;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%}
+.claim .stripe{border-radius:8px 0 0 8px}
+.claim.supported .stripe{background:var(--lo)}.claim.revise .stripe{background:var(--med)}.claim.block .stripe{background:var(--hi)}
+.claim.active{border-color:var(--accent)}
+.cq{font-family:var(--f-doc);font-size:14.5px}
+.cv{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;margin-left:auto}
+.supported .cv{color:var(--lo)}.revise .cv{color:var(--med)}.block .cv{color:var(--hi)}
+.csrc{font-size:13px;color:var(--muted);margin-top:4px}
+.cfix{font-size:13.5px;margin-top:4px}.cfix b{font-weight:600}
+.doc mark.supported{background:var(--lo-soft)}.doc mark.revise{background:var(--med-soft)}.doc mark.block{background:var(--hi-soft)}
+.elems{list-style:none;margin:0;padding:0;display:grid;gap:5px}
+.elems li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;font-size:13.5px;padding:7px 10px;border-radius:6px;background:var(--bg)}
+.elems .ic{font-family:var(--f-mono);font-weight:600;text-align:center}
+.elems .yes .ic{color:var(--lo)}.elems .no .ic{color:var(--hi)}.elems .chk .ic{color:var(--med)}
+.elems small{display:block;color:var(--muted);font-size:12px}
+/* Simple view / Full view. Simple puts the example result first and folds the inputs away; Full is the page as built. */
+.wrap[data-view="simple"] .full-only{display:none}
+.wrap[data-view="full"] .simple-only{display:none}
+.wrap[data-view="simple"] .collapsible:not(.is-open){display:none}
+.wrap[data-view="simple"] .list:not(.show-all)>button:nth-of-type(n+7){display:none}
+.wrap[data-view="simple"]{gap:16px}
+.wrap[data-view="simple"] .mode{gap:16px}
+.wrap[data-view="simple"] .lede{max-width:none}
+.headrow{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
+.viewsw{display:inline-flex;gap:2px;padding:2px;border:1px solid var(--line);border-radius:999px;background:var(--panel)}
+.viewsw button{border:0;border-radius:999px;padding:4px 12px;font-size:12.5px;font-weight:500;background:transparent;color:var(--muted)}
+.viewsw button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+.tabrow{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.suite{font-size:13px;color:var(--accent);text-underline-offset:3px}
+.suite:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+.wrap[data-view="simple"] .tabs{border:0;border-radius:0;overflow:visible;gap:6px;align-items:center}
+.wrap[data-view="simple"] .tabs button{border:1px solid var(--line);border-radius:6px}
+.wrap[data-view="simple"] .tabs button[aria-selected="true"]{border-color:var(--accent)}
+.wrap[data-view="simple"] #tab-r{border-color:transparent;background:transparent;color:var(--muted);font-size:13px;font-weight:500;padding:7px 10px;text-decoration:underline;text-underline-offset:3px}
+.wrap[data-view="simple"] #tab-r[aria-selected="true"]{background:var(--accent-soft);color:var(--accent);text-decoration:none}
+.wrap[data-view="simple"] .verdict{font-size:16px;font-weight:500;line-height:1.45}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.discrow{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.disc{display:inline-flex;align-items:center;gap:9px;justify-self:start}
+.disc::before{content:"";flex:none;width:7px;height:7px;margin-left:2px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .15s}
+.disc[aria-expanded="true"]::before{transform:rotate(45deg)}
+@media (prefers-reduced-motion:reduce){.disc::before{transition:none}}
+</style>
+
+<div class="wrap" id="app" data-view="simple">
+  <header>
+    <div class="headrow">
+      <div class="eyebrow">Prototype · Diligence</div>
+      <div class="viewsw" role="group" aria-label="Page view">
+        <button type="button" id="viewSimple" aria-pressed="true">Simple view</button>
+        <button type="button" id="viewFull" aria-pressed="false">Full view</button>
+      </div>
+    </div>
+    <h1>Diligence Contract Reader</h1>
+    <p class="lede simple-only">Shows which terms in a contract put a deal at risk, and marks the clause behind each finding.</p>
+    <p class="lede full-only">One reader, two rulebooks. For a commercial contract, Claude pulls the terms a buyer cares about and marks each clause. For a regulated or claims-heavy document (advertising and product claims, device or pharma promotion, an informed consent form), it checks every claim against the source documents and lists the required elements that are missing.</p>
+  </header>
+  <div class="banner" role="note"><b>Invented examples.</b> <span class="simple-only">Every party, product and document here is fictional. Not legal or regulatory advice.</span><span class="full-only">Every party, product and document here is fictional. The page checks that every quote Claude gives actually appears in the text. Not legal or regulatory advice; counsel and regulatory review decide.</span></div>
+
+  <nav class="flow full-only" aria-label="Related prototypes">
+    <a href="../#thesis-sourcer"><b>1 · Thesis Sourcer</b><span>Find platforms and add-ons</span></a>
+    <div class="here"><b>2 · Contract Reader</b><span>Diligence the agreements</span></div>
+    <a href="../#coa-mapper"><b>3 · COA Mapper</b><span>Integrate the add-on</span></a>
+    <a href="../#ai-ranker"><b>4 · AI Ranker</b><span>Find value after close</span></a>
+  </nav>
+
+  <div class="tabrow">
+    <div class="tabs" role="tablist" aria-label="Document type">
+      <button type="button" role="tab" id="tab-c" aria-selected="true" aria-controls="modeContract">Commercial contract</button>
+      <button type="button" role="tab" id="tab-r" aria-selected="false" aria-controls="modeReg"><span class="full-only">Claims check</span><span class="simple-only">Also: claims check</span></button>
+    </div>
+    <a class="suite simple-only" href="../">Part of PE AI &amp; Data Tools</a>
+  </div>
+
+  <div class="mode" id="modeContract" role="tabpanel" aria-labelledby="tab-c">
+  <section class="panel collapsible" id="inC" aria-labelledby="in-h">
+    <div class="row"><h2 id="in-h" class="grow">Agreement</h2><span class="badge example" id="inBadge">Example agreement</span></div>
+    <div class="row"><label for="target">Target party name</label><input type="text" id="target" class="tin" placeholder="e.g., Lakeshore Specialty Foods" autocomplete="off" aria-describedby="targetHint"><span class="status" id="targetHint">The party being acquired. Leave blank and Claude will infer it from context and state the assumption in its first finding.</span></div>
+    <textarea id="src" spellcheck="false" aria-label="Agreement text"></textarea>
+    <div class="row">
+      <button class="primary" id="run">Extract terms with Claude</button>
+      <label class="filebtn">Upload .txt or .pdf<input type="file" id="file" accept=".txt,.md,.pdf,text/plain,application/pdf"></label>
+      <button id="reset">Load example</button>
+      <span class="status" id="status" role="status"></span>
+    </div>
+  </section>
+
+  <div class="work">
+    <section class="panel" aria-labelledby="f-h">
+      <div class="row"><h2 id="f-h" class="grow">Findings</h2><span class="badge example" id="srcBadge">Example result</span></div>
+      <div class="tally" id="tally"></div>
+      <p class="verdict" id="verdict"></p>
+      <p class="hint simple-only">Click a finding to see its clause in the agreement.</p>
+      <div class="list" id="list"></div>
+      <button type="button" class="disc simple-only" id="moreC" aria-controls="list" aria-expanded="false" hidden>Show all findings</button>
+      <div class="row"><button id="copy">Copy findings for the diligence tracker</button><span class="status" id="copyStatus" role="status"></span></div>
+    </section>
+    <section class="panel" aria-labelledby="d-h">
+      <h2 id="d-h">Agreement text</h2>
+      <div class="doc" id="doc" tabindex="0"></div>
+    </section>
+  </div>
+  <div class="discrow simple-only" id="discRowC">
+    <button type="button" class="disc" id="discC" aria-controls="inC" aria-expanded="false">Use your own agreement</button>
+    <span class="status">Paste or upload a contract and run the same extraction.</span>
+  </div>
+  </div>
+
+  <div class="mode" id="modeReg" role="tabpanel" aria-labelledby="tab-r" hidden>
+    <section class="panel collapsible" id="inR" aria-labelledby="rb-h">
+      <div class="row"><h2 id="rb-h" class="grow">Rulebook</h2><span class="badge example" id="rInBadge">Example documents</span></div>
+      <div class="rb" id="rulebooks"></div>
+      <div class="two-in">
+        <div><label for="rDraft">Draft to review</label><textarea id="rDraft" spellcheck="false"></textarea></div>
+        <div><label for="rSrc" id="rSrcLabel">Source documents</label><textarea id="rSrc" spellcheck="false"></textarea></div>
+      </div>
+      <div class="row">
+        <button class="primary" id="rRun">Check against the rulebook</button>
+        <button id="rReset">Load example</button>
+        <span class="status" id="rStatus" role="status"></span>
+      </div>
+    </section>
+    <div class="work">
+      <section class="panel" aria-labelledby="rc-h">
+        <div class="row"><h2 id="rc-h" class="grow">Claims</h2><span class="badge example" id="rBadge">Example result</span></div>
+        <div class="tally" id="rTally"></div>
+        <p class="verdict" id="rVerdict"></p>
+        <p class="hint simple-only">Each claim is checked against the source documents. Click a claim to see it in the draft.</p>
+        <div class="list" id="rClaims"></div>
+        <button type="button" class="disc simple-only" id="moreR" aria-controls="rClaims" aria-expanded="false" hidden>Show all claims</button>
+        <h3 style="margin-top:6px">Required elements</h3>
+        <ul class="elems" id="rElems"></ul>
+        <div class="row"><button id="rCopy">Copy reference pack</button><span class="status" id="rCopyStatus" role="status"></span></div>
+      </section>
+      <section class="panel" aria-labelledby="rd-h">
+        <h2 id="rd-h">Draft with claims marked</h2>
+        <div class="doc" id="rDoc" tabindex="0"></div>
+      </section>
+    </div>
+    <div class="discrow simple-only" id="discRowR">
+      <button type="button" class="disc" id="discR" aria-controls="inR" aria-expanded="false">Check your own document</button>
+      <span class="status">Pick a rulebook, paste a draft and its sources, and run the same check.</span>
+    </div>
+  </div>
+
+  <p class="foot">Prototype for discussion, not legal advice. The example agreement and parties are invented. Each finding links to the clause Claude quoted; a finding whose quote can't be found in the text is shown without a mark so you can check it. Extraction runs on the viewer's own Claude account and asks permission the first time.</p>
+</div>
+
+<script>
+(() => {
+"use strict";
+const EXAMPLE=`EXCLUSIVE DISTRIBUTION AGREEMENT
+
+This Exclusive Distribution Agreement (the "Agreement") is entered into as of March 1, 2024 between Meridian Dairy Imports, Inc. ("Supplier") and Lakeshore Specialty Foods, LLC ("Distributor").
+
+1. APPOINTMENT. Supplier appoints Distributor as its exclusive distributor of the Products to restaurants, grocers and foodservice operators in Illinois, Indiana and Wisconsin (the "Territory"). Distributor shall not market or sell any product that competes with the Products in the Territory during the Term.
+
+2. TERM. The initial term is three (3) years from the Effective Date. The Agreement renews automatically for successive one-year periods unless either party gives notice of non-renewal at least ninety (90) days before the end of the then-current term.
+
+3. MINIMUM PURCHASES. Distributor shall purchase at least $4,500,000 of Products in each contract year. If Distributor fails to meet the minimum in any contract year, Supplier may convert the appointment to non-exclusive on thirty (30) days' notice.
+
+4. PRICING. Prices are set out in Exhibit A. Supplier may increase prices once per contract year by up to five percent (5%) on sixty (60) days' written notice. Supplier shall not sell the Products to any other distributor in the United States at prices lower than those charged to Distributor.
+
+5. REBATES. Supplier shall pay Distributor a quarterly volume rebate of 2% of net purchases above $1,250,000 in that quarter. Rebates are forfeited if Distributor is in breach of any payment obligation.
+
+6. PAYMENT. Invoices are due net forty-five (45) days. Late amounts bear interest at 1.5% per month.
+
+7. ASSIGNMENT; CHANGE OF CONTROL. Neither party may assign this Agreement without the other party's prior written consent. A change of control of Distributor, including a sale of a majority of its equity or substantially all of its assets, shall be deemed an assignment. Supplier may terminate this Agreement on thirty (30) days' notice following any change of control of Distributor to which it has not consented.
+
+8. TERMINATION. Either party may terminate for material breach not cured within thirty (30) days of written notice. Supplier may terminate for convenience on one hundred eighty (180) days' notice after the second anniversary of the Effective Date.
+
+9. LIMITATION OF LIABILITY. Except for indemnification obligations, neither party's aggregate liability shall exceed the amounts paid by Distributor in the twelve (12) months preceding the claim.
+
+10. INDEMNIFICATION. Supplier shall indemnify Distributor against third-party claims alleging that a Product is defective or infringes intellectual property, except to the extent caused by Distributor's handling or storage.
+
+11. DATA PRIVACY. To the extent Distributor receives personal information of consumers in connection with product tracing or recalls, the parties shall enter into a Data Processing Addendum substantially in the form of Exhibit C.
+
+12. GOVERNING LAW. This Agreement is governed by the laws of the State of Delaware.`;
+
+const EXAMPLE_RESULT={
+ verdict:"Supplier can walk after a sale of Lakeshore without consent, and can terminate for convenience after March 2026. Get a consent or waiver from Meridian before signing.",
+ findings:[
+  {term:"Change of control",section:"7",risk:"high",finding:"A sale of the distributor counts as an assignment; supplier may terminate on 30 days' notice if it hasn't consented.",quote:"Supplier may terminate this Agreement on thirty (30) days' notice following any change of control of Distributor",note:"Obtain Meridian's written consent or waiver as a closing condition."},
+  {term:"Termination for convenience",section:"8",risk:"high",finding:"Supplier may terminate for any reason on 180 days' notice after March 1, 2026.",quote:"Supplier may terminate for convenience on one hundred eighty (180) days' notice after the second anniversary",note:"This window is already open. Size revenue at risk and ask about relationship health."},
+  {term:"Minimum purchase commitment",section:"3",risk:"medium",finding:"$4.5M annual minimum; missing it lets supplier remove exclusivity.",quote:"Distributor shall purchase at least $4,500,000 of Products in each contract year",note:"Compare against trailing purchases by contract year."},
+  {term:"Exclusivity and non-compete",section:"1",risk:"medium",finding:"Exclusive in IL, IN and WI; distributor can't sell competing products in the territory.",quote:"Distributor shall not market or sell any product that competes with the Products in the Territory",note:"Check conflicts with platform product lines before integrating."},
+  {term:"Price increases",section:"4",risk:"medium",finding:"Supplier can raise prices up to 5% per year on 60 days' notice.",quote:"by up to five percent (5%) on sixty (60) days' written notice",note:"Test whether price increases can be passed through to restaurant and grocer customers."},
+  {term:"Most favored pricing",section:"4",risk:"low",finding:"Supplier may not sell to other U.S. distributors at lower prices. This favors the distributor.",quote:"at prices lower than those charged to Distributor",note:"Confirm compliance and whether it survives assignment."},
+  {term:"Rebates",section:"5",risk:"low",finding:"2% quarterly rebate on purchases above $1.25M per quarter; forfeited on payment breach.",quote:"Rebates are forfeited if Distributor is in breach of any payment obligation",note:"Reconcile rebate accruals in the QoE."},
+  {term:"Liability cap",section:"9",risk:"low",finding:"Capped at 12 months of fees paid, excluding indemnities.",quote:"shall exceed the amounts paid by Distributor in the twelve (12) months preceding the claim",note:"Standard for this type of agreement."},
+  {term:"Data privacy",section:"11",risk:"medium",finding:"A data processing addendum is required if the distributor handles consumer personal information for product tracing or recalls.",quote:"the parties shall enter into a Data Processing Addendum",note:"Request the executed addendum; confirm it exists if personal information is handled."},
+  {term:"Renewal",section:"2",risk:"low",finding:"Three-year initial term from March 2024, then auto-renews yearly unless 90 days' notice.",quote:"renews automatically for successive one-year periods",note:"Initial term ends Feb 2027."}
+ ]};
+
+const $=id=>document.getElementById(id);
+const ORDER={high:0,medium:1,low:2};
+let text="", result=null, source="example", active=-1;
+
+function esc(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function norm(s){return s.replace(/\s+/g," ").trim()}
+
+function locate(q){
+  if(!q) return -1;
+  let i=text.indexOf(q); if(i>=0) return [i,q.length];
+  const nq=norm(q).toLowerCase(), nt=text.toLowerCase(); i=nt.indexOf(nq); return i>=0?[i,nq.length]:-1;
+}
+
+function renderDoc(){
+  const spans=[];
+  (result?.findings||[]).forEach((f,k)=>{const r=locate(f.quote); if(r!==-1) spans.push({s:r[0],e:r[0]+r[1],k})});
+  spans.sort((a,b)=>a.s-b.s);
+  let html="",pos=0;
+  for(const sp of spans){ if(sp.s<pos) continue; html+=esc(text.slice(pos,sp.s))+`<mark id="m${sp.k}" class="${sp.k===active?"active":""}">`+esc(text.slice(sp.s,sp.e))+"</mark>"; pos=sp.e }
+  html+=esc(text.slice(pos)); $("doc").innerHTML=html;
+}
+
+function render(){
+  const fs=(result?.findings||[]).map((f,i)=>({...f,i})).sort((a,b)=>(ORDER[a.risk]??3)-(ORDER[b.risk]??3));
+  const counts={high:0,medium:0,low:0}; fs.forEach(f=>{if(counts[f.risk]!=null)counts[f.risk]++});
+  $("tally").innerHTML=["high","medium","low"].map(r=>`<span class="pill ${r}">${counts[r]} ${r}</span>`).join("");
+  $("verdict").textContent=result?.verdict||"Run an extraction to see the buyer's headline issue.";
+  const list=$("list"); list.textContent="";
+  fs.forEach(f=>{
+    const b=document.createElement("button"); b.type="button"; b.className="finding "+(ORDER[f.risk]!=null?f.risk:"low")+(f.i===active?" active":"");
+    b.innerHTML=`<span class="stripe"></span><span><span class="fhead"><span class="fterm"></span><span class="fsec"></span><span class="frisk"></span></span><div class="fbody"></div><div class="fnote"><b>Diligence:</b> <span></span></div></span>`;
+    b.querySelector(".fterm").textContent=f.term; b.querySelector(".fsec").textContent=f.section?"§"+f.section:"";
+    b.querySelector(".frisk").textContent=f.risk; b.querySelector(".fbody").textContent=f.finding;
+    b.querySelector(".fnote span").textContent=f.note||"";
+    if(locate(f.quote)===-1) b.querySelector(".fsec").textContent+=" · clause not found in text";
+    b.onclick=()=>{active=f.i; render(); const m=$("m"+f.i); if(m) m.scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"})};
+    list.append(b);
+  });
+  $("srcBadge").textContent=source==="example"?"Example result":"Extracted by Claude";
+  $("srcBadge").className="badge"+(source==="example"?" example":"");
+  renderDoc();
+}
+
+function loadExample(){ $("src").value=EXAMPLE; $("target").value="Lakeshore Specialty Foods, LLC"; text=EXAMPLE; result=EXAMPLE_RESULT; source="example"; active=-1;
+  $("inBadge").hidden=false; $("status").textContent=""; $("status").className="status"; render() }
+
+function errCopy(code){
+  return ({not_granted:"Claude wasn't allowed for this page, so extraction is off.",
+    sampling_disabled:"Claude isn't available on this account.",
+    rate_limited:"Too many requests right now. Wait a minute, then try again.",
+    session_expired:"Your session expired. Sign in again, then retry.",
+    invalid_json:"Claude's reply couldn't be read as findings. Try again.",
+    prompt_too_large:"That agreement is too long. Paste the key sections instead.",
+    refused:"Claude declined this input. Check the pasted text and try again."})[code]||"Extraction failed. Try again in a moment.";
+}
+
+const samplePromise=window.claude?claude.use("sample"):Promise.resolve(null);
+samplePromise.then(s=>{if(!s){$("run").disabled=true;$("status").textContent="Live extraction is switched off on this hosted copy. The example shows how it works."}});
+
+$("src").addEventListener("input",()=>{$("inBadge").hidden=$("src").value!==EXAMPLE});
+const PDFJS="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/";
+let pdfLib=null;
+async function loadPdfJs(){
+  if(pdfLib) return pdfLib;
+  let lib; try{ lib=await import(PDFJS+"pdf.min.mjs"); }catch(e){ throw {code:"pdf_unavailable"}; }
+  lib.GlobalWorkerOptions.workerSrc=PDFJS+"pdf.worker.min.mjs"; pdfLib=lib; return lib;
+}
+async function pdfToText(file,onPage){
+  const lib=await loadPdfJs();
+  const doc=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+  const pages=[];
+  for(let p=1;p<=doc.numPages;p++){ if(onPage) onPage(p,doc.numPages);
+    const tc=await (await doc.getPage(p)).getTextContent();
+    pages.push("[page "+p+"]\n"+tc.items.map(i=>i.str||"").join(" ").replace(/[ \t]+/g," ").trim()); }
+  return {text:pages.join("\n\n"),pages:doc.numPages};
+}
+$("file").onchange=async e=>{const f=e.target.files[0]; e.target.value=""; if(!f) return;
+  const isPdf=f.type==="application/pdf"||/\.pdf$/i.test(f.name);
+  if(isPdf){
+    if(f.size>25e6){$("status").className="status err";$("status").textContent="That PDF is over 25 MB. Split it or paste the key sections instead.";return}
+    $("status").className="status"; $("status").textContent="Reading "+f.name+"…";
+    try{
+      const r=await pdfToText(f,(p,n)=>{$("status").textContent="Reading "+f.name+": page "+p+" of "+n+"…"});
+      $("src").value=r.text; $("inBadge").hidden=true;
+      $("status").textContent="Loaded "+f.name+": "+r.pages+" page"+(r.pages===1?"":"s")+", "+r.text.length.toLocaleString("en-US")+" characters."+(r.text.replace(/\[page \d+\]/g,"").trim().length<200?" Little text was found; a scanned PDF needs OCR first.":" Click Extract.");
+    }catch(err){
+      $("status").className="status err";
+      $("status").textContent=err&&err.code==="pdf_unavailable"?"PDF reading isn't available here; paste the text instead.":"That PDF couldn't be read (it may be encrypted or scanned). Paste the text instead.";
+    }
+    return}
+  if(f.size>400000){$("status").className="status err";$("status").textContent="That file is over 400 KB. Paste the key sections instead.";return}
+  $("src").value=await f.text(); $("inBadge").hidden=true; $("status").className="status"; $("status").textContent="Loaded "+f.name+". Click Extract."};
+
+$("run").onclick=async()=>{
+  const sample=await samplePromise; if(!sample) return;
+  const src=$("src").value.trim();
+  if(src.length<200){$("status").className="status err";$("status").textContent="Paste the agreement text first (at least a few clauses).";return}
+  $("run").disabled=true; $("status").className="status"; $("status").textContent="Reading the agreement… this can take up to a minute.";
+  const target=$("target").value.trim();
+  const persp=target
+    ?`The Target is ${target}; assess every term from the perspective of a buyer acquiring the Target.`
+    :`The Target's name was not provided. Identify the party most likely to be the Target from context (the operating company whose agreement a buyer would diligence) and state that assumption explicitly in your FIRST finding (term "Target assumption", risk "low", quote the words that name that party). Then assess every term from the perspective of a buyer acquiring the Target.`;
+  const prompt=`You are a private equity buy-side diligence analyst reviewing a commercial agreement of a company being acquired (the "Target"). ${persp} Read change-of-control triggers, most-favored-pricing benefit, non-compete exposure and termination rights from the Target's side of the agreement, not the counterparty's. Identify the terms that matter to a buyer.
+
+Cover each of these that the agreement addresses: change of control / assignment, termination (for convenience and for cause), exclusivity and non-compete, minimum commitments, pricing and price increases, price protection / escalators, most-favored pricing, rebates or fees, administrative or marketing fee percentages, payment terms, renewal and term, liability cap, indemnification, recall cost allocation, audit rights, affiliate definitions (whether obligations bind the Target's or the buyer's affiliates), termination assistance / transition services, data privacy (including PHI and a business associate agreement where health data is involved), and anything else unusual. Skip boilerplate with no deal impact.
+
+For each finding:
+- term: short label
+- section: the section number as written, or ""
+- risk: "high" (could cost the buyer the contract or material value), "medium" (needs diligence or negotiation), or "low" (standard or favorable)
+- finding: one plain sentence, at most 30 words
+- quote: copy 8-25 words EXACTLY as they appear in the agreement, so the page can find them
+- note: one concrete diligence action, at most 20 words
+Also give verdict: the buyer's headline issue in at most 2 sentences.
+
+Reply with only JSON in this shape:
+{"verdict":"...","findings":[{"term":"...","section":"7","risk":"high","finding":"...","quote":"...","note":"..."}]}
+
+AGREEMENT:
+${src.slice(0,120000)}`;
+  try{
+    const res=await sample.json(prompt);
+    if(!res||!Array.isArray(res.findings)) throw {code:"invalid_json"};
+    text=$("src").value;
+    result={verdict:String(res.verdict||""),findings:res.findings.slice(0,30).map(f=>({term:String(f.term||"Term"),section:String(f.section||""),
+      risk:["high","medium","low"].includes(f.risk)?f.risk:"medium",finding:String(f.finding||""),quote:String(f.quote||""),note:String(f.note||"")}))};
+    source="claude"; active=-1; $("status").textContent="Done. "+result.findings.length+" findings. Click one to see its clause.";
+    render();
+  }catch(e){
+    $("status").className="status err"; $("status").textContent=errCopy(e&&e.code);
+    if(e&&(e.code==="not_granted"||e.code==="sampling_disabled")) $("run").dataset.off="1";
+  }finally{ $("run").disabled=!!$("run").dataset.off }
+};
+
+$("reset").onclick=loadExample;
+$("copy").onclick=()=>{
+  const fs=(result?.findings||[]).slice().sort((a,b)=>(ORDER[a.risk]??3)-(ORDER[b.risk]??3));
+  const tsv=[["Term","Section","Risk","Finding","Diligence action","Clause"].join("\t"),...fs.map(f=>[f.term,f.section,f.risk,f.finding,f.note,f.quote].map(v=>String(v).replace(/\s+/g," ")).join("\t"))].join("\n");
+  const blocked=()=>{$("copyStatus").textContent="Clipboard blocked in this view. Select the findings text to copy manually."};
+  if(!(navigator.clipboard&&navigator.clipboard.writeText)){blocked(); return;}
+  navigator.clipboard.writeText(tsv).then(()=>{$("copyStatus").textContent="Copied "+fs.length+" rows. Paste into Excel or Sheets."}).catch(blocked);
+};
+loadExample();
+})();
+</script>
+<script>
+(() => {
+"use strict";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const RB={
+ ad:{t:"Advertising and product claims",d:"Any product: sell sheet, ad, email, web copy",src:"Substantiation file: specifications, test reports, certifications, sales data",
+  rules:["Every objective claim needs support in the substantiation file before it is made.","Comparative and superiority claims need head-to-head or dated market data.","A test result must be stated as tested: same conditions, same number.","Absence claims (free of, no added) must match the ingredient statement and test reports.","Awards and certifications must be named and current."],
+  els:[["name","Product name"],["ingr","Ingredient or composition statement, or a reference to it"],["allergen","Allergen statement where the product contains a major allergen"],["storage","Storage or handling conditions for any shelf-life claim"],["cite","Source for each test or comparative claim"]]},
+ device:{t:"Device promotion",d:"510(k)-cleared device: email, ad, brochure, web copy",src:"Cleared indications for use, IFU excerpts and test or study summaries",
+  rules:["Claims stay within the cleared indications for use; uses outside them are off-label and blocked.","A 510(k) device is FDA-cleared, not FDA-approved.","Performance, safety and comparative claims need support in the source documents; superiority over competitors needs head-to-head data.","Bench or lab results must not be presented as clinical results.","Risk information must not be contradicted or minimized."],
+  els:[["name","Product name"],["ifu","Indications for use stated, consistent with the clearance"],["rx","Prescription statement (Rx only) for a prescription device"],["refer","Reference to the Instructions for Use for contraindications, warnings and precautions"],["cite","Citation for each performance or comparative claim"]]},
+ pharma:{t:"Pharma promotion (MLR)",d:"Promotional piece for an approved drug",src:"Approved label (prescribing information) and cited study data",
+  rules:["Every claim must be consistent with the approved label.","Efficacy claims need substantial evidence in the sources; no overstatement of effect size.","Fair balance: risk information comparable in prominence to benefit claims.","No uses outside the approved indication.","Comparative claims need head-to-head data."],
+  els:[["brand","Brand name with the established (generic) name"],["ind","Approved indication stated"],["isi","Important Safety Information present"],["pi","Reference to the full Prescribing Information"],["cite","Citation for each data claim"]]},
+ icf:{t:"Informed consent form",d:"Clinical study consent, checked against 21 CFR 50.25(a)",src:"Protocol synopsis",
+  rules:["Statements must match the protocol synopsis (procedures, visits, duration, risks).","Benefits must not be overstated, and no language may waive the subject's rights.","Each basic element of informed consent must be present."],
+  els:[["research","Statement that the study involves research, with its purpose, duration, procedures, and which procedures are experimental"],["risks","Reasonably foreseeable risks or discomforts"],["benefits","Benefits to the subject or others that may reasonably be expected"],["alts","Appropriate alternative procedures or treatments"],["conf","Confidentiality of records, noting FDA may inspect them"],["injury","For more than minimal risk: compensation and medical treatment if injury occurs"],["contact","Whom to contact about the research, subjects' rights and research-related injury"],["vol","Participation is voluntary; refusing or stopping involves no penalty or loss of benefits"],["ctgov","ClinicalTrials.gov statement, for applicable clinical trials (50.25(c))"]]}};
+const EXD=`Introducing Alpina Reserve, the award-winning alpine cheese that outsells every competitor.
+
+Proven to stay fresh for 120 days. Made all natural with no preservatives.
+
+Vacuum-sealed, ready to slice out of the case. Ask your Lakeshore rep for samples and order today.`;
+const EXS=`Product specification: Alpina Reserve is a pasteurized cow's milk alpine-style cheese, aged six months. Ingredients: pasteurized milk, salt, cultures, enzymes. Rind treated with natamycin (a preservative). Contains milk.
+
+Packaging: Vacuum-sealed 5 lb wheel. Keep refrigerated at or below 40°F.
+
+Shelf-life study summary: Unopened product held at 38°F met the quality specification through 90 days. No sales comparison data were provided.`;
+const EXR={verdict:"Two claims would block this sell sheet: it says the product outsells every competitor with no sales data, and says no preservatives when the specification lists one. Two more need rewording, and the sheet lacks an ingredient reference, an allergen statement and storage conditions.",
+ claims:[
+  {claim:"outsells every competitor",verdict:"block",source:"No sales comparison data were provided.",reason:"Nothing in the file supports a market-leadership claim.",fix:"Remove, or cite dated third-party sales data."},
+  {claim:"all natural with no preservatives",verdict:"block",source:"Rind treated with natamycin (a preservative).",reason:"The specification lists a preservative on the rind.",fix:"Delete \"no preservatives\"; describe the ingredients as listed."},
+  {claim:"Proven to stay fresh for 120 days",verdict:"revise",source:"Unopened product held at 38°F met the quality specification through 90 days.",reason:"The study supports 90 days, unopened and refrigerated, not 120.",fix:"\"90-day shelf life, unopened at 38°F\" with a citation."},
+  {claim:"award-winning",verdict:"revise",source:"",reason:"No award is named in the sources.",fix:"Name the award and year, or remove."},
+  {claim:"Vacuum-sealed, ready to slice out of the case",verdict:"supported",source:"Vacuum-sealed 5 lb wheel.",reason:"Matches the packaging specification.",fix:""}],
+ elements:{name:{present:true,quote:"Alpina Reserve"},ingr:{present:false,quote:""},allergen:{present:false,quote:""},storage:{present:false,quote:""},cite:{present:false,quote:""}}};
+let rb="ad", res=EXR, isEx=true, active=-1;
+const norm=s=>s.replace(/\s+/g," ").trim().toLowerCase();
+const found=(q,txt)=>!!q&&norm(txt).includes(norm(q));
+function locate(q,txt){ if(!q) return -1; let i=txt.indexOf(q); if(i>=0) return [i,q.length]; const lo=txt.toLowerCase(), ql=q.toLowerCase(); i=lo.indexOf(ql); return i>=0?[i,q.length]:-1; }
+function rulebooks(){
+  $("rulebooks").innerHTML=Object.entries(RB).map(([k,v])=>`<button type="button" data-k="${k}" aria-pressed="${k===rb}"><b>${esc(v.t)}</b><span>${esc(v.d)}</span></button>`).join("");
+  $("rulebooks").querySelectorAll("button").forEach(b=>b.onclick=()=>{ if(rb===b.dataset.k) return; rb=b.dataset.k; res=null; active=-1;
+    if(rb!=="ad"){ $("rDraft").value=""; $("rSrc").value=""; isEx=false; $("rInBadge").hidden=true; $("rStatus").textContent="Paste the draft and the source documents, then run the check."; }
+    else { $("rStatus").textContent="Load the example or paste your own."; }
+    rulebooks(); render(); });
+  $("rSrcLabel").textContent=RB[rb].src;
+}
+function render(){
+  const draft=$("rDraft").value, src=$("rSrc").value, R=RB[rb];
+  const cl=(res?.claims||[]).map((c,i)=>({...c,i,inDraft:locate(c.claim,draft)!==-1,srcOk:!c.source||found(c.source,src)}));
+  const n=v=>cl.filter(c=>c.verdict===v).length;
+  $("rTally").innerHTML=res?["block","revise","supported"].map(v=>`<span class="pill ${v}">${n(v)} ${v}</span>`).join(""):"";
+  $("rVerdict").textContent=res?.verdict||`Rulebook: ${R.t}. ${R.rules.join(" ")}`;
+  const L=$("rClaims"); L.textContent="";
+  const order={block:0,revise:1,supported:2};
+  cl.slice().sort((a,b)=>order[a.verdict]-order[b.verdict]).forEach(c=>{
+    const b=document.createElement("button"); b.type="button"; b.className="claim "+c.verdict+(c.i===active?" active":"");
+    b.innerHTML=`<span class="stripe"></span><span><span class="fhead" style="display:flex;gap:8px;align-items:baseline"><span class="cq"></span><span class="cv"></span></span><div class="fbody"></div><div class="csrc"></div><div class="cfix"></div></span>`;
+    b.querySelector(".cq").textContent="“"+c.claim+"”"+(c.inDraft?"":" (not found in the draft)");
+    b.querySelector(".cv").textContent=c.verdict; b.querySelector(".fbody").textContent=c.reason;
+    b.querySelector(".csrc").textContent=c.source?("Source: “"+c.source+"”"+(c.srcOk?"":" (not found in the sources; check it)")):"Source: none in the documents";
+    if(c.fix){const f=b.querySelector(".cfix");f.innerHTML="<b>Fix:</b> ";f.append(c.fix)}
+    b.onclick=()=>{active=c.i; render(); const m=document.getElementById("rm"+c.i); if(m) m.scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});};
+    L.append(b);
+  });
+  if(!res){const p=document.createElement("p");p.className="status";p.textContent="No check run yet for this rulebook.";L.append(p)}
+  const E=$("rElems"); E.textContent="";
+  R.els.forEach(([k,l])=>{const e=res?.elements?.[k]; const li=document.createElement("li");
+    let cls="chk",ic="?",note="Not checked yet";
+    if(e){ if(e.present&&found(e.quote,draft)){cls="yes";ic="✓";note="Found: “"+e.quote+"”";} else if(e.present){cls="chk";ic="?";note="Claude says present, but its quote isn't in the draft; check by hand";} else {cls="no";ic="✕";note="Missing";} }
+    li.className=cls; li.innerHTML=`<span class="ic">${ic}</span><span></span>`; li.children[1].append(l); const sm=document.createElement("small"); sm.textContent=note; li.children[1].append(sm); E.append(li);});
+  const spans=cl.map(c=>{const r=locate(c.claim,draft);return r===-1?null:{s:r[0],e:r[0]+r[1],c}}).filter(Boolean).sort((a,b)=>a.s-b.s);
+  let html="",pos=0; for(const sp of spans){ if(sp.s<pos) continue; html+=esc(draft.slice(pos,sp.s))+`<mark id="rm${sp.c.i}" class="${sp.c.verdict}${sp.c.i===active?" active":""}">`+esc(draft.slice(sp.s,sp.e))+"</mark>"; pos=sp.e; }
+  $("rDoc").innerHTML=(html+esc(draft.slice(pos)))||'<span class="status">Paste a draft to see it here.</span>';
+  $("rBadge").textContent=isEx&&res===EXR?"Example result":res?"Checked by Claude":"Not run";
+  $("rBadge").className="badge"+(isEx&&res===EXR?" example":"");
+}
+function loadEx(){ rb="ad"; $("rDraft").value=EXD; $("rSrc").value=EXS; res=EXR; isEx=true; active=-1; $("rInBadge").hidden=false; $("rStatus").textContent=""; rulebooks(); render(); }
+["rDraft","rSrc"].forEach(i=>$(i).addEventListener("input",()=>{ if(isEx){isEx=false;$("rInBadge").hidden=true;} }));
+$("rReset").onclick=loadEx;
+function errCopy(c){return({not_granted:"Claude wasn't allowed for this page, so the check is off.",sampling_disabled:"Claude isn't available on this account.",rate_limited:"Too many requests right now. Wait a minute, then try again.",session_expired:"Your session expired. Sign in again, then retry.",invalid_json:"Claude's reply couldn't be read. Try again.",prompt_too_large:"The documents are too long. Paste the key sections.",refused:"Claude declined this input. Check the text."})[c]||"The check failed. Try again in a moment.";}
+const samplePromise=window.claude?claude.use("sample"):Promise.resolve(null);
+samplePromise.then(s=>{if(!s){$("rRun").disabled=true;$("rStatus").textContent="Live checking is switched off on this hosted copy. The example still shows how it works."}});
+$("rRun").onclick=async()=>{
+  const sample=await samplePromise; if(!sample) return;
+  const draft=$("rDraft").value.trim(), src=$("rSrc").value.trim(), R=RB[rb];
+  if(draft.length<40||src.length<40){$("rStatus").className="status err";$("rStatus").textContent="Paste both the draft and the source documents.";return}
+  $("rRun").disabled=true; $("rStatus").className="status"; $("rStatus").textContent="Checking every claim… this can take up to a minute.";
+  const prompt=`You are a regulatory and legal claims reviewer. Review the DRAFT against the SOURCES using this rulebook: ${R.t}.
+Rules:
+${R.rules.map(r=>"- "+r).join("\n")}
+
+1. Find every factual or promotional claim in the DRAFT. For each give:
+- claim: the words EXACTLY as they appear in the draft (4 to 20 words)
+- verdict: "supported", "revise" or "block"
+- source: the supporting or contradicting words EXACTLY as they appear in the SOURCES, or "" if the sources say nothing
+- reason: max 20 words
+- fix: max 18 words, or "" if supported
+2. For each required element below, say whether the DRAFT contains it; when present, quote the draft words exactly.
+${R.els.map(([k,l])=>`- ${k}: ${l}`).join("\n")}
+3. verdict: the reviewer's headline in at most 2 sentences.
+
+Reply with only JSON: {"verdict":"...","claims":[{"claim":"...","verdict":"block","source":"...","reason":"...","fix":"..."}],"elements":{"${R.els[0][0]}":{"present":true,"quote":"..."}}}
+
+DRAFT:
+${draft.slice(0,40000)}
+
+SOURCES:
+${src.slice(0,80000)}`;
+  try{
+    const r=await sample.json(prompt);
+    if(!r||!Array.isArray(r.claims)) throw {code:"invalid_json"};
+    res={verdict:String(r.verdict||""),claims:r.claims.slice(0,40).map(c=>({claim:String(c.claim||""),verdict:["supported","revise","block"].includes(c.verdict)?c.verdict:"revise",source:String(c.source||""),reason:String(c.reason||""),fix:String(c.fix||"")})).filter(c=>c.claim),
+      elements:Object.fromEntries(R.els.map(([k])=>{const e=(r.elements||{})[k]||{};return [k,{present:!!e.present,quote:String(e.quote||"")}]}))};
+    isEx=false; active=-1;
+    const miss=res.claims.filter(c=>locate(c.claim,$("rDraft").value)===-1).length;
+    $("rStatus").textContent=`Checked ${res.claims.length} claims.`+(miss?` ${miss} quote${miss>1?"s":""} could not be found in the draft and ${miss>1?"are":"is"} flagged.`:"");
+    render();
+  }catch(e){$("rStatus").className="status err";$("rStatus").textContent=errCopy(e&&e.code);if(e&&(e.code==="not_granted"||e.code==="sampling_disabled"))$("rRun").dataset.off="1"}
+  finally{$("rRun").disabled=!!$("rRun").dataset.off}
+};
+$("rCopy").onclick=()=>{
+  if(!res){$("rCopyStatus").textContent="Run a check first.";return}
+  const rows=[["Claim","Verdict","Source","Reason","Fix"].join("\t"),...res.claims.map(c=>[c.claim,c.verdict,c.source,c.reason,c.fix].map(v=>String(v).replace(/\s+/g," ")).join("\t")),"",
+    ["Required element","Status","Draft quote"].join("\t"),...RB[rb].els.map(([k,l])=>{const e=res.elements[k]||{};return [l,e.present?"present":"missing",e.quote||""].join("\t")})].join("\n");
+  const blocked=()=>{$("rCopyStatus").textContent="Clipboard blocked in this view."};
+  if(!(navigator.clipboard&&navigator.clipboard.writeText)){blocked(); return;}
+  navigator.clipboard.writeText(rows).then(()=>{$("rCopyStatus").textContent="Copied. Paste into the review tracker."}).catch(blocked);
+};
+function tab(which){ const reg=which==="r"; $("modeContract").hidden=reg; $("modeReg").hidden=!reg; $("tab-c").setAttribute("aria-selected",!reg); $("tab-r").setAttribute("aria-selected",reg);
+  try{history.replaceState(null,"",reg?"#regulated":"#contract")}catch(e){} }
+$("tab-c").onclick=()=>tab("c"); $("tab-r").onclick=()=>tab("r");
+window.addEventListener("hashchange",()=>tab(location.hash==="#regulated"?"r":"c"));
+loadEx(); if(location.hash==="#regulated") tab("r");
+})();
+</script>
+<script>
+/* Simple view / Full view. Hides, folds and reorders only; the two tools above are unchanged. */
+(() => {
+"use strict";
+const $=id=>document.getElementById(id);
+const root=$("app"), KEY="ws-contract-reader-view", TOP=6;
+let view="simple";
+try{ if(localStorage.getItem(KEY)==="full") view="full"; }catch(e){}
+const MODES=[["modeContract","inC","discRowC"],["modeReg","inR","discRowR"]];
+function apply(){
+  root.dataset.view=view;
+  $("viewSimple").setAttribute("aria-pressed",view==="simple");
+  $("viewFull").setAttribute("aria-pressed",view==="full");
+  /* Simple: results, then the disclosure, then the inputs. Full: inputs first, as built. */
+  MODES.forEach(([m,p,d])=>{ const mode=$(m), panel=$(p), row=$(d);
+    if(view==="simple"){ if(row.nextElementSibling!==panel) row.after(panel); }
+    else if(mode.firstElementChild!==panel) mode.prepend(panel); });
+}
+function setView(v){ view=v; try{localStorage.setItem(KEY,v)}catch(e){} apply(); }
+$("viewSimple").onclick=()=>setView("simple");
+$("viewFull").onclick=()=>setView("full");
+[["discC","inC"],["discR","inR"]].forEach(([b,p])=>{ const btn=$(b), panel=$(p);
+  btn.onclick=()=>{ const open=!panel.classList.contains("is-open"); panel.classList.toggle("is-open",open); btn.setAttribute("aria-expanded",open); }; });
+function limiter(listId,btnId,noun){
+  const list=$(listId), btn=$(btnId);
+  const sync=()=>{ const n=list.querySelectorAll(":scope > button").length, all=list.classList.contains("show-all");
+    btn.hidden=n<=TOP; btn.setAttribute("aria-expanded",all);
+    btn.textContent=all?"Show the top "+TOP+" "+noun+" only":"Show all "+n+" "+noun; };
+  btn.onclick=()=>{ list.classList.toggle("show-all"); sync(); };
+  new MutationObserver(sync).observe(list,{childList:true}); sync();
+}
+limiter("list","moreC","findings");
+limiter("rClaims","moreR","claims");
+apply();
+})();
+</script>
+
+</body></html>

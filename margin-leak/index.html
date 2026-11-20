@@ -1,0 +1,821 @@
+<!doctype html><html><head><meta charset=utf8><meta name="robots" content="noindex,nofollow"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PE Toolkit - Margin Leak Finder</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: summary tiles, CEO readout, two chart rows (bridge + customers, price spread + cost lag), repricing list with letter drafting. Same family as the Portfolio Opportunity Sizer. */
+:root {
+  --bg: #f6f7f8;
+  --surface: #ffffff;
+  --surface-2: #eef0f2;
+  --line: #dcdfe3;
+  --grid: #e8eaed;
+  --ink: #15191e;
+  --ink-2: #4c545e;
+  --ink-3: #78808a;
+  --accent: #1c5cab;
+  --accent-soft: #e3edf9;
+  --s-above: #2a78d6;
+  --s-below: #eb6834;
+  --s-dot: #6da7ec;
+  --s-neutral: #9aa1a9;
+  --warn-bg: #fff3d6;
+  --warn-ink: #7a5200;
+  --font-ui: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121417; --surface: #1a1d21; --surface-2: #23272c; --line: #33383f; --grid: #2a2e34;
+    --ink: #eef0f2; --ink-2: #b7bdc5; --ink-3: #8a919a; --accent: #6da7ec; --accent-soft: #1d2a3b;
+    --s-above: #3987e5; --s-below: #d95926; --s-dot: #5598e7; --s-neutral: #6b727b;
+    --warn-bg: #3a2e12; --warn-ink: #f2c66b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121417; --surface: #1a1d21; --surface-2: #23272c; --line: #33383f; --grid: #2a2e34;
+  --ink: #eef0f2; --ink-2: #b7bdc5; --ink-3: #8a919a; --accent: #6da7ec; --accent-soft: #1d2a3b;
+  --s-above: #3987e5; --s-below: #d95926; --s-dot: #5598e7; --s-neutral: #6b727b;
+  --warn-bg: #3a2e12; --warn-ink: #f2c66b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 14px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 48px;
+}
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+h2 { font-size: 15px; font-weight: 600; margin: 0; }
+h3 { font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3); margin: 6px 0 8px; }
+p { margin: 0; }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.muted { color: var(--ink-2); }
+.small { font-size: 12.5px; }
+header { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; justify-content: space-between; }
+header .lede { max-width: 70ch; color: var(--ink-2); margin-top: 6px; }
+.badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 4px; background: var(--warn-bg); color: var(--warn-ink); }
+.badge.own { background: var(--accent-soft); color: var(--accent); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+button, .btn { font: inherit; font-size: 13px; font-weight: 600; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  padding: 7px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+button:hover, .btn:hover { border-color: var(--ink-3); }
+button:disabled { opacity: 0.5; cursor: default; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+:root[data-theme="dark"] button.primary { color: #0e1116; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) button.primary { color: #0e1116; } }
+button.link { border: none; background: none; padding: 2px 4px; color: var(--accent); font-size: 12.5px; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toast { font-size: 12.5px; color: var(--ink-2); min-height: 1em; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tile .label { font-size: 11.5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3); }
+.tile .value { font-family: var(--font-num); font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
+.tile .sub { font-size: 12.5px; color: var(--ink-2); }
+.tile.focus { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+
+.charts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.chart-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: baseline; margin-bottom: 8px; }
+.chart-head p { font-size: 12.5px; color: var(--ink-2); margin-top: 2px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.sw.dot { border-radius: 50%; }
+.chart-box { position: relative; }
+svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
+svg.chart text { font-family: var(--font-ui); }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+  font-size: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); min-width: 190px; z-index: 5; }
+.tip b { display: block; font-size: 13px; margin-bottom: 4px; }
+.tip .row { display: flex; justify-content: space-between; gap: 12px; color: var(--ink-2); }
+.tip .row span:last-child { font-family: var(--font-num); color: var(--ink); }
+.note { margin-top: 10px; font-size: 12.5px; color: var(--ink-2); border-top: 1px solid var(--grid); padding-top: 10px; }
+
+.ai { display: flex; flex-direction: column; gap: 10px; }
+.ai-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: center; }
+.ai-out { white-space: pre-wrap; font-size: 14px; line-height: 1.6; color: var(--ink); max-width: 90ch; }
+.ai-out.placeholder { color: var(--ink-3); font-size: 13px; }
+.ai-label { font-size: 11.5px; color: var(--ink-3); }
+.ai-label.fallback { color: var(--warn-ink); font-weight: 600; }
+.thinking { color: var(--ink-3); font-style: italic; }
+
+details.drawer { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+details.drawer > summary { cursor: pointer; padding: 14px 16px; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+details.drawer > summary::-webkit-details-marker { display: none; }
+details.drawer > summary::after { content: "Show"; font-size: 12.5px; color: var(--accent); font-weight: 600; }
+details.drawer[open] > summary::after { content: "Hide"; }
+.method { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; color: var(--ink-2); max-width: 80ch; }
+.method code { font-family: var(--font-num); font-size: 12px; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; color: var(--ink); }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; }
+.field { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--ink-2); }
+.field input { width: 120px; }
+.field input.wide { width: 220px; }
+input, select, textarea { font: inherit; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 5px 7px; }
+input[type="number"] { font-family: var(--font-num); }
+
+.table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.panel .table-scroll { border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+th, td { padding: 6px 8px; border-bottom: 1px solid var(--grid); text-align: left; white-space: nowrap; vertical-align: middle; }
+thead th { position: sticky; top: 0; background: var(--surface-2); font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); z-index: 1; }
+th.r, td.r { text-align: right; }
+td.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+tbody tr:hover { background: var(--surface-2); }
+tbody tr.sel { background: var(--accent-soft); }
+.tag { display: inline-block; font-size: 10.5px; font-weight: 600; padding: 1px 6px; border-radius: 4px; background: var(--surface-2); color: var(--ink-2); margin-right: 4px; }
+.tag.hot { background: var(--warn-bg); color: var(--warn-ink); }
+.neg { color: var(--ink-3); }
+.table-tools { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+
+.letter { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--grid); padding-top: 14px; margin-top: 14px; }
+.letter .ai-out { background: var(--surface-2); border-radius: 8px; padding: 14px 16px; font-size: 13.5px; }
+
+.import { display: flex; flex-direction: column; gap: 10px; }
+.import textarea { width: 100%; min-height: 140px; font-family: var(--font-num); font-size: 12px; }
+.import .cols { font-family: var(--font-num); font-size: 12px; background: var(--surface-2); padding: 8px 10px; border-radius: 6px; overflow-x: auto; white-space: nowrap; }
+.err { color: #c0392b; font-size: 12.5px; }
+:root[data-theme="dark"] .err { color: #ef8a80; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .err { color: #ef8a80; } }
+footer { font-size: 12px; color: var(--ink-3); }
+
+@media (max-width: 960px) {
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .charts { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 480px) {
+  .tiles { grid-template-columns: minmax(0, 1fr); }
+  h1 { font-size: 22px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <span class="badge" id="data-badge">Sample data · fictitious trailer and fabrication manufacturer</span>
+      <h1 style="margin-top:8px">Margin Leak Finder</h1>
+      <p class="lede">Reads a year of invoice lines and shows where margin is leaking: discounts beyond policy, customers below target margin, inconsistent pricing on the same product, and cost increases that never reached the price. Then it builds a repricing list, sizes the EBITDA, and drafts the customer letters.</p>
+    </div>
+    <div class="actions">
+      <button id="btn-import" class="primary" type="button">Load invoice CSV</button>
+      <button id="btn-copy" type="button">Copy results as CSV</button>
+    </div>
+  </header>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <section class="panel import" id="import-panel" hidden>
+    <h2>Load invoice lines</h2>
+    <p class="muted small">One row per invoice line, with a header row. Dates as YYYY-MM-DD or M/D/YYYY; prices and costs per unit. Any ERP sales export with these fields works; extra columns are ignored.</p>
+    <div class="cols" id="csv-cols"></div>
+    <div class="actions">
+      <button id="btn-template" type="button">Copy blank template</button>
+      <label class="btn" for="csv-file">Choose CSV file</label>
+      <input id="csv-file" type="file" accept=".csv,text/csv" hidden>
+      <button id="btn-sample" type="button">Reload sample data</button>
+    </div>
+    <textarea id="csv-text" aria-label="Paste invoice CSV here" placeholder="invoice_date,invoice_id,customer,product,product_family,qty,unit_price,list_price,unit_cost"></textarea>
+    <div class="actions">
+      <button id="btn-load" class="primary" type="button">Analyze this data</button>
+      <button id="btn-cancel" type="button">Cancel</button>
+    </div>
+    <div class="err" id="csv-err"></div>
+  </section>
+
+  <section class="tiles" id="tiles" aria-label="Summary"></section>
+
+  <section class="panel ai" aria-labelledby="ceo-h">
+    <div class="ai-head">
+      <div>
+        <h2 id="ceo-h">CEO readout</h2>
+        <p class="muted small">Five plain-English bullets on the biggest findings, written from the numbers on this page.</p>
+      </div>
+      <div class="actions">
+        <button id="btn-summary" class="primary" type="button">Summarize for the CEO</button>
+        <button id="btn-summary-stop" type="button" hidden>Stop</button>
+      </div>
+    </div>
+    <div class="ai-out placeholder" id="summary-out">Press “Summarize for the CEO” to turn the analysis below into a short readout.</div>
+    <div class="ai-label" id="summary-label"></div>
+  </section>
+
+  <section class="charts">
+    <div class="panel">
+      <div class="chart-head">
+        <div>
+          <h2>From list price to gross margin</h2>
+          <p>Last 12 months, $M. Discounts beyond the policy limit are the clearest leak.</p>
+        </div>
+        <div class="legend">
+          <span><i class="sw" style="background:var(--accent)"></i>Totals</span>
+          <span><i class="sw" style="background:var(--s-neutral)"></i>Within policy</span>
+          <span><i class="sw" style="background:var(--s-below)"></i>Beyond policy</span>
+        </div>
+      </div>
+      <div class="chart-box" id="wf-box"><svg class="chart" id="wf" role="img" aria-label="Bridge from list revenue to gross margin"></svg><div class="tip" id="tip-wf" hidden></div></div>
+    </div>
+    <div class="panel">
+      <div class="chart-head">
+        <div>
+          <h2>Customers against target margin</h2>
+          <p>Each dot is a customer; revenue on a log scale. Numbers mark the top five on the repricing list.</p>
+        </div>
+        <div class="legend">
+          <span><i class="sw dot" style="background:var(--s-below)"></i>Below target</span>
+          <span><i class="sw dot" style="background:var(--s-above)"></i>At or above</span>
+        </div>
+      </div>
+      <div class="chart-box" id="sc-box"><svg class="chart" id="sc" role="img" aria-label="Scatter of customer revenue against gross margin"></svg><div class="tip" id="tip-sc" hidden></div></div>
+    </div>
+  </section>
+
+  <section class="charts">
+    <div class="panel">
+      <div class="chart-head">
+        <div>
+          <h2>Same product, different prices</h2>
+          <p>Top products by revenue. Each dot is one customer's average net price as a share of list; the line spans lowest to highest.</p>
+        </div>
+        <div class="legend">
+          <span><i class="sw dot" style="background:var(--s-dot)"></i>Customer</span>
+          <span><i class="sw" style="background:var(--ink);width:3px;height:12px"></i>Median</span>
+        </div>
+      </div>
+      <div class="chart-box" id="ds-box"><svg class="chart" id="ds" role="img" aria-label="Spread of net price by customer for top products"></svg><div class="tip" id="tip-ds" hidden></div></div>
+    </div>
+    <div class="panel">
+      <div class="chart-head">
+        <div>
+          <h2>Cost increases not passed through</h2>
+          <p id="pt-sub">Products whose unit cost rose in the second half while price stayed flat.</p>
+        </div>
+      </div>
+      <div class="table-scroll"><table id="pt"><thead><tr><th>Product</th><th class="r">Cost change</th><th class="r">Price change</th><th class="r">Margin lost, 2nd half</th></tr></thead><tbody></tbody></table></div>
+      <div class="note" id="pt-note"></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="rp-h">
+    <div class="table-tools">
+      <div>
+        <h2 id="rp-h">Repricing list</h2>
+        <p class="muted small">Customers below target margin, with the price increase needed to reach it (capped) and the EBITDA it adds after some volume loss.</p>
+      </div>
+      <div class="actions">
+        <button id="btn-download" type="button">Download repricing list (CSV)</button>
+      </div>
+    </div>
+    <div class="controls" style="margin:14px 0">
+      <label class="field" for="c-target">Target gross margin, %<input id="c-target" type="number" step="0.5" min="0" max="80" value="25"></label>
+      <label class="field" for="c-max">Max price increase, %<input id="c-max" type="number" step="0.5" min="0" max="50" value="6"></label>
+      <label class="field" for="c-ret">Volume kept after increase, %<input id="c-ret" type="number" step="1" min="0" max="100" value="95"></label>
+      <label class="field" for="c-policy">Discount policy limit, %<input id="c-policy" type="number" step="0.5" min="0" max="80" value="15"></label>
+    </div>
+    <div class="table-scroll">
+      <table id="rp">
+        <thead><tr><th class="r">#</th><th>Customer</th><th class="r">Revenue $K</th><th class="r">Gross margin</th><th class="r">Avg discount</th><th>Why</th><th class="r">Increase</th><th class="r">New margin</th><th class="r">EBITDA $K / yr</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="table-tools" style="margin-top:8px">
+      <p class="muted small" id="rp-foot"></p>
+      <button class="link" id="btn-more" type="button"></button>
+    </div>
+
+    <div class="letter" id="letter" hidden>
+      <div class="ai-head">
+        <div>
+          <h2 id="letter-h">Price letter</h2>
+          <p class="muted small">A short, respectful notice to send under your own name. Edit before sending.</p>
+        </div>
+        <div class="actions">
+          <label class="field" for="c-company">Your company name<input id="c-company" class="wide" type="text" value="Redwing Trailer & Fab"></label>
+          <button id="btn-letter-stop" type="button" hidden>Stop</button>
+          <button id="btn-letter-copy" type="button">Copy letter</button>
+        </div>
+      </div>
+      <div class="ai-out" id="letter-out"></div>
+      <div class="ai-label" id="letter-label"></div>
+    </div>
+  </section>
+
+  <details class="drawer">
+    <summary>How it works and assumptions</summary>
+    <div class="method">
+      <p><b>Discount</b> on a line = list price − invoice price. Discount up to the policy limit counts as within policy; anything deeper counts as beyond policy.</p>
+      <p><b>Gross margin</b> = invoice revenue − units × unit cost. Freight, rebates and handling are not in the data, so true margins on small orders are likely lower than shown.</p>
+      <p><b>Repricing:</b> for each customer below target, the increase needed is <code>cost ÷ ((1 − target) × revenue) − 1</code>, capped at the maximum increase. The EBITDA added assumes the customer keeps the stated share of volume: <code>kept × (new revenue − cost) − (revenue − cost)</code>, on the last 12 months.</p>
+      <p><b>Cost not passed through:</b> the year is split at its midpoint. A product is flagged when its average unit cost rose more than 3% while its average net price rose less than 1%. Margin lost = second-half units × (cost rise − price rise) per unit.</p>
+      <p><b>Same product, different prices:</b> for the products with the most revenue, each customer's volume-weighted net price is shown as a share of list. A wide spread usually means discounts are set deal by deal rather than by policy.</p>
+      <p><b>AI:</b> the readout and letters are written by Claude from a compact summary of the numbers, never from raw invoices, and only when you press the button. Where Claude isn't available, the page writes a plain summary itself and says so.</p>
+    </div>
+  </details>
+
+  <footer>The sample company, customers, products and invoices are fictitious and generated for this demo. Load your own invoice export to analyze a real business; it stays in this browser page. <a href="../" style="color:inherit">Part of PE AI &amp; Data Tools</a></footer>
+</div>
+
+<script>
+(() => {
+  const COLS = ["invoice_date", "invoice_id", "customer", "product", "product_family", "qty", "unit_price", "list_price", "unit_cost"];
+  const $ = id => document.getElementById(id);
+
+  // ---------- sample data (seeded; every name is invented) ----------
+  function sampleLines() {
+    let s = 7731;
+    const rnd = () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+    const norm = () => { let u = 0, v = 0; while (!u) u = rnd(); while (!v) v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+    const pick = a => a.at(Math.floor(rnd() * a.length));
+    const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+    const skus = [];
+    const add = (family, code, name, lo, hi, cr, steel, qlo, qhi) => skus.push({ family, product: `${code} ${name}`, list: Math.round((lo + rnd() * (hi - lo)) / 5) * 5, cr, steel, qlo, qhi, bump: steel && rnd() < 0.35 });
+    ["5x8 single axle", "5x10 single axle", "6x10 single axle", "6x12 single axle", "6x12 tandem", "7x14 tandem", "7x16 tandem", "7x18 tandem", "8.5x16 enclosed", "8.5x20 enclosed", "6x10 mesh gate", "7x12 landscape", "7x16 landscape", "6x12 ATV", "7x14 car hauler", "7x18 car hauler", "8.5x24 enclosed", "6x8 single axle"]
+      .forEach((n, i) => add("Utility trailers", "UT-" + (101 + i), n, 3700, 11200, 0.65 + rnd() * 0.06, true, 1, 4));
+    ["16ft 7K", "18ft 7K", "18ft 10K", "20ft 10K", "20ft 14K", "22ft 14K", "24ft 14K", "20ft tilt 14K", "22ft tilt 16K", "24ft deckover 16K", "25ft gooseneck", "30ft gooseneck", "32ft gooseneck", "20ft skid steer", "18ft scissor lift", "26ft deckover"]
+      .forEach((n, i) => add("Equipment trailers", "EQ-" + (201 + i), n, 10100, 26500, 0.63 + rnd() * 0.06, true, 1, 2));
+    ["10ft 10K", "12ft 12K", "12ft 14K", "14ft 14K", "14ft 16K", "16ft 16K", "12ft low-pro", "14ft low-pro", "16ft roll-off", "14ft telescopic", "10ft utility dump", "16ft high-side"]
+      .forEach((n, i) => add("Dump trailers", "DT-" + (301 + i), n, 13200, 32000, 0.65 + rnd() * 0.06, true, 1, 2));
+    ["truck body", "service body", "skid frame", "ramp set", "toolbox package", "flatbed upfit", "hitch platform", "custom deck", "weld repair job", "frame extension"]
+      .forEach((n, i) => add("Custom fabrication", "CF-" + (401 + i), n, 8000, 48000, 0.58 + rnd() * 0.10, true, 1, 1));
+    ["LED light kit", "Spare tire 15in", "Ramp gate spring", "Tongue jack 7K", "Ratchet straps 4-pack", "Brake controller", "Coupler 2-5/16", "Fender set", "Wiring harness 7-way", "Hitch pin set", "D-ring 5K", "Tongue toolbox", "Mud flaps", "Battery 12V", "Breakaway kit", "Safety chains", "Wheel chocks", "Tarp kit", "Axle 7K", "Hub assembly", "Leaf spring pair", "Deck boards 2x8", "Paint touch-up", "Grease 14oz"]
+      .forEach((n, i) => add("Parts & accessories", "PA-" + (501 + i), n, 18, 620, 0.45 + rnd() * 0.15, n.includes("Axle") || n.includes("Hub") || n.includes("Fender"), 2, 30));
+    // a long tail of legacy-priced products that barely make money
+    for (let k = 0; k < 10; k++) { const sk = skus.at(Math.floor(rnd() * skus.length)); sk.cr = 0.84 + rnd() * 0.08; }
+
+    const first = ["Prairie Line", "Hollis", "Tri-County", "Bluestem", "Kettle Run", "Granite Bay", "Sandstone", "Westgate", "Riverbend", "Copperline", "Ashford", "Calloway", "Norland", "Osage", "Larkspur", "Thornbury", "Pinecrest", "Mill Creek", "Juniper", "Halsted", "Wexford", "Tamarack", "Crestwood", "Union Pier", "Beacon", "Driftwood", "Galena", "Ridgeview", "Summit", "Ironwood"];
+    const kinds = [["Trailer Sales", "dealer"], ["Equipment", "dealer"], ["Ag Supply", "dealer"], ["Rentals", "contractor"], ["Contracting", "contractor"], ["Construction", "contractor"], ["Fleet Services", "industrial"], ["Hauling", "contractor"], ["Farm & Ranch", "dealer"], ["Outfitters", "parts"], ["Auto & Tire", "parts"], ["Landscape", "contractor"]];
+    const mix = {
+      dealer: { "Utility trailers": 0.45, "Equipment trailers": 0.2, "Dump trailers": 0.1, "Custom fabrication": 0.0, "Parts & accessories": 0.25 },
+      contractor: { "Utility trailers": 0.1, "Equipment trailers": 0.3, "Dump trailers": 0.35, "Custom fabrication": 0.05, "Parts & accessories": 0.2 },
+      industrial: { "Utility trailers": 0.05, "Equipment trailers": 0.15, "Dump trailers": 0.05, "Custom fabrication": 0.55, "Parts & accessories": 0.2 },
+      parts: { "Utility trailers": 0.05, "Equipment trailers": 0, "Dump trailers": 0, "Custom fabrication": 0, "Parts & accessories": 0.95 }
+    };
+    const customers = []; const used = new Set();
+    for (let i = 0; i < 60; i++) {
+      let name, k;
+      do { k = pick(kinds); name = pick(first) + " " + k[0]; } while (used.has(name));
+      used.add(name);
+      const r = rnd();
+      const disc = r < 0.12 ? 0.22 + rnd() * 0.10 : r < 0.32 ? 0.14 + rnd() * 0.05 : 0.05 + rnd() * 0.08;
+      const small = k[1] === "parts" || rnd() < 0.08;
+      customers.push({ name, type: small && k[1] !== "parts" ? "parts" : k[1], disc, w: Math.exp(norm() * 1.0) * (small ? 0.5 : 1), small });
+    }
+    const totW = customers.reduce((a, c) => a + c.w, 0);
+    const pickCust = () => { let r = rnd() * totW; for (const c of customers) { r -= c.w; if (r <= 0) return c; } return customers.at(-1); };
+    const fams = Object.keys(mix.dealer);
+    const pickFam = c => { const m = mix[c.type]; let r = rnd(); for (const f of fams) { r -= m[f]; if (r <= 0) return f; } return "Parts & accessories"; };
+    const start = Date.UTC(2025, 10, 1), end = Date.UTC(2026, 9, 31), costStep = Date.UTC(2026, 4, 1), listStep = Date.UTC(2026, 5, 1);
+    const lines = []; let inv = 50210;
+    while (lines.length < 3300) {
+      const c = pickCust(); inv++;
+      const t = start + rnd() * (end - start);
+      const date = new Date(t).toISOString().slice(0, 10);
+      const n = c.small ? 1 + Math.floor(rnd() * 3) : 1 + Math.floor(rnd() * 2);
+      for (let j = 0; j < n; j++) {
+        const fam = c.small && rnd() < 0.85 ? "Parts & accessories" : pickFam(c);
+        const pool = skus.filter(x => x.family === fam);
+        const sk = pool.at(Math.floor(rnd() * pool.length));
+        const list = sk.list * (sk.bump && t >= listStep ? 1.04 : 1);
+        let d = c.disc + norm() * 0.025 + (rnd() < 0.08 ? 0.05 + rnd() * 0.06 : 0);
+        d = clamp(d, 0, 0.4);
+        const qty = c.small ? Math.max(1, Math.round(sk.qlo + rnd() * Math.min(6, sk.qhi - sk.qlo))) : Math.round(sk.qlo + rnd() * (sk.qhi - sk.qlo));
+        const cost = sk.list * sk.cr * (sk.steel && t >= costStep ? 1.075 : 1) * (1 + norm() * 0.01);
+        lines.push({ invoice_date: date, invoice_id: "INV-" + inv, customer: c.name, product: sk.product, product_family: fam, qty, unit_price: Math.round(list * (1 - d) * 100) / 100, list_price: Math.round(list * 100) / 100, unit_cost: Math.round(cost * 100) / 100 });
+      }
+    }
+    lines.sort((a, b) => a.invoice_date < b.invoice_date ? -1 : 1);
+    return lines;
+  }
+
+  // ---------- state ----------
+  let lines = sampleLines(); let isSample = true; let showAll = false; let selected = null;
+  const ctl = () => ({
+    target: clampN(+$("c-target").value, 0, 80, 25) / 100,
+    max: clampN(+$("c-max").value, 0, 50, 6) / 100,
+    ret: clampN(+$("c-ret").value, 0, 100, 95) / 100,
+    policy: clampN(+$("c-policy").value, 0, 80, 15) / 100
+  });
+  function clampN(v, a, b, d) { return isFinite(v) ? Math.min(b, Math.max(a, v)) : d; }
+
+  // ---------- analysis ----------
+  function analyze() {
+    const C = ctl();
+    let listRev = 0, rev = 0, cost = 0, discIn = 0, discOut = 0;
+    const cust = new Map(), prod = new Map();
+    const times = lines.map(l => Date.parse(l.invoice_date)).filter(isFinite).sort((a, b) => a - b);
+    const mid = times.length ? times.at(Math.floor(times.length / 2)) : 0;
+    const months = times.length ? Math.max(1, (times.at(-1) - times.at(0)) / (864e5 * 30.44)) : 12;
+    const annual = Math.min(1, 12 / months) > 0 ? 12 / Math.max(12, months) : 1;
+    lines.forEach(l => {
+      const q = l.qty, lr = q * l.list_price, r = q * l.unit_price, c = q * l.unit_cost;
+      const d = Math.max(0, lr - r), dIn = Math.min(d, lr * C.policy);
+      listRev += lr; rev += r; cost += c; discIn += dIn; discOut += d - dIn;
+      if (!cust.has(l.customer)) cust.set(l.customer, { name: l.customer, rev: 0, cost: 0, list: 0, n: 0, inv: new Set(), h1r: 0, h1c: 0, h2r: 0, h2c: 0 });
+      const g = cust.get(l.customer); g.rev += r; g.cost += c; g.list += lr; g.n++; g.inv.add(l.invoice_id);
+      const t = Date.parse(l.invoice_date);
+      if (t < mid) { g.h1r += r; g.h1c += c; } else { g.h2r += r; g.h2c += c; }
+      if (!prod.has(l.product)) prod.set(l.product, { name: l.product, family: l.product_family, rev: 0, cost: 0, list: 0, q1: 0, c1: 0, p1: 0, q2: 0, c2: 0, p2: 0, byCust: new Map() });
+      const p = prod.get(l.product); p.rev += r; p.cost += c; p.list += lr;
+      if (t < mid) { p.q1 += q; p.c1 += c; p.p1 += r; } else { p.q2 += q; p.c2 += c; p.p2 += r; }
+      const bc = p.byCust.get(l.customer) || { r: 0, lr: 0, q: 0 }; bc.r += r; bc.lr += lr; bc.q += q; p.byCust.set(l.customer, bc);
+    });
+    const gm = rev - cost;
+    // products: low-margin tail, pass-through
+    const prods = [...prod.values()];
+    prods.forEach(p => { p.gm = p.rev ? (p.rev - p.cost) / p.rev : 0; });
+    const tail = prods.filter(p => p.gm < 0.10);
+    const pass = prods.filter(p => p.q1 > 0 && p.q2 > 0).map(p => {
+      const uc1 = p.c1 / p.q1, uc2 = p.c2 / p.q2, up1 = p.p1 / p.q1, up2 = p.p2 / p.q2;
+      const dc = uc2 / uc1 - 1, dp = up2 / up1 - 1;
+      return { name: p.name, dc, dp, lost: Math.max(0, p.q2 * ((uc2 - uc1) - (up2 - up1))) };
+    }).filter(x => x.dc > 0.03 && x.dp < 0.01 && x.lost > 0).sort((a, b) => b.lost - a.lost);
+    const passLost = pass.reduce((a, x) => a + x.lost, 0);
+    const tailSet = new Set(tail.map(p => p.name));
+    // customers
+    const custs = [...cust.values()].map(g => {
+      const gmp = g.rev ? (g.rev - g.cost) / g.rev : 0;
+      const disc = g.list ? 1 - g.rev / g.list : 0;
+      const avgInv = g.rev / Math.max(1, g.inv.size);
+      const h1 = g.h1r ? (g.h1r - g.h1c) / g.h1r : null, h2 = g.h2r ? (g.h2r - g.h2c) / g.h2r : null;
+      return { ...g, invN: g.inv.size, gmp, disc, avgInv, drift: h1 != null && h2 != null ? h2 - h1 : 0 };
+    });
+    const tailRevBy = new Map();
+    lines.forEach(l => { if (tailSet.has(l.product)) tailRevBy.set(l.customer, (tailRevBy.get(l.customer) || 0) + l.qty * l.unit_price); });
+    const rp = custs.filter(g => g.rev > 0 && g.gmp < C.target).map(g => {
+      const need = g.cost / ((1 - C.target) * g.rev) - 1;
+      const inc = Math.max(0, Math.min(C.max, need));
+      const nr = g.rev * (1 + inc);
+      const impact = (C.ret * (nr - g.cost) - (g.rev - g.cost)) * annual;
+      const why = [];
+      if (g.disc > C.policy) why.push(["Deep discount", true]);
+      if (g.drift < -0.04) why.push(["Cost not passed through", true]);
+      if ((tailRevBy.get(g.name) || 0) / g.rev > 0.2) why.push(["Low-margin mix", false]);
+      if (g.avgInv < 1500 && g.invN >= 15) why.push(["Small orders", false]);
+      if (!why.length) why.push(["Below target", false]);
+      return { ...g, need, inc, newGm: (nr - g.cost) / nr, impact, capped: need > C.max, why };
+    }).sort((a, b) => b.impact - a.impact);
+    const impact = rp.reduce((a, r) => a + Math.max(0, r.impact), 0);
+    // dispersion
+    const top = prods.sort((a, b) => b.rev - a.rev).slice(0, 10).map(p => {
+      const pts = [...p.byCust.entries()].filter(([, v]) => v.lr > 0).map(([c, v]) => ({ c, share: v.r / v.lr, q: v.q }));
+      pts.sort((a, b) => a.share - b.share);
+      const med = pts.length ? pts.at(Math.floor(pts.length / 2)).share : 0;
+      return { name: p.name, pts, lo: pts.length ? pts.at(0).share : 0, hi: pts.length ? pts.at(-1).share : 0, med, rev: p.rev };
+    });
+    return { C, listRev, rev, cost, gm, discIn, discOut, custs, rp, impact, pass, passLost, tail, tailRev: tail.reduce((a, p) => a + p.rev, 0), top, months, nLines: lines.length, nProducts: prods.length };
+  }
+
+  // ---------- formatting ----------
+  const M = v => "$" + (Math.abs(v) >= 1e7 ? (v / 1e6).toFixed(1) : (v / 1e6).toFixed(2)) + "M";
+  const K = v => (v / 1e3).toFixed(0);
+  const kf = v => "$" + (Math.abs(v) >= 1e6 ? (v / 1e6).toFixed(2) + "M" : Math.round(v / 1e3) + "K");
+  const P = (v, d = 1) => (v * 100).toFixed(d) + "%";
+  const esc = s => String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
+  const NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; }
+  function niceStep(span, n) { const raw = span / n; const p = Math.pow(10, Math.floor(Math.log10(raw))); const m = raw / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; }
+  function toast(msg) { const t = $("toast"); t.textContent = msg; clearTimeout(toast._t); toast._t = setTimeout(() => { t.textContent = ""; }, 4500); }
+  function tipAt(tip, box, svg, W, H, x, y, html) {
+    tip.innerHTML = html; tip.hidden = false;
+    const bb = box.getBoundingClientRect(), sb = svg.getBoundingClientRect();
+    const px = x / W * sb.width + (sb.left - bb.left), py = y / H * sb.height + (sb.top - bb.top);
+    const left = px + 14 + tip.offsetWidth > bb.width ? px - 14 - tip.offsetWidth : px + 14;
+    tip.style.left = Math.max(0, left) + "px"; tip.style.top = Math.max(0, py - 24) + "px";
+  }
+  function hover(node, show, tip) {
+    node.addEventListener("pointerenter", show); node.addEventListener("focus", show);
+    node.addEventListener("pointerleave", () => tip.hidden = true); node.addEventListener("blur", () => tip.hidden = true);
+  }
+
+  // ---------- render ----------
+  function renderTiles(a) {
+    const gmp = a.rev ? a.gm / a.rev : 0, disc = a.listRev - a.rev;
+    $("tiles").innerHTML = `
+      <div class="tile"><span class="label">Revenue, last 12 months</span><span class="value">${M(a.rev)}</span><span class="sub">${a.nLines.toLocaleString()} invoice lines · ${a.custs.length} customers · ${a.nProducts} products</span></div>
+      <div class="tile"><span class="label">Gross margin</span><span class="value">${P(gmp)}</span><span class="sub">${M(a.gm)} · target ${P(a.C.target, 0)}</span></div>
+      <div class="tile"><span class="label">Discount off list</span><span class="value">${M(disc)}</span><span class="sub">${P(a.listRev ? disc / a.listRev : 0)} of list · ${M(a.discOut)} beyond the ${P(a.C.policy, 0)} policy</span></div>
+      <div class="tile focus"><span class="label">Repricing opportunity</span><span class="value">${kf(a.impact)}</span><span class="sub">EBITDA a year from repricing the ${a.rp.length} customers below target, after volume loss</span></div>`;
+  }
+
+  function renderWaterfall(a) {
+    const svg = $("wf"); svg.innerHTML = "";
+    const W = 600, H = 330, m = { l: 52, r: 12, t: 26, b: 52 };
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    const steps = [
+      { k: "List revenue", v: a.listRev, type: "total", from: 0, to: a.listRev },
+      { k: "Discount within policy", v: -a.discIn, type: "in", from: a.listRev, to: a.listRev - a.discIn },
+      { k: "Discount beyond policy", v: -a.discOut, type: "out", from: a.listRev - a.discIn, to: a.rev },
+      { k: "Invoice revenue", v: a.rev, type: "total", from: 0, to: a.rev },
+      { k: "Cost of goods", v: -a.cost, type: "in", from: a.rev, to: a.gm },
+      { k: "Gross margin", v: a.gm, type: "total", from: 0, to: a.gm }
+    ];
+    const max = a.listRev * 1.04 || 1, pw = W - m.l - m.r, ph = H - m.t - m.b;
+    const Y = v => m.t + ph - v / max * ph, bw = pw / steps.length;
+    const step = niceStep(max, 5);
+    for (let t = 0; t <= max; t += step) {
+      svg.appendChild(el("line", { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t), stroke: "var(--grid)" }));
+      svg.appendChild(el("text", { x: m.l - 8, y: Y(t) + 4, "text-anchor": "end", "font-size": 11, fill: "var(--ink-3)" }, "$" + (t / 1e6).toFixed(0) + "M"));
+    }
+    const fill = t => t === "total" ? "var(--accent)" : t === "out" ? "var(--s-below)" : "var(--s-neutral)";
+    const tip = $("tip-wf"), box = $("wf-box");
+    steps.forEach((s, i) => {
+      const x = m.l + i * bw + bw * 0.18, w = bw * 0.64;
+      const y0 = Y(Math.max(s.from, s.to)), y1 = Y(Math.min(s.from, s.to));
+      const r = el("rect", { x, y: y0, width: w, height: Math.max(1, y1 - y0), rx: 3, fill: fill(s.type) });
+      svg.appendChild(r);
+      if (i < steps.length - 1) {
+        const nxt = steps.at(i + 1), lv = s.type === "total" ? s.to : s.to;
+        svg.appendChild(el("line", { x1: x + w, x2: x + bw, y1: Y(lv), y2: Y(lv), stroke: "var(--ink-3)", "stroke-dasharray": "2 3", "stroke-opacity": nxt ? 0.7 : 0 }));
+      }
+      svg.appendChild(el("text", { x: x + w / 2, y: y0 - 6, "text-anchor": "middle", "font-size": 11.5, "font-weight": s.type === "total" ? 600 : 400, fill: s.type === "out" ? "var(--ink)" : "var(--ink-2)", "font-family": "var(--font-num)" }, (s.v < 0 ? "−" : "") + "$" + (Math.abs(s.v) / 1e6).toFixed(1) + "M"));
+      const words = s.k.split(" "), half = Math.ceil(words.length / 2);
+      [words.slice(0, half).join(" "), words.slice(half).join(" ")].forEach((ln, j) => ln && svg.appendChild(el("text", { x: x + w / 2, y: H - m.b + 16 + j * 13, "text-anchor": "middle", "font-size": 11, fill: s.type === "out" ? "var(--ink)" : "var(--ink-2)", "font-weight": s.type === "out" ? 600 : 400 }, ln)));
+      const hit = el("rect", { x: m.l + i * bw, y: m.t, width: bw, height: ph, fill: "transparent", tabindex: 0, "aria-label": `${s.k}: ${M(Math.abs(s.v))}` });
+      hover(hit, () => tipAt(tip, box, svg, W, H, x + w, y0, `<b>${s.k}</b><div class="row"><span>Amount</span><span>${M(Math.abs(s.v))}</span></div><div class="row"><span>Share of list</span><span>${P(Math.abs(s.v) / a.listRev)}</span></div>`), tip);
+      svg.appendChild(hit);
+    });
+    svg.appendChild(el("line", { x1: m.l, x2: W - m.r, y1: Y(0), y2: Y(0), stroke: "var(--ink-3)" }));
+  }
+
+  function renderScatter(a) {
+    const svg = $("sc"); svg.innerHTML = "";
+    const W = 600, H = 330, m = { l: 50, r: 16, t: 14, b: 44 };
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    const cs = a.custs.filter(c => c.rev > 0);
+    if (!cs.length) return;
+    const lo = Math.log10(Math.max(1e3, Math.min(...cs.map(c => c.rev)) * 0.8)), hi = Math.log10(Math.max(...cs.map(c => c.rev)) * 1.2);
+    const gLo = Math.min(0, Math.floor(Math.min(...cs.map(c => c.gmp)) * 20) / 20), gHi = Math.max(a.C.target + 0.05, Math.ceil(Math.max(...cs.map(c => c.gmp)) * 20) / 20);
+    const pw = W - m.l - m.r, ph = H - m.t - m.b;
+    const X = v => m.l + (Math.log10(v) - lo) / (hi - lo) * pw, Y = g => m.t + ph - (g - gLo) / (gHi - gLo) * ph;
+    for (let g = gLo; g <= gHi + 1e-9; g += 0.05) {
+      svg.appendChild(el("line", { x1: m.l, x2: W - m.r, y1: Y(g), y2: Y(g), stroke: "var(--grid)" }));
+      svg.appendChild(el("text", { x: m.l - 8, y: Y(g) + 4, "text-anchor": "end", "font-size": 11, fill: "var(--ink-3)" }, Math.round(g * 100) + "%"));
+    }
+    [1e4, 3e4, 1e5, 3e5, 1e6, 3e6, 1e7].filter(v => Math.log10(v) >= lo && Math.log10(v) <= hi).forEach(v => {
+      svg.appendChild(el("line", { x1: X(v), x2: X(v), y1: m.t, y2: m.t + ph, stroke: "var(--grid)" }));
+      svg.appendChild(el("text", { x: X(v), y: H - m.b + 16, "text-anchor": "middle", "font-size": 11, fill: "var(--ink-3)" }, v >= 1e6 ? "$" + v / 1e6 + "M" : "$" + v / 1e3 + "K"));
+    });
+    svg.appendChild(el("text", { x: m.l + pw / 2, y: H - 6, "text-anchor": "middle", "font-size": 12, fill: "var(--ink-2)" }, "Customer revenue, last 12 months (log scale) →"));
+    svg.appendChild(el("line", { x1: m.l, x2: W - m.r, y1: Y(a.C.target), y2: Y(a.C.target), stroke: "var(--ink-2)", "stroke-dasharray": "5 4" }));
+    svg.appendChild(el("text", { x: W - m.r - 4, y: Y(a.C.target) - 6, "text-anchor": "end", "font-size": 11, "font-weight": 600, fill: "var(--ink-2)", stroke: "var(--surface)", "stroke-width": 3, "paint-order": "stroke" }, `Target ${P(a.C.target, 0)}`));
+    const tip = $("tip-sc"), box = $("sc-box");
+    const g = el("g", {});
+    cs.forEach(c => {
+      const below = c.gmp < a.C.target, cx = X(c.rev), cy = Y(c.gmp);
+      g.appendChild(el("circle", { cx, cy, r: 5.5, fill: below ? "var(--s-below)" : "var(--s-above)", stroke: "var(--surface)", "stroke-width": 2 }));
+      const hit = el("circle", { cx, cy, r: 10, fill: "transparent", tabindex: 0, "aria-label": `${c.name}: ${kf(c.rev)} revenue, ${P(c.gmp)} gross margin` });
+      hover(hit, () => tipAt(tip, box, svg, W, H, cx, cy, `<b>${esc(c.name)}</b><div class="row"><span>Revenue</span><span>${kf(c.rev)}</span></div><div class="row"><span>Gross margin</span><span>${P(c.gmp)}</span></div><div class="row"><span>Avg discount off list</span><span>${P(c.disc)}</span></div><div class="row"><span>Invoices</span><span>${c.invN}</span></div>`), tip);
+      g.appendChild(hit);
+    });
+    svg.appendChild(g);
+    // label the three biggest repricing opportunities
+    const lab = el("g", { "pointer-events": "none" });
+    a.rp.slice(0, 5).forEach((c, i) => {
+      const cx = X(c.rev), cy = Y(c.gmp);
+      lab.appendChild(el("text", { x: cx, y: cy + 18, "text-anchor": "middle", "font-size": 11, "font-weight": 700, fill: "var(--ink)", stroke: "var(--surface)", "stroke-width": 3, "paint-order": "stroke" }, String(i + 1)));
+    });
+    svg.appendChild(lab);
+  }
+
+  function renderSpread(a) {
+    const svg = $("ds"); svg.innerHTML = "";
+    const rows = a.top, rowH = 26, W = 600, m = { l: 190, r: 52, t: 8, b: 34 };
+    const H = m.t + rows.length * rowH + m.b;
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    const lo = Math.max(0, Math.floor(Math.min(...rows.map(r => r.lo)) * 20) / 20), hi = 1;
+    const pw = W - m.l - m.r, X = v => m.l + (v - lo) / (hi - lo) * pw;
+    for (let v = lo; v <= hi + 1e-9; v += 0.05) {
+      svg.appendChild(el("line", { x1: X(v), x2: X(v), y1: m.t, y2: H - m.b, stroke: "var(--grid)" }));
+      svg.appendChild(el("text", { x: X(v), y: H - m.b + 16, "text-anchor": "middle", "font-size": 11, fill: "var(--ink-3)" }, Math.round(v * 100) + "%"));
+    }
+    svg.appendChild(el("text", { x: m.l + pw / 2, y: H - 4, "text-anchor": "middle", "font-size": 12, fill: "var(--ink-2)" }, "Net price as a share of list →"));
+    svg.appendChild(el("text", { x: W - 4, y: m.t + 2, "text-anchor": "end", "font-size": 10.5, "font-weight": 600, fill: "var(--ink-3)" }, "SPREAD"));
+    const tip = $("tip-ds"), box = $("ds-box");
+    rows.forEach((r, i) => {
+      const y = m.t + i * rowH + rowH / 2 + 6;
+      const nm = r.name.length > 28 ? r.name.slice(0, 27) + "…" : r.name;
+      svg.appendChild(el("text", { x: m.l - 10, y: y + 4, "text-anchor": "end", "font-size": 11.5, fill: "var(--ink-2)" }, nm));
+      svg.appendChild(el("line", { x1: X(r.lo), x2: X(r.hi), y1: y, y2: y, stroke: "var(--ink-3)", "stroke-width": 1.5 }));
+      r.pts.forEach(p => {
+        const cx = X(p.share);
+        svg.appendChild(el("circle", { cx, cy: y, r: 3.5, fill: "var(--s-dot)", "fill-opacity": 0.85, stroke: "var(--surface)", "stroke-width": 1 }));
+        const hit = el("circle", { cx, cy: y, r: 7, fill: "transparent" });
+        hover(hit, () => tipAt(tip, box, svg, W, H, cx, y, `<b>${esc(p.c)}</b><div class="row"><span>${esc(nm)}</span><span></span></div><div class="row"><span>Net price vs list</span><span>${P(p.share)}</span></div><div class="row"><span>Units</span><span>${p.q}</span></div>`), tip);
+        svg.appendChild(hit);
+      });
+      svg.appendChild(el("rect", { x: X(r.med) - 1.5, y: y - 7, width: 3, height: 14, rx: 1, fill: "var(--ink)" }));
+      svg.appendChild(el("text", { x: W - 4, y: y + 4, "text-anchor": "end", "font-size": 11, fill: "var(--ink-2)", "font-family": "var(--font-num)" }, Math.round((r.hi - r.lo) * 100) + " pts"));
+    });
+  }
+
+  function renderPass(a) {
+    $("pt").querySelector("tbody").innerHTML = a.pass.slice(0, 8).map(x => `<tr><td>${esc(x.name)}</td><td class="r num">+${P(x.dc)}</td><td class="r num">${x.dp >= 0 ? "+" : "−"}${P(Math.abs(x.dp))}</td><td class="r num"><b>${kf(x.lost)}</b></td></tr>`).join("")
+      || `<tr><td colspan="4" class="muted" style="padding:14px">No products show a cost rise above 3% without a matching price rise.</td></tr>`;
+    $("pt-sub").textContent = `${a.pass.length} products saw unit cost rise more than 3% in the second half while net price moved less than 1%.`;
+    $("pt-note").innerHTML = `<b style="color:var(--ink)">${kf(a.passLost)}</b> of margin lost in the second half on these products. Separately, ${a.tail.length} products earn under 10% gross margin on ${M(a.tailRev)} of revenue, a long tail worth repricing or dropping.`;
+  }
+
+  function renderRepricing(a) {
+    const rows = showAll ? a.rp : a.rp.slice(0, 15);
+    $("rp").querySelector("tbody").innerHTML = rows.map((r, i) => `<tr class="${selected === r.name ? "sel" : ""}">
+        <td class="r num">${i + 1}</td>
+        <td><b>${esc(r.name)}</b></td>
+        <td class="r num">${K(r.rev)}</td>
+        <td class="r num">${P(r.gmp)}</td>
+        <td class="r num">${P(r.disc)}</td>
+        <td>${r.why.map(([w, hot]) => `<span class="tag${hot ? " hot" : ""}">${w}</span>`).join("")}</td>
+        <td class="r num">${P(r.inc)}${r.capped ? '<span class="muted" title="Capped at the maximum increase"> cap</span>' : ""}</td>
+        <td class="r num">${P(r.newGm)}</td>
+        <td class="r num ${r.impact > 0 ? "" : "neg"}"><b>${Math.round(r.impact / 1e3).toLocaleString()}</b></td>
+        <td><button class="link" type="button" data-letter="${esc(r.name)}">Draft price letter</button></td>
+      </tr>`).join("") || `<tr><td colspan="10" class="muted" style="padding:14px">Every customer is at or above the target margin.</td></tr>`;
+    $("rp-foot").textContent = `${a.rp.length} customers below ${P(a.C.target, 0)} gross margin. Increases capped at ${P(a.C.max, 0)}; ${P(a.C.ret, 0)} of their volume assumed kept. Total ${kf(a.impact)} of EBITDA a year.`;
+    $("btn-more").textContent = a.rp.length > 15 ? (showAll ? "Show top 15" : `Show all ${a.rp.length}`) : "";
+    $("btn-more").hidden = a.rp.length <= 15;
+  }
+
+  let last = null;
+  function renderAll() {
+    last = analyze();
+    $("data-badge").textContent = isSample ? "Sample data · fictitious trailer and fabrication manufacturer" : "Your data · analyzed in this browser page";
+    $("data-badge").classList.toggle("own", !isSample);
+    renderTiles(last); renderWaterfall(last); renderScatter(last); renderSpread(last); renderPass(last); renderRepricing(last);
+    return last;
+  }
+
+  // ---------- findings for the AI ----------
+  function findings(a) {
+    return {
+      period_months: Math.round(a.months),
+      revenue: Math.round(a.rev), list_revenue: Math.round(a.listRev),
+      gross_margin_pct: +(a.gm / a.rev * 100).toFixed(1), target_margin_pct: +(a.C.target * 100).toFixed(1),
+      discount_off_list: Math.round(a.listRev - a.rev), discount_beyond_policy: Math.round(a.discOut), policy_limit_pct: +(a.C.policy * 100).toFixed(1),
+      customers_below_target: a.rp.length, customers_total: a.custs.length,
+      repricing_ebitda_per_year: Math.round(a.impact), max_increase_pct: +(a.C.max * 100).toFixed(1), volume_kept_pct: +(a.C.ret * 100).toFixed(0),
+      top_repricing: a.rp.slice(0, 5).map(r => ({ customer: r.name, revenue: Math.round(r.rev), gross_margin_pct: +(r.gmp * 100).toFixed(1), avg_discount_pct: +(r.disc * 100).toFixed(1), increase_pct: +(r.inc * 100).toFixed(1), ebitda_per_year: Math.round(r.impact), reasons: r.why.map(w => w[0]) })),
+      cost_not_passed_through: { products: a.pass.length, margin_lost_second_half: Math.round(a.passLost), examples: a.pass.slice(0, 3).map(x => ({ product: x.name, cost_change_pct: +(x.dc * 100).toFixed(1), price_change_pct: +(x.dp * 100).toFixed(1) })) },
+      low_margin_tail: { products_under_10pct_margin: a.tail.length, revenue: Math.round(a.tailRev) },
+      widest_price_spreads: a.top.slice().sort((x, y) => (y.hi - y.lo) - (x.hi - x.lo)).slice(0, 3).map(t => ({ product: t.name, lowest_pct_of_list: Math.round(t.lo * 100), highest_pct_of_list: Math.round(t.hi * 100) }))
+    };
+  }
+  function fallbackSummary(f) {
+    const $k = v => "$" + (Math.abs(v) >= 1e6 ? (v / 1e6).toFixed(1) + "M" : Math.round(v / 1e3) + "K");
+    const t = f.top_repricing.slice(0, 3).map(r => r.customer).join(", ");
+    const sp = f.widest_price_spreads.at(0);
+    return [
+      `• Gross margin is ${f.gross_margin_pct}% against a ${f.target_margin_pct}% target, on ${$k(f.revenue)} of revenue.`,
+      `• Customers received ${$k(f.discount_off_list)} off list; ${$k(f.discount_beyond_policy)} of that was beyond the ${f.policy_limit_pct}% policy limit.`,
+      `• ${f.customers_below_target} of ${f.customers_total} customers are below target. Repricing them (up to ${f.max_increase_pct}%, keeping ${f.volume_kept_pct}% of volume) adds about ${$k(f.repricing_ebitda_per_year)} of EBITDA a year, led by ${t}.`,
+      `• ${f.cost_not_passed_through.products} products absorbed cost increases without a price change, costing ${$k(f.cost_not_passed_through.margin_lost_second_half)} of margin in the second half.`,
+      sp ? `• Pricing is set deal by deal: ${sp.product} sells anywhere from ${sp.lowest_pct_of_list}% to ${sp.highest_pct_of_list}% of list. ${f.low_margin_tail.products_under_10pct_margin} products earn under 10% margin.` : `• ${f.low_margin_tail.products_under_10pct_margin} products earn under 10% margin.`
+    ].join("\n");
+  }
+  function fallbackLetter(r, company) {
+    return `Dear ${r.name} team,\n\nThank you for your continued business with ${company}. Over the past year our costs for steel, components and freight have risen significantly, and we have absorbed much of that increase to protect our customers.\n\nTo keep investing in the quality and service you rely on, we will be adjusting your pricing by ${(r.inc * 100).toFixed(1)}% effective [date, 30–60 days out]. Orders placed before that date will be honored at current prices.\n\nWe value our partnership and are happy to walk through the change, discuss order planning, or look at options that help offset it. Please reach out to me directly with any questions.\n\nSincerely,\n[Your name]\n[Title], ${company}`;
+  }
+
+  // ---------- AI wiring ----------
+  let sample = null, aiState = "pending";
+  const samplePromise = (window.claude && typeof window.claude.use === "function") ? window.claude.use("sample").catch(() => null) : Promise.resolve(null);
+  samplePromise.then(s => { sample = s; aiState = s ? "ready" : "none"; if (!s) $("btn-summary").textContent = "Show summary"; });
+  const HIDE = new Set(["not_granted", "sampling_disabled", "not_declared", "capability_disabled", "capability_removed"]);
+  function errCopy(code) {
+    return ({
+      rate_limited: "Claude is busy or a usage limit was reached. Try again in a little while.",
+      session_expired: "Sign in to Claude again to use this.",
+      refused: "Claude declined this request.",
+      empty_completion: "Claude returned nothing. Try again.",
+      prompt_too_large: "There was too much to send. Try again with fewer rows.",
+    })[code] || "Something went wrong reaching Claude. Try again.";
+  }
+  async function runAI({ prompt, out, label, stopBtn, fallback, runBtn }) {
+    await Promise.race([samplePromise, new Promise(r => setTimeout(r, 1500))]);
+    const useFallback = () => {
+      out.classList.remove("placeholder"); out.textContent = fallback();
+      label.textContent = "Written by the page from the numbers (AI unavailable here)"; label.className = "ai-label fallback";
+    };
+    if (!sample || aiState === "none") return useFallback();
+    const c = new AbortController();
+    stopBtn.hidden = false; runBtn.disabled = true;
+    stopBtn.onclick = () => c.abort();
+    out.classList.remove("placeholder"); out.innerHTML = '<span class="thinking">Thinking…</span>';
+    label.textContent = ""; label.className = "ai-label";
+    try {
+      const res = await sample(prompt, { signal: c.signal, onText: ({ text }) => { out.textContent = text; } });
+      out.textContent = res.text;
+      label.textContent = "Written by Claude from the numbers on this page" + (res.truncated ? " · cut short" : "");
+    } catch (e) {
+      const code = e && e.code;
+      if (HIDE.has(code)) { aiState = "none"; $("btn-summary").textContent = "Show summary"; useFallback(); }
+      else if (code === "cancelled") { out.textContent = e.text || ""; label.textContent = "Stopped."; }
+      else { out.textContent = e && e.text ? e.text : ""; label.textContent = errCopy(code); }
+    } finally { stopBtn.hidden = true; runBtn.disabled = false; }
+  }
+  $("btn-summary").addEventListener("click", () => {
+    const f = findings(last);
+    runAI({
+      prompt: "You are an operating partner at a family-owned holding company, briefing the CEO of one of its manufacturing businesses. Using ONLY the numbers in the JSON below (an analysis of the company's last 12 months of invoices), write exactly 5 bullets, each starting with \"• \", each under 35 words. Lead each bullet with the dollar amount or percentage that matters. Cover: overall margin vs target, discount leakage, the repricing opportunity and the top customers, cost increases not passed through, and pricing consistency or the low-margin tail. Plain English, no jargon, no headings, no intro or closing line, no numbers that are not in the JSON. Round dollars to $K or $M.\n\n" + JSON.stringify(f),
+      out: $("summary-out"), label: $("summary-label"), stopBtn: $("btn-summary-stop"), runBtn: $("btn-summary"),
+      fallback: () => fallbackSummary(f)
+    });
+  });
+  function draftLetter(name) {
+    const r = last.rp.find(x => x.name === name); if (!r) return;
+    selected = name; renderRepricing(last);
+    $("letter").hidden = false; $("letter-h").textContent = `Price letter to ${name}`;
+    $("letter").scrollIntoView({ block: "nearest", behavior: "smooth" });
+    const company = $("c-company").value.trim() || "our company";
+    const reasons = r.why.map(w => w[0]);
+    runAI({
+      prompt: `Write a short customer price-adjustment letter (130 to 180 words) from ${company}, a trailer and fabrication manufacturer, to its customer "${r.name}". The price increase is ${(r.inc * 100).toFixed(1)}%. Internal context (do NOT reveal margins, discount levels or these labels to the customer): ${reasons.join(", ")}; steel and component costs rose this year. Tone: respectful, appreciative of the relationship, confident, not apologetic. Give a placeholder effective date of [date, 30–60 days out], say orders placed before then are honored at current prices, and offer to talk it through. Sign off as [Your name], [Title], ${company}. Plain text only, no subject line, no markdown.`,
+      out: $("letter-out"), label: $("letter-label"), stopBtn: $("btn-letter-stop"), runBtn: $("btn-letter-copy"),
+      fallback: () => fallbackLetter(r, company)
+    });
+  }
+  $("rp").addEventListener("click", e => { const n = e.target.dataset && e.target.dataset.letter; if (n) draftLetter(n); });
+  $("btn-letter-copy").addEventListener("click", () => copy($("letter-out").textContent, "Letter copied."));
+
+  // ---------- CSV ----------
+  function parseCSV(text) {
+    const rows = []; let row = [], cell = "", q = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text.charAt(i);
+      if (q) { if (ch === '"') { if (text.charAt(i + 1) === '"') { cell += '"'; i++; } else q = false; } else cell += ch; }
+      else if (ch === '"') q = true;
+      else if (ch === ",") { row.push(cell); cell = ""; }
+      else if (ch === "\n" || ch === "\r") { if (ch === "\r" && text.charAt(i + 1) === "\n") i++; row.push(cell); cell = ""; if (row.some(x => x.trim() !== "")) rows.push(row); row = []; }
+      else cell += ch;
+    }
+    row.push(cell); if (row.some(x => x.trim() !== "")) rows.push(row);
+    return rows;
+  }
+  const csvCell = v => { const s = String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  function toISO(s) {
+    s = String(s).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+    const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+    if (m) { const y = m[3].length === 2 ? "20" + m[3] : m[3]; return `${y}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`; }
+    const t = Date.parse(s); return isFinite(t) ? new Date(t).toISOString().slice(0, 10) : null;
+  }
+  function loadCSV(text) {
+    const err = $("csv-err"); err.textContent = "";
+    const rows = parseCSV(text.trim());
+    if (rows.length < 2) { err.textContent = "Add a header row and at least one invoice line."; return; }
+    const head = rows.at(0).map(h => h.trim().toLowerCase().replace(/\s+/g, "_"));
+    const missing = COLS.filter(c => !head.includes(c));
+    if (missing.length) { err.textContent = `Missing column${missing.length > 1 ? "s" : ""}: ${missing.join(", ")}. Copy the blank template to see the expected header.`; return; }
+    const ix = k => head.indexOf(k), num = s => parseFloat(String(s).replace(/[$,\s]/g, ""));
+    const out = []; let bad = 0;
+    rows.slice(1).forEach(r => {
+      const g = k => (r.at(ix(k)) || "").trim();
+      const l = { invoice_date: toISO(g("invoice_date")), invoice_id: g("invoice_id") || "?", customer: g("customer") || "Unknown", product: g("product") || "Unknown", product_family: g("product_family") || "Other", qty: num(g("qty")), unit_price: num(g("unit_price")), list_price: num(g("list_price")), unit_cost: num(g("unit_cost")) };
+      if (!l.invoice_date || ![l.qty, l.unit_price, l.list_price, l.unit_cost].every(isFinite) || l.qty <= 0) { bad++; return; }
+      out.push(l);
+    });
+    if (!out.length) { err.textContent = "No usable rows. Check that qty, prices and cost are numbers and dates are readable."; return; }
+    lines = out; isSample = false; selected = null; $("letter").hidden = true;
+    $("import-panel").hidden = true; renderAll();
+    resetSummary();
+    toast(`Analyzed ${out.length.toLocaleString()} invoice lines.` + (bad ? ` Skipped ${bad} rows with missing or non-numeric values.` : ""));
+  }
+  function resetSummary() { $("summary-out").className = "ai-out placeholder"; $("summary-out").textContent = "Press “Summarize for the CEO” to turn the analysis below into a short readout."; $("summary-label").textContent = ""; }
+  async function copy(text, okMsg) {
+    try { await navigator.clipboard.writeText(text); toast(okMsg); }
+    catch (e) { $("import-panel").hidden = false; const ta = $("csv-text"); ta.value = text; ta.focus(); ta.select(); toast("Copying is blocked here, so the text is selected in the box. Press Ctrl+C or Cmd+C."); }
+  }
+  function repricingCSV(a) {
+    const head = ["rank", "customer", "revenue", "gross_margin_pct", "avg_discount_pct", "reasons", "price_increase_pct", "new_margin_pct", "ebitda_per_year"];
+    return [head.join(","), ...a.rp.map((r, i) => [i + 1, r.name, Math.round(r.rev), (r.gmp * 100).toFixed(1), (r.disc * 100).toFixed(1), r.why.map(w => w[0]).join("; "), (r.inc * 100).toFixed(1), (r.newGm * 100).toFixed(1), Math.round(r.impact)].map(csvCell).join(","))].join("\n");
+  }
+  $("csv-cols").textContent = COLS.join(",");
+  $("btn-import").addEventListener("click", () => { const p = $("import-panel"); p.hidden = !p.hidden; if (!p.hidden) $("csv-text").focus(); });
+  $("btn-cancel").addEventListener("click", () => { $("import-panel").hidden = true; $("csv-err").textContent = ""; });
+  $("btn-load").addEventListener("click", () => loadCSV($("csv-text").value));
+  $("btn-sample").addEventListener("click", () => { lines = sampleLines(); isSample = true; selected = null; $("letter").hidden = true; $("import-panel").hidden = true; renderAll(); resetSummary(); toast("Sample data reloaded."); });
+  $("btn-template").addEventListener("click", () => copy(COLS.join(",") + "\n2026-03-14,INV-10021,Example Customer,UT-104 6x12 single axle,Utility trailers,2,5120.00,5800.00,4180.00\n", "Template copied. Paste it into Excel or Sheets."));
+  $("csv-file").addEventListener("change", e => { const f = e.target.files && e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => loadCSV(String(rd.result)); rd.readAsText(f); e.target.value = ""; });
+  $("btn-copy").addEventListener("click", () => copy(repricingCSV(last), `Copied ${last.rp.length} customers as CSV.`));
+  const downloadsP = Promise.resolve({save:async({filename,data})=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:"text/csv"}));a.download=filename;document.body.appendChild(a);a.click();a.remove();}});
+  $("btn-download").addEventListener("click", async () => {
+    const data = repricingCSV(last);
+    const dl = await Promise.race([downloadsP, new Promise(r => setTimeout(() => r(null), 1500))]);
+    if (!dl) return copy(data, "Downloads aren't available here, so the list was copied as CSV instead.");
+    try { await dl.save({ filename: "repricing-list.csv", data }); toast("Repricing list saved."); }
+    catch (e) { if (e && e.code === "declined") toast("Download cancelled."); else copy(data, "Download wasn't available, so the list was copied as CSV instead."); }
+  });
+  ["c-target", "c-max", "c-ret", "c-policy"].forEach(id => $(id).addEventListener("change", () => { renderAll(); }));
+  $("btn-more").addEventListener("click", () => { showAll = !showAll; renderRepricing(last); });
+  let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => ["tip-wf", "tip-sc", "tip-ds"].forEach(i => $(i).hidden = true), 100); });
+
+  renderAll();
+})();
+</script>
+
+</body></html>

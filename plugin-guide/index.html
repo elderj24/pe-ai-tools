@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PE Plugin Guide</title>
+<style>
+/* Layout: a field manual in three tabs. Guide: plain-language start, "what do you want to do" picker,
+   three ideas, rules and questions. All skills: the full map and how it fits together.
+:root {
+  --bg: #f4f6f5; --surface: #ffffff; --surface-2: #f8faf9;
+  --ink: #14201c; --ink-2: #4a5853; --muted: #6c7974;
+  --line: #d6dedb; --line-2: #e7ecea;
+  --accent: #2443b8; --accent-ink: #1d3796; --accent-soft: #e7ecfa;
+  --state: #1d6b5a; --state-soft: #e2f1ec;
+  --good: #137a3a; --warn: #9a6a00; --crit: #b83232;
+  --good-bg: #e2f3e8; --warn-bg: #fbf0d6; --crit-bg: #fae3e1;
+  --code-bg: #eef2f0;
+  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-body: Charter, "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1513; --surface: #161f1c; --surface-2: #121a17; --ink: #e6ece9; --ink-2: #b6c2bd; --muted: #8e9b96;
+    --line: #2b3733; --line-2: #222c29; --accent: #8aa0f2; --accent-ink: #a9b8f5; --accent-soft: #1d2645;
+    --state: #6cc9ae; --state-soft: #143028; --good: #5fd08a; --warn: #f0c060; --crit: #ef7b7b;
+    --good-bg: #133222; --warn-bg: #36290d; --crit-bg: #3d1a1a; --code-bg: #1c2623; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1513; --surface: #161f1c; --surface-2: #121a17; --ink: #e6ece9; --ink-2: #b6c2bd; --muted: #8e9b96;
+  --line: #2b3733; --line-2: #222c29; --accent: #8aa0f2; --accent-ink: #a9b8f5; --accent-soft: #1d2645;
+  --state: #6cc9ae; --state-soft: #143028; --good: #5fd08a; --warn: #f0c060; --crit: #ef7b7b;
+  --good-bg: #133222; --warn-bg: #36290d; --crit-bg: #3d1a1a; --code-bg: #1c2623; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-display); font-size: 15px; line-height: 1.55;
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 72px; display: grid; gap: 52px; }
+h1, h2, h3, h4 { margin: 0; text-wrap: balance; font-family: var(--font-display); }
+h1 { font-size: clamp(30px, 4.4vw, 44px); font-weight: 600; letter-spacing: -0.015em; line-height: 1.1; }
+h2 { font-size: 24px; font-weight: 600; letter-spacing: -0.005em; }
+h3 { font-size: 17px; font-weight: 600; }
+h4 { font-size: 13px; font-weight: 600; }
+p { margin: 0; }
+.prose { font-family: var(--font-body); font-size: 16px; color: var(--ink-2); max-width: 68ch; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+code, .mono { font-family: var(--font-mono); font-size: .9em; }
+code { background: var(--code-bg); border-radius: 3px; padding: 1px 5px; }
+a { color: var(--accent); text-underline-offset: 2px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* nav */
+.nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.nav-inner { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; gap: 6px 18px; align-items: center; overflow-x: auto; padding-block: 10px; scrollbar-width: none; }
+.nav-inner::-webkit-scrollbar { display: none; }
+.nav b { font-size: 13px; white-space: nowrap; margin-right: 6px; }
+.nav a { font-size: 13px; color: var(--ink-2); text-decoration: none; white-space: nowrap; }
+.nav a:hover { color: var(--accent); }
+.tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--surface-2); margin-right: 10px; flex: none; }
+.tabs button { border: 0; background: transparent; border-radius: 999px; padding: 4px 12px; font-size: 13px; color: var(--ink-2); }
+.tabs button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+body:not([data-view="example"]) .view-example, body:not([data-view="example"]) .nav a.n-example { display: none; }
+body:not([data-view="skills"]) .view-skills, body:not([data-view="skills"]) .nav a.n-skills { display: none; }
+body[data-view="example"] .view-guide, body[data-view="example"] .nav a.n-guide,
+body[data-view="skills"] .view-guide, body[data-view="skills"] .nav a.n-guide { display: none; }
+body:not([data-view="example"]):not([data-view="skills"]) .view-back { display: none; }
+
+header { display: grid; gap: 16px; padding-top: 40px; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px; }
+.fact { font-family: var(--font-mono); font-size: 12.5px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 3px 10px; color: var(--ink-2); }
+section { display: grid; gap: 18px; scroll-margin-top: 64px; }
+.sec-head { display: grid; gap: 6px; }
+.callout { border-left: 3px solid var(--state); background: var(--state-soft); padding: 12px 14px; border-radius: 0 6px 6px 0; font-size: 14.5px; color: var(--ink); max-width: 82ch; display: grid; gap: 6px; }
+.callout.warn { border-left-color: var(--warn); background: var(--warn-bg); }
+.callout.accent { border-left-color: var(--accent); background: var(--accent-soft); }
+.go { background: var(--accent); color: var(--surface); border: 0; border-radius: 999px; padding: 6px 14px; font-size: 13.5px; justify-self: start; }
+.go:hover { filter: brightness(1.08); }
+.linklike { border: 0; background: transparent; padding: 0; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+
+/* copy snippet */
+.snippet { display: flex; align-items: stretch; border: 1px solid var(--line); border-radius: 6px; background: var(--code-bg); overflow: hidden; min-width: 0; }
+.snippet pre { margin: 0; padding: 8px 10px; font-family: var(--font-mono); font-size: 12.5px; white-space: pre-wrap; word-break: break-word; flex: 1; min-width: 0; }
+.copy { border: 0; border-left: 1px solid var(--line); background: var(--surface); font-size: 12px; padding: 0 10px; color: var(--ink-2); white-space: nowrap; }
+.copy:hover { color: var(--accent); }
+
+/* steps */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 14px; counter-reset: s; }
+.steps li { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 8px; align-content: start; counter-increment: s; }
+.steps li::before { content: "Step " counter(s); font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.steps p { font-family: var(--font-body); font-size: 14.5px; color: var(--ink-2); }
+
+/* job picker */
+.jobs { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+@media (max-width: 760px) { .jobs { grid-template-columns: 1fr; } }
+.job-list { display: grid; gap: 6px; align-content: start; }
+.job { text-align: left; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 9px 11px; font-size: 14px; }
+.job:hover { border-color: var(--accent); }
+.job[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); font-weight: 600; }
+.job-detail { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.kv { display: grid; gap: 5px; align-content: start; min-width: 0; }
+.kv h4 { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+.kv p, .kv li { font-family: var(--font-body); font-size: 15px; color: var(--ink-2); }
+.kv ul { margin: 0; padding-left: 1.1em; display: grid; gap: 3px; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 2px 10px; font-size: 12.5px; }
+button.pill:hover { border-color: var(--accent); color: var(--accent); }
+
+.cards3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 8px; align-content: start; }
+.card p { font-family: var(--font-body); font-size: 15px; color: var(--ink-2); }
+.chip { display: inline-flex; gap: 5px; align-items: center; font-family: var(--font-mono); font-size: 12px; font-weight: 500; border-radius: 999px; padding: 1px 9px; white-space: nowrap; justify-self: start; }
+.c-committed { background: var(--good-bg); color: var(--good); }
+.c-pending { background: var(--accent-soft); color: var(--accent-ink); }
+.c-blocked { background: var(--crit-bg); color: var(--crit); }
+.statuses { display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; align-items: center; font-family: var(--font-body); font-size: 15px; color: var(--ink-2); }
+
+
+.never { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 10px 24px; }
+.never li { display: grid; grid-template-columns: auto 1fr; gap: 10px; font-family: var(--font-body); font-size: 15px; color: var(--ink-2); }
+.never li::before { content: "✕"; font-family: var(--font-display); color: var(--crit); font-weight: 600; }
+
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 0 16px; }
+details + details { margin-top: 8px; }
+summary { cursor: pointer; padding: 12px 0; font-weight: 600; font-size: 14.5px; }
+details[open] > summary { border-bottom: 1px solid var(--line-2); }
+details > div { padding: 12px 0 16px; font-family: var(--font-body); font-size: 15px; color: var(--ink-2); display: grid; gap: 10px; max-width: 78ch; }
+details.big > div { max-width: none; }
+.subtle { font-size: 13px; color: var(--muted); }
+
+/* full skill map */
+.map { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 14px; }
+.rail-scroll { overflow-x: auto; }
+.rail { display: grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap: 10px; min-width: 700px; }
+.stage { display: grid; gap: 8px; align-content: start; }
+.stage-h { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border-bottom: 2px solid var(--ink); padding-bottom: 6px; }
+.sk { text-align: left; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; display: grid; gap: 2px; }
+.sk:hover { border-color: var(--accent); }
+.sk[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.sk b { font-size: 13.5px; font-weight: 600; }
+.sk span { font-size: 12px; color: var(--muted); line-height: 1.35; }
+.band { min-width: 700px; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; background: var(--state-soft); border: 1px solid var(--state); border-radius: 6px; padding: 10px 12px; }
+.band .sk, .top-row .sk { background: var(--surface); }
+.band p, .top-row p { font-size: 13px; color: var(--ink-2); }
+.top-row { min-width: 700px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.detail { border-top: 1px solid var(--line-2); padding-top: 16px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 28px; }
+@media (max-width: 820px) { .detail { grid-template-columns: 1fr; } }
+.detail-head { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline; }
+.detail-head .id { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
+
+/* architecture */
+.arch-scroll { overflow-x: auto; }
+.arch { width: 100%; min-width: 860px; height: auto; display: block; color: var(--ink-2); }
+.arch rect { fill: var(--surface-2); stroke: var(--line); }
+.arch text { fill: var(--ink); }
+.a-skill rect { fill: var(--surface); }
+.a-tool rect { fill: var(--state-soft); stroke: var(--state); }
+.a-file rect { fill: var(--surface); }
+.a-arrow path { fill: none; stroke: var(--ink-2); stroke-width: 1.4; }
+.a-small, .a-note { font-size: 11.5px; fill: var(--muted) !important; }
+
+/* worked example */
+.chapters { display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 8px; min-width: 780px; }
+.chap { text-align: left; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; display: grid; gap: 3px; }
+.chap:hover { border-color: var(--accent); }
+.chap[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.chap b { font-size: 13.5px; }
+.chap span { font-size: 12px; color: var(--muted); line-height: 1.35; }
+.chap .mono { font-size: 11px; }
+.ch-body { display: grid; gap: 18px; border-top: 1px solid var(--line-2); padding-top: 16px; }
+.ch-top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 28px; }
+@media (max-width: 820px) { .ch-top { grid-template-columns: 1fr; } }
+.ch-meta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+.tag { font-family: var(--font-mono); font-size: 11.5px; border-radius: 3px; padding: 1px 6px; border: 1px solid var(--line); color: var(--ink-2); background: var(--surface); }
+.said { font-family: var(--font-body); font-size: 15px; background: var(--code-bg); border-radius: 6px; padding: 10px 12px; color: var(--ink-2); }
+.tbl-scroll { overflow-x: auto; }
+table.t { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 560px; }
+table.t th { text-align: left; font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); }
+table.t td { padding: 8px 8px 8px 0; border-top: 1px solid var(--line-2); vertical-align: top; font-variant-numeric: tabular-nums; }
+table.t td.k { font-weight: 600; }
+.v { display: inline-block; font-family: var(--font-mono); font-size: 11.5px; border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+.v-bad { background: var(--crit-bg); color: var(--crit); }
+.v-mis { background: var(--warn-bg); color: var(--warn); }
+.v-ok { background: var(--good-bg); color: var(--good); }
+.chart { background: var(--surface-2); border: 1px solid var(--line-2); border-radius: 8px; padding: 12px; overflow-x: auto; }
+.chart h4 { margin-bottom: 4px; }
+.chart svg { display: block; width: 100%; min-width: 620px; height: auto; }
+.chart text { fill: var(--ink-2); font-family: var(--font-display); }
+.chart .lab { font-size: 12.5px; fill: var(--ink); }
+.chart .tick { font-size: 11px; fill: var(--muted); }
+.chart .grid { stroke: var(--line-2); }
+.chart .axis { stroke: var(--line); }
+footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
+</style>
+</head>
+<body>
+<nav class="nav" aria-label="Sections">
+  <div class="nav-inner">
+    <b>PE plugin</b>
+    <div class="tabs" role="group" aria-label="View"><button type="button" id="tab-guide" data-view="guide" aria-pressed="true">Guide</button><button type="button" id="tab-skills" data-view="skills" aria-pressed="false">All skills</button></div>
+    <a class="n-guide" href="#start">Get started</a>
+    <a class="n-guide" href="#jobs">What do you want to do?</a>
+    <a class="n-guide" href="#ideas">How it works</a>
+    <a class="n-guide" href="#rules">Ground rules</a>
+    <a class="n-guide" href="#faq">Questions</a>
+    <a class="n-skills" href="#all">By deal stage</a>
+    <a class="n-skills" href="#hood">Under the hood</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">User guide &middot; pe-investment-stack v0.3.0</div>
+    <h1>PE Plugin Guide</h1>
+    <p class="prose">You ask Claude, in plain English, for the work a private equity deal team does: screen a teaser, test the seller's numbers, price the deal, write the IC memo. The plugin keeps one running record for each deal, so every step builds on the last, and it tells you what it checked, what it could not check, and what it saved.</p>
+    <div class="facts"><span class="fact">Ask in plain English</span><span class="fact">15 skills</span><span class="fact">1 record per deal</span><span class="fact">No firm's criteria built in</span></div>
+    <div class="callout accent view-guide"><b>New here?</b> Read "Get started" and "What do you want to do?" below. The "All skills" tab is reference for when you want the full list. The plugin is sector-neutral and ships with a blank firm profile: tell it your sectors, size range and return targets when it asks.</div>
+    <p class="view-back"><button class="linklike" type="button" data-go="guide">&larr; Back to the guide</button></p>
+  </header>
+
+  <!-- ============================ GUIDE ============================ -->
+  <section id="start" aria-labelledby="h-start" class="view-guide">
+    <div class="sec-head">
+      <div class="eyebrow">Get started</div>
+      <h2 id="h-start">Your first deal in three messages</h2>
+      <p class="prose">Open a Claude session with a working folder (the deal record is saved there) and send these. Swap in your own deal name and files.</p>
+    </div>
+    <ol class="steps">
+      <li><h3>Start a record</h3><p>Creates the deal's record in your folder. You only do this once per deal.</p><div class="snippet"><pre>/pe-new-deal Project Cascade</pre><button class="copy" type="button">Copy</button></div></li>
+      <li><h3>Send the first document</h3><p>Attach the teaser or CIM and ask in your own words. The plugin picks the right skill and saves what it found.</p><div class="snippet"><pre>Screen the attached CIM for Project Cascade. Is it worth our time, and what should we ask the banker?</pre><button class="copy" type="button">Copy</button></div></li>
+      <li><h3>Ask where things stand</h3><p>Any time: the stage, open questions, anything out of date, and the suggested next step.</p><div class="snippet"><pre>/pe-state-status deal-project-cascade</pre><button class="copy" type="button">Copy</button></div></li>
+    </ol>
+    <div class="callout"><span><b>You never need the technical commands.</b> The two slash commands above are shortcuts. Everything else is a normal request, and the plugin runs its own tools. It will ask you when it needs something only you know, such as your firm's return targets or which entry multiple to use.</span></div>
+  </section>
+
+  <section id="jobs" aria-labelledby="h-jobs" class="view-guide">
+    <div class="sec-head">
+      <div class="eyebrow">What do you want to do?</div>
+      <h2 id="h-jobs">Pick a situation and copy what to say</h2>
+    </div>
+    <div class="jobs">
+      <div class="job-list" id="job-list" role="group" aria-label="Situations"></div>
+      <div class="job-detail" id="job-detail" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section id="ideas" aria-labelledby="h-ideas" class="view-guide">
+    <div class="sec-head">
+      <div class="eyebrow">How it works</div>
+      <h2 id="h-ideas">Three ideas behind every answer</h2>
+    </div>
+    <div class="cards3">
+      <div class="card"><h3>One record per deal</h3><p>Each skill reads the deal's record before it starts and saves its findings back. So you can work in a new chat tomorrow and the next skill still knows which seller numbers failed and what the normalized EBITDA is. When new evidence changes something, earlier work that relied on it is flagged out of date until it is refreshed or confirmed.</p></div>
+      <div class="card"><h3>Seller numbers are claims</h3><p>A CIM, banker deck or management model can support a number but never prove it. A number is proven only by a document of record (a ledger, a contract, an invoice file) or independent work, and disproven the same way. Every brief shows which is which, so you know what you are relying on.</p></div>
+      <div class="card"><h3>The IC's decision is locked</h3><p>When the IC decides, the plugin records the decision word for word, with who decided, on what authority and when, and freezes the case it approved. Later portfolio reviews compare actual results with that frozen case instead of writing over it. A pass is recorded the same way.</p></div>
+    </div>
+    <div class="card"><h3>What the save messages mean</h3>
+      <div class="statuses">
+        <span class="chip c-committed">&#10003; committed</span><span>Saved to the deal record.</span>
+        <span class="chip c-pending">&#9684; pending_commit</span><span>The analysis is done and shown to you, but nothing was saved (usually because there is no working folder).</span>
+        <span class="chip c-blocked">&#10005; blocked</span><span>A check failed and nothing was saved. The message says why and what is missing.</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="rules" aria-labelledby="h-rules" class="view-guide">
+    <div class="sec-head">
+      <div class="eyebrow">Ground rules</div>
+      <h2 id="h-rules">What the plugin will not do</h2>
+    </div>
+    <ul class="never">
+      <li><span>Treat a seller, banker or management number as fact.</span></li>
+      <li><span>Make up your firm's criteria. You give return targets, leverage limits and size ranges once; until then, reports say no criteria were applied.</span></li>
+      <li><span>Let the upside case, unsigned add-ons or unproven synergies set the price.</span></li>
+      <li><span>Choose the entry multiple for you. It shows a low, middle and high value and asks; if you don't answer it uses the middle and says so.</span></li>
+      <li><span>Record a recommendation as a decision. Only the IC decides, and the record needs who, on what authority and when.</span></li>
+      <li><span>Fill in a missing fact itself. It asks, or records the gap as unknown.</span></li>
+      <li><span>Give legal or regulatory advice. Legal points in a brief are starting points for counsel.</span></li>
+      <li><span>Put regulated personal data in a chat. Patient, consumer or employee records go in only de-identified or under the agreement that covers them.</span></li>
+      <li><span>Say something was saved when it was not.</span></li>
+    </ul>
+  </section>
+
+  <section id="faq" aria-labelledby="h-faq" class="view-guide">
+    <div class="sec-head">
+      <div class="eyebrow">Questions</div>
+      <h2 id="h-faq">Common questions</h2>
+    </div>
+    <div>
+      <details><summary>Do I need to know the commands or the file names?</summary><div><p>No. Ask in plain English and attach the files. The plugin chooses the skill, runs its calculators and saves to the record. The commands in the technical reference are there for people who want to check its work.</p></div></details>
+      <details><summary>Do I have to use the deal record?</summary><div><p>No. Every skill works in a plain chat and shows you what it would have saved, marked pending_commit. The record is what lets later skills build on earlier ones, so use it for any deal you expect to pursue.</p></div></details>
+      <details><summary>Why is an earlier piece of work marked out of date?</summary><div><p>Something it relied on changed: a seller claim was disproven, a figure was restated, a case weight moved. The reason is shown on the flag. Ask Claude to refresh it, or, if the change does not affect its conclusion, to confirm it is still valid and say why. Nothing old is edited in place.</p></div></details>
+      <details><summary>How does it reach a recommendation?</summary><div><p>From six tests: is the thesis proven, are the open risks small or fixable, do we believe the value-creation plan, is there a margin of safety in the price, does the range of outcomes clear our targets with a downside near 1.0x, and how does our price compare with the market. It lands on Pursue, Pursue at our price, Pass with triggers to come back, or Pass, and states a walk-away price. The memo recommends; the IC decides.</p></div></details>
+      <details><summary>What if the IC hasn't told me everything about its decision?</summary><div><p>Tell Claude what you know. It suggests the details your message implies (for example "the investment committee, by vote, today") for you to confirm. If something is still unknown, the decision is recorded as reported with the gap named, and the case is frozen once the missing details arrive.</p></div></details>
+      <details><summary>Which skills produce Word or Excel files?</summary><div><p>Underwriting can build an Excel LBO model for the standalone platform. Every other skill returns a written brief plus an HTML version with charts.</p></div></details>
+      <details><summary>Is anything sent outside Claude?</summary><div><p>The record stays in your working folder, and the HTML briefs load nothing from the web. Skills may search the web for current market or regulatory facts and cite them with dates. Load only material you are allowed to share with Claude.</p></div></details>
+      <details><summary>How do I tell it about my firm?</summary><div><p>Two things, both optional until a skill needs them. The firm profile holds your sectors, size range and current portfolio, for the fit and overlap checks; it ships blank, and anything blank is reported as unknown. Your return targets, leverage limits and entry-multiple range are given once, with where they came from, and every calculator reads them. The plugin never fills either in itself.</p></div></details>
+      <details><summary>Does the contract skill give legal advice?</summary><div><p>No. It is a business-side review for the deal team and its counsel. It redlines only agreements your side is a party to (an NDA, or a contract your firm or a portfolio company is negotiating), and only from the Word original; for a target's existing contracts it reports the terms, the consents needed and what to ask for. Its positions are common buyer-side starting points until you give it your firm's own.</p></div></details>
+      <details><summary>What does this plugin not cover?</summary><div><p>This is the core set. It has no skill for unit economics by site or product, management assessment, add-on integration, board preparation or exit readiness. Ask anyway: the stack guide names the nearest skill and what it can and cannot do, and records the rest as open questions for the deal team.</p></div></details>
+      <details class="big"><summary>Technical reference (for checking the plugin's work)</summary><div>
+        <p><b>Firm criteria.</b> Set once, with where they came from: <code>pe_state.py criteria set target_moic=2.5 target_irr=0.20 max_entry_leverage=5.5 max_entry_multiple=13 --basis "IC guidelines, Nov 2026"</code>. This writes <code>pe-state/firm_criteria.json</code>, which the record and every calculator read. <code>criteria show</code> and <code>check</code> report any drift.</p>
+        <p><b>Saving.</b> Each skill drafts its update from the live record (<code>draft</code>), previews it (<code>apply --dry-run</code>), then saves (<code>apply</code>). Every save is sealed and versioned; <code>check</code> catches a file edited outside the tool, and <code>verify</code> checks a synced copy.</p>
+        <p><b>Out-of-date work.</b> The tool flags outputs whose inputs changed. An output confirmed still valid (<code>outputs_reviewed</code>) no longer passes the flag on to work built on it. A stronger verdict, such as untested to corroborated, does not flag anything.</p>
+        <p><b>Exceptions and evidence notices.</b> An exception is a rule a record breaks (resting on a disproven claim, a case outside your criteria); each is accepted one at a time with who accepted it and why. Notices that conclusions rest on evidence not yet validated are one summary line.</p>
+        <p><b>Decisions and the freeze.</b> <code>freeze --intake</code> lists what the snapshot will store and what the record already knows, and writes nothing. A decision missing its authority or date can be recorded as reported (<code>unknown_fields</code>); the freeze waits for those fields. <code>freeze</code> records an approval, <code>freeze --outcome pass</code> a pass, <code>close</code> checks the conditions at closing, and <code>init-portfolio</code> starts the ownership record.</p>
+        <p><b>Calculators.</b> Returns come from <code>lbo_returns.py</code>, weighted cases and the walk-away from <code>scenario_ev.py</code>, valuation from <code>valuation_calc.py</code>, the QoE bridge and NWC peg from <code>qoe_bridge.py</code>, covenant headroom and liquidity from <code>covenant_liquidity.py</code>. Every brief carries a numbers-audit line saying how many figures were traced to the record, a calculator or a source.</p>
+      </div></details>
+    </div>
+  </section>
+
+  <section id="all" aria-labelledby="h-all" class="view-skills">
+    <div class="sec-head">
+      <div class="eyebrow">Reference</div>
+      <h2 id="h-all">All 15 skills, by deal stage</h2>
+      <p class="prose">You don't need to pick skills yourself: ask in plain English and the plugin chooses. This map shows what exists. Select a skill for when to use it, what you get and an example request.</p>
+    </div>
+    <div class="map">
+      <div class="rail-scroll">
+        <div class="top-row" id="top-row"></div>
+        <div class="rail" id="rail" style="margin-top:12px"></div>
+        <div class="band" id="band" style="margin-top:12px"></div>
+      </div>
+      <div class="detail" id="detail" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section id="hood" aria-labelledby="h-hood" class="view-skills">
+    <div class="sec-head">
+      <div class="eyebrow">Under the hood</div>
+      <h2 id="h-hood">Where everything lives</h2>
+    </div>
+    <div class="map">
+      <p class="prose">Skills never talk to each other directly. They read and write the deal record through one state tool, which checks every save and keeps the record, its history and readable views in your working folder.</p>
+      <div class="arch-scroll">
+      <svg class="arch" viewBox="0 0 980 300" role="img" aria-label="Skills read and write the record through the state tool; the record lives in your working folder with its history, criteria, views and briefs">
+        <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
+        <g font-family="var(--font-display)" font-size="13">
+          <g class="a-skill"><rect x="20" y="30" width="190" height="34" rx="6"/><text x="115" y="52" text-anchor="middle">Sourcing and screen</text></g>
+          <g class="a-skill"><rect x="20" y="74" width="190" height="34" rx="6"/><text x="115" y="96" text-anchor="middle">QoE and commercial</text></g>
+          <g class="a-skill"><rect x="20" y="118" width="190" height="34" rx="6"/><text x="115" y="140" text-anchor="middle">Entry multiple and LBO</text></g>
+          <g class="a-skill"><rect x="20" y="162" width="190" height="34" rx="6"/><text x="115" y="184" text-anchor="middle">Challenger and IC memo</text></g>
+          <g class="a-skill"><rect x="20" y="206" width="190" height="34" rx="6"/><text x="115" y="228" text-anchor="middle">Ownership</text></g>
+          <text x="115" y="268" text-anchor="middle" class="a-note">15 skills, any chat, any day</text>
+          <g class="a-arrow"><path d="M212 47 C 255 47, 255 135, 288 135" marker-end="url(#ah)"/><path d="M212 91 C 255 91, 255 135, 288 135" marker-end="url(#ah)"/><path d="M212 135 L288 135" marker-end="url(#ah)"/><path d="M212 179 C 255 179, 255 135, 288 135" marker-end="url(#ah)"/><path d="M212 223 C 255 223, 255 135, 288 135" marker-end="url(#ah)"/></g>
+          <g class="a-tool"><rect x="290" y="80" width="262" height="110" rx="8"/><text x="421" y="104" text-anchor="middle" font-weight="600">The state tool</text><text x="421" y="126" text-anchor="middle" font-size="12">checks every save before it is written</text><text x="421" y="144" text-anchor="middle" font-size="12">grades claims, flags out-of-date work</text><text x="421" y="162" text-anchor="middle" font-size="12">records and freezes IC decisions</text></g>
+          <g class="a-arrow"><path d="M554 122 L600 122" marker-end="url(#ah)"/><path d="M600 152 L554 152" marker-end="url(#ah)"/></g>
+          <g><rect x="602" y="14" width="376" height="272" rx="8"/><text x="622" y="38" font-weight="600">Your working folder</text>
+            <g class="a-file"><rect x="622" y="52" width="336" height="38" rx="5"/><text x="634" y="68">The deal record</text><text x="634" y="83" class="a-small">one per deal and per add-on, versioned on every save</text></g>
+            <g class="a-file"><rect x="622" y="98" width="336" height="38" rx="5"/><text x="634" y="114">History</text><text x="634" y="129" class="a-small">every earlier version kept</text></g>
+            <g class="a-file"><rect x="622" y="144" width="336" height="38" rx="5"/><text x="634" y="160">Firm criteria</text><text x="634" y="175" class="a-small">set once by you, read by every calculator</text></g>
+            <g class="a-file"><rect x="622" y="190" width="336" height="38" rx="5"/><text x="634" y="206">Briefs and readable views</text><text x="634" y="221" class="a-small">Markdown and HTML, each tied to the record version</text></g>
+            <g class="a-file"><rect x="622" y="236" width="336" height="38" rx="5"/><text x="634" y="252">The portfolio record</text><text x="634" y="267" class="a-small">after close; the frozen case carried read-only</text></g>
+          </g>
+        </g>
+      </svg>
+      </div>
+    </div>
+  </section>
+
+  <footer>Plugin guide for pe-investment-stack 0.3.0, prepared by JD Elder. A general workflow, not any firm's policy. Example deals are fictional. <a href="../" style="color:inherit">Part of PE AI &amp; Data Tools</a></footer>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const snip = t => `<div class="snippet"><pre>${esc(t)}</pre><button class="copy" type="button">Copy</button></div>`;
+
+  /* ---------------- situations ---------------- */
+  const JOBS = [
+ {
+  "t": "A teaser or CIM just arrived",
+  "say": "Screen the attached CIM for Project Cascade. Is it worth our time, and what should we ask the banker?",
+  "get": [
+   "A call: Pass, Watch, Partner review or Priority diligence",
+   "What must be true, the bear case and the big risks",
+   "Questions for the banker and a first data request"
+  ],
+  "skills": [
+   "pe-deal-screen"
+  ],
+  "next": "Build the diligence plan."
+ },
+ {
+  "t": "The banker sent an NDA",
+  "say": "Mark up the attached NDA as buyer. We will sign as the fund.",
+  "get": [
+   "A Word redline with tracked changes and comments",
+   "What the draft was missing, and which positions are defaults",
+   "The points that need a business decision"
+  ],
+  "skills": [
+   "pe-contract-review"
+  ],
+  "next": "Screen the CIM when it arrives."
+ },
+ {
+  "t": "We are looking at a sector",
+  "say": "Is specialty distribution a good place for us to build a platform? Assess the sector and give me a first list of companies to call.",
+  "get": [
+   "A verdict on the sector's investment merits, test by test",
+   "Where profit sits, how roll-ups work and who buys platforms",
+   "A first target list, scored and sorted into whom to call"
+  ],
+  "skills": [
+   "pe-industry-analysis"
+  ],
+  "next": "Screen the first company that responds."
+ },
+ {
+  "t": "We need a diligence plan",
+  "say": "Build the diligence plan for Project Cascade, with decision gates before the IOI and the final bid.",
+  "get": [
+   "The questions that could make you walk, in order",
+   "What to ask for and which advisors to use",
+   "Gates: what must be true before each bid"
+  ],
+  "skills": [
+   "pe-diligence-architect"
+  ],
+  "next": "Work through the data room."
+ },
+ {
+  "t": "The data room opened",
+  "say": "The data room is open; batch 1 is attached. What changed versus the CIM, and what conflicts?",
+  "get": [
+   "What's new, what conflicts with the CIM, what is still unsupported",
+   "Customer concentration restated by parent company",
+   "Where each file should go next"
+  ],
+  "skills": [
+   "pe-vdr-intelligence"
+  ],
+  "next": "QoE review and commercial diligence."
+ },
+ {
+  "t": "Are the earnings real?",
+  "say": "Review the sell-side QoE. Give us normalized EBITDA, the NWC peg and debt-like items.",
+  "get": [
+   "Each seller add-back accepted or rejected, with the reason",
+   "Normalized EBITDA, a working-capital peg and debt-like items, computed",
+   "What is still unverified"
+  ],
+  "skills": [
+   "pe-qoe-review"
+  ],
+  "next": "Commercial diligence, then the price."
+ },
+ {
+  "t": "Is the revenue really there?",
+  "say": "Run commercial diligence: customer and channel concentration, retention and a revenue build.",
+  "get": [
+   "Concentration with related accounts combined",
+   "Retention measured from the data, not the CIM",
+   "A revenue build and verdicts on the CIM's growth claims"
+  ],
+  "skills": [
+   "pe-commercial-diligence"
+  ],
+  "next": "The entry multiple and the base case."
+ },
+ {
+  "t": "We need to read the key contracts",
+  "say": "Review the top supplier and customer agreements in the data room. What could end or reprice revenue, and which consents do we need?",
+  "get": [
+   "Key terms quoted with their section numbers",
+   "Each finding ranked, with what the buyer should ask for",
+   "A closing checklist of consents and notices"
+  ],
+  "skills": [
+   "pe-contract-review"
+  ],
+  "next": "Carry the consents into the IC memo as conditions."
+ },
+ {
+  "t": "What should we pay?",
+  "say": "What is it worth? Use the comps and precedents we have. Then build the LBO with a base, a downside and the signed add-on.",
+  "get": [
+   "A low, middle and high value; you choose the entry multiple",
+   "Returns for each case, and what drives them",
+   "A walk-away price, and whether returns or a firm limit sets it"
+  ],
+  "skills": [
+   "pe-underwriting-lbo"
+  ],
+  "next": "Pressure-test the case."
+ },
+ {
+  "t": "Get ready for IC",
+  "say": "Pressure-test the investment case, then write the IC memo with your recommendation, the price you would pay, the walk-away price and the conditions.",
+  "get": [
+   "The strongest case against the deal",
+   "A memo opening with the six tests and one of four recommendations",
+   "Conditions to invest, and what is still unverified"
+  ],
+  "skills": [
+   "pe-ic-challenger",
+   "pe-ic-memo"
+  ],
+  "next": "Tell Claude what the IC decided."
+ },
+ {
+  "t": "The IC has decided",
+  "say": "The investment committee approved the memo's recommendation, by vote, on 15 November. Record the decision and freeze the case.",
+  "get": [
+   "The decision saved word for word, with who, authority and date",
+   "Out-of-date work refreshed or confirmed first",
+   "The approved case frozen for later reviews"
+  ],
+  "skills": [
+   "pe-ic-memo",
+   "pe-deal-portfolio-state"
+  ],
+  "next": "At closing: onboarding and the 100-day plan."
+ },
+ {
+  "t": "A draft purchase agreement arrived",
+  "say": "Review the seller's draft purchase agreement and give me the issues list for counsel.",
+  "get": [
+   "A prioritized Word issues list",
+   "The price mechanics tested against the QoE findings",
+   "What needs tax, benefits or other specialist review"
+  ],
+  "skills": [
+   "pe-contract-review"
+  ],
+  "next": "At closing: onboarding and the 100 days."
+ },
+ {
+  "t": "We just closed",
+  "say": "Build the 100-day plan and KPI set for Cascade from the closing snapshot.",
+  "get": [
+   "The value-creation plan, with each initiative tied to its evidence",
+   "One definition per KPI",
+   "A 100-day plan with owners and gates"
+  ],
+  "skills": [
+   "pe-portfolio-onboarding-vcp"
+  ],
+  "next": "Monthly and quarterly reviews."
+ },
+ {
+  "t": "We own it now",
+  "say": "Q3 review for Cascade: what changed against what we underwrote, and are the add-on synergies real?",
+  "get": [
+   "Actuals against budget and against the frozen IC case",
+   "Covenant headroom and months of liquidity",
+   "Exceptions first, with questions for management"
+  ],
+  "skills": [
+   "pe-portfolio-review"
+  ],
+  "next": "The next review, or AI opportunities."
+ },
+ {
+  "t": "Where could AI help this company?",
+  "say": "Where could AI pay at Cascade in the next 12 months? Size the top three.",
+  "get": [
+   "Opportunities ranked and sized, with capacity kept apart from cash",
+   "Build, buy or partner for each",
+   "A pilot with stop rules"
+  ],
+  "skills": [
+   "pe-ai-value-creation"
+  ],
+  "next": "Track what is realized in the portfolio review."
+ },
+ {
+  "t": "I'm not sure where to start",
+  "say": "Which skill should I use to start on a new add-on for our platform?",
+  "get": [
+   "The right skill for the stage you are at",
+   "A request you can paste"
+  ],
+  "skills": [
+   "pe-stack-guide"
+  ],
+  "next": ""
+ }
+];
+  let job = 0;
+  function renderJobs() {
+    $("job-list").innerHTML = JOBS.map((j, i) => `<button class="job" type="button" id="job-${i}" aria-pressed="${i === job}">${esc(j.t)}</button>`).join("");
+    $("job-list").querySelectorAll(".job").forEach((b, i) => b.addEventListener("click", () => { job = i; renderJobs(); }));
+    const j = JOBS[job];
+    $("job-detail").innerHTML = `
+      <div class="kv"><h4>Say this (attach your files)</h4>${snip(j.say)}</div>
+      <div class="kv"><h4>You get back</h4><ul>${j.get.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>
+      <div class="kv"><h4>Skills it uses</h4><div class="pills">${j.skills.map(s => `<button class="pill" type="button" data-goto="${s}">${esc(SKILLS[s].name)}</button>`).join("")}</div></div>
+      ${j.next ? `<div class="kv"><h4>Usually next</h4><p>${esc(j.next)}</p></div>` : ""}`;
+    $("job-detail").querySelectorAll("[data-goto]").forEach(b => b.addEventListener("click", () => { select(b.dataset.goto); setView("skills"); document.getElementById("all").scrollIntoView({ block: "start" }); }));
+    wireCopy($("job-detail"));
+  }
+
+  /* ---------------- skill map ---------------- */
+  const SKILLS = {
+ "pe-stack-guide": {
+  "name": "Stack guide",
+  "stage": "start",
+  "blurb": "Not sure which skill to use",
+  "when": "You are not sure where to start, want to know what the plugin covers, or want the firm profile for a fit and overlap check.",
+  "get": [
+   "The right skill for the stage",
+   "A request to paste",
+   "The nearest skill for work this plugin does not cover"
+  ],
+  "prompt": "Which skill should I use to start on a new add-on for our platform?",
+  "next": [
+   "pe-deal-screen",
+   "pe-industry-analysis"
+  ]
+ },
+ "pe-deal-portfolio-state": {
+  "name": "Deal record",
+  "stage": "state",
+  "blurb": "The record underneath everything",
+  "when": "Any time: log a call, set firm criteria, record and freeze an IC decision or a pass, close the deal, start the ownership record.",
+  "get": [
+   "The one record every skill reads and writes",
+   "Claims graded by evidence and out-of-date work flagged",
+   "The IC decision recorded and the approved case frozen"
+  ],
+  "prompt": "log: call with Cascade's largest customer - renewal likely, wants a 2% price cut.",
+  "next": [
+   "pe-portfolio-onboarding-vcp"
+  ]
+ },
+ "pe-industry-analysis": {
+  "name": "Industry analysis",
+  "stage": "sourcing",
+  "blurb": "Is this sector worth our time?",
+  "when": "You are weighing a sector, or want a first list of companies to call in one.",
+  "get": [
+   "A verdict on the sector's investment merits against eight tests",
+   "The served market, where profit sits, roll-up logic, risks and who buys platforms",
+   "An initial target list: scored, checked against the portfolio and sorted into whom to call"
+  ],
+  "prompt": "Assess specialty distribution in the Midwest as a place to build a platform, and give me a first target list.",
+  "next": [
+   "pe-deal-screen"
+  ]
+ },
+ "pe-deal-screen": {
+  "name": "Deal screen",
+  "stage": "sourcing",
+  "blurb": "Platform, add-on or pass?",
+  "when": "A teaser, CIM or banker email arrives.",
+  "get": [
+   "Pass, Watch, Partner review or Priority diligence",
+   "Claims kept apart from evidence; what must be true; the bear case",
+   "Banker questions and a first data request"
+  ],
+  "prompt": "Screen the attached CIM. Is it a platform, an add-on to one we own, or a pass?",
+  "next": [
+   "pe-diligence-architect"
+  ]
+ },
+ "pe-diligence-architect": {
+  "name": "Diligence plan",
+  "stage": "diligence",
+  "blurb": "What would make us walk?",
+  "when": "The deal passes the screen and the team needs a plan.",
+  "get": [
+   "The questions that could kill the deal, with thresholds",
+   "Workstreams, advisors and a first data request",
+   "Gates before each bid"
+  ],
+  "prompt": "Build the diligence plan for Project Cascade through LOI. What would make us walk?",
+  "next": [
+   "pe-vdr-intelligence",
+   "pe-qoe-review"
+  ]
+ },
+ "pe-vdr-intelligence": {
+  "name": "Data room",
+  "stage": "diligence",
+  "blurb": "What changed, what conflicts",
+  "when": "New files land in the data room.",
+  "get": [
+   "What changed against the CIM, conflicts side by side",
+   "Concentration restated by parent company",
+   "A file inventory with duplicates flagged"
+  ],
+  "prompt": "Batch 3 of the data room is attached. What changed versus the CIM?",
+  "next": [
+   "pe-qoe-review",
+   "pe-commercial-diligence"
+  ]
+ },
+ "pe-qoe-review": {
+  "name": "QoE review",
+  "stage": "diligence",
+  "blurb": "Are the earnings real?",
+  "when": "A QoE, EBITDA bridge, trial balance or ledger arrives, for the platform or an add-on.",
+  "get": [
+   "Each add-back tested; normalized EBITDA recomputed",
+   "The working-capital peg and debt-like items",
+   "What is still unverified (it does not replace an accounting firm's QoE)"
+  ],
+  "prompt": "Test the sell-side QoE's add-backs and give me normalized EBITDA, the NWC peg and debt-like items.",
+  "next": [
+   "pe-underwriting-lbo"
+  ]
+ },
+ "pe-commercial-diligence": {
+  "name": "Commercial diligence",
+  "stage": "diligence",
+  "blurb": "Is the revenue there?",
+  "when": "You need to know whether the revenue the case needs is there.",
+  "get": [
+   "A bottom-up market checked against the CIM",
+   "Concentration by parent and retention from the data",
+   "A revenue build and verdicts on the CIM's growth claims"
+  ],
+  "prompt": "Measure customer concentration by parent and cohort retention. Which CIM growth claims hold?",
+  "next": [
+   "pe-underwriting-lbo"
+  ]
+ },
+ "pe-underwriting-lbo": {
+  "name": "Entry multiple and LBO",
+  "stage": "ic",
+  "blurb": "Value, cases, returns and a bid",
+  "when": "You need a value range, a check on banker comps, the operating cases, the returns or a bid.",
+  "get": [
+   "Comps, precedents and a DCF in one chart; a low, middle and high value, then a question: which multiple?",
+   "A base case built driver by driver, a downside where linked risks go wrong together, and returns with and without the add-on",
+   "A walk-away price that says whether returns or a firm limit sets it; an Excel model"
+  ],
+  "prompt": "Value Project Cascade from comps and precedents, then run base and downside with the signed add-on and show how much of the return depends on the pipeline.",
+  "next": [
+   "pe-ic-challenger"
+  ]
+ },
+ "pe-ic-challenger": {
+  "name": "IC challenger",
+  "stage": "ic",
+  "blurb": "The strongest case against",
+  "when": "Before the IC memo is final.",
+  "get": [
+   "The bear case and the assumptions carrying the return",
+   "Whether the base is too high or too low",
+   "Proposed conditions"
+  ],
+  "prompt": "Pressure-test the Cascade case. What would a skeptical IC member attack first?",
+  "next": [
+   "pe-ic-memo"
+  ]
+ },
+ "pe-ic-memo": {
+  "name": "IC memo",
+  "stage": "ic",
+  "blurb": "The recommendation",
+  "when": "For an initial or final IC, or an add-on approval.",
+  "get": [
+   "The six tests and one of four recommendations",
+   "Price, walk-away, conditions and what is unverified",
+   "The decision recorded once the IC has met"
+  ],
+  "prompt": "Draft the final IC memo for Cascade from the record.",
+  "next": [
+   "pe-deal-portfolio-state"
+  ]
+ },
+ "pe-contract-review": {
+  "name": "Contract redlines and issues lists",
+  "stage": "ic",
+  "blurb": "What does the paper say?",
+  "when": "An NDA, a target's key agreements or a draft purchase agreement needs a buyer-side read.",
+  "get": [
+   "An NDA redline in Word, with tracked changes and comments",
+   "A target's contract terms, the consents needed and what the buyer should ask for",
+   "A purchase agreement issues list for counsel (a business-side review, not legal advice)"
+  ],
+  "prompt": "Mark up the attached NDA as buyer.",
+  "next": [
+   "pe-commercial-diligence",
+   "pe-ic-memo"
+  ]
+ },
+ "pe-portfolio-onboarding-vcp": {
+  "name": "Onboarding and 100 days",
+  "stage": "portfolio",
+  "blurb": "The first 100 days",
+  "when": "At signing or close.",
+  "get": [
+   "The value-creation plan and add-on program",
+   "KPI definitions",
+   "A 100-day plan and meeting rhythm"
+  ],
+  "prompt": "Build the 100-day plan and KPI set for Cascade from the closing snapshot.",
+  "next": [
+   "pe-portfolio-review"
+  ]
+ },
+ "pe-portfolio-review": {
+  "name": "Portfolio review",
+  "stage": "portfolio",
+  "blurb": "What changed against plan?",
+  "when": "Monthly, quarterly or before a board meeting.",
+  "get": [
+   "Actuals against budget and the frozen IC case",
+   "Covenant headroom and months of liquidity",
+   "Exceptions first"
+  ],
+  "prompt": "Q3 review for Cascade: what changed against underwriting?",
+  "next": [
+   "pe-ai-value-creation"
+  ]
+ },
+ "pe-ai-value-creation": {
+  "name": "AI value creation",
+  "stage": "portfolio",
+  "blurb": "Where AI pays",
+  "when": "You want to know where AI pays at a portfolio company, or to test a target's AI claims.",
+  "get": [
+   "Opportunities sized, with capacity kept apart from cash",
+   "Build, buy or partner",
+   "Pilots with stop rules"
+  ],
+  "prompt": "Where could AI pay at Cascade in the next 12 months? Size the top three.",
+  "next": [
+   "pe-portfolio-review"
+  ]
+ }
+};
+  const STAGES = [["sourcing", "Sourcing and screen"], ["diligence", "Diligence"], ["ic", "Underwriting and IC"], ["portfolio", "Ownership"]];
+  let current = "pe-deal-screen";
+  const skillBtn = id => `<button class="sk" type="button" data-skill="${id}" aria-pressed="${id === current}"><b>${esc(SKILLS[id].name)}</b><span>${esc(SKILLS[id].blurb)}</span></button>`;
+  function renderMap() {
+    $("top-row").innerHTML = skillBtn("pe-stack-guide") + `<p>Start here when unsure.</p>`;
+    $("rail").innerHTML = STAGES.map(([k, label]) => `<div class="stage"><div class="stage-h">${label}</div>${Object.keys(SKILLS).filter(id => SKILLS[id].stage === k).map(skillBtn).join("")}</div>`).join("");
+    $("band").innerHTML = skillBtn("pe-deal-portfolio-state") + `<p>The shared record underneath every skill. It records each IC decision, a pass included, and starts the ownership record.</p>`;
+    document.querySelectorAll("[data-skill]").forEach(b => b.addEventListener("click", () => select(b.dataset.skill)));
+    renderDetail();
+  }
+  function renderDetail() {
+    const s = SKILLS[current];
+    $("detail").innerHTML = `
+      <div class="detail-head"><h3>${esc(s.name)}</h3><span class="id">${esc(current)}</span></div>
+      <div class="kv"><h4>Use it when</h4><p>${esc(s.when)}</p></div>
+      <div class="kv"><h4>You get</h4><ul>${s.get.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>
+      <div class="kv"><h4>Example request</h4>${snip(s.prompt)}</div>
+      <div class="kv"><h4>Usually next</h4><div class="pills">${s.next.map(n => `<button class="pill" type="button" data-goto2="${n}">${esc(SKILLS[n].name)}</button>`).join("")}</div></div>`;
+    $("detail").querySelectorAll("[data-goto2]").forEach(b => b.addEventListener("click", () => select(b.dataset.goto2)));
+    wireCopy($("detail"));
+  }
+  function select(id) {
+    current = id;
+    document.querySelectorAll("[data-skill]").forEach(b => b.setAttribute("aria-pressed", b.dataset.skill === id));
+    renderDetail();
+  }
+  function wireCopy(root) {
+    root.querySelectorAll(".copy").forEach(b => {
+      if (b.dataset.wired) return; b.dataset.wired = "1";
+      b.addEventListener("click", async () => {
+        const pre = b.previousElementSibling;
+        try { await navigator.clipboard.writeText(pre.textContent); b.textContent = "Copied"; }
+        catch (e) { const r = document.createRange(); r.selectNodeContents(pre); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); b.textContent = "Selected"; }
+        setTimeout(() => { b.textContent = "Copy"; }, 1600);
+      });
+    });
+  }
+
+  /* ---------------- tabs ---------------- */
+  function setView(v) {
+    document.body.dataset.view = v;
+    document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === v));
+    try { localStorage.setItem("pe-guide-view", v); } catch (e) {}
+  }
+  document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => { setView(b.dataset.view); window.scrollTo({ top: 0 }); }));
+  document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => {
+    setView(b.dataset.go); window.scrollTo({ top: 0 });
+  }));
+  let startView = "guide";
+  try { startView = localStorage.getItem("pe-guide-view") || "guide"; } catch (e) {}
+  if (startView !== "guide" && startView !== "skills") startView = "guide";
+  if (location.hash === "#all" || location.hash === "#hood") startView = "skills";
+  setView(startView);
+  renderJobs(); renderMap(); wireCopy(document);
+})();
+</script>
+</body>
+</html>

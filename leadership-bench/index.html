@@ -1,0 +1,318 @@
+<!doctype html><html><head><meta charset=utf8><meta name="robots" content="noindex,nofollow"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PE Toolkit - Leadership Bench</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Schibsted+Grotesk:wght@600;700&display=swap">
+<style>
+/* Concept: a talent partner's workbench. A portfolio x role grid of leadership risk, and a search debrief that organizes evidence
+   without scoring people. Status colors are used only for state, always with an icon and a word. */
+:root{
+  --bg:#f6f6f4; --surface:#fcfcfb; --raised:#fff; --ink:#111315; --ink2:#52514e; --muted:#6f6d67; --axis:#898781;
+  --line:#e1e0d9; --line2:#c3c2b7; --accent:#256abf; --accent-ink:#fff; --accent-soft:#e6f0fc; --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;
+  --good:#0a6b0a; --good-bg:#e4f3e4; --warn:#7a4f00; --warn-bg:#fdf1d3; --ser:#9a3b12; --ser-bg:#fde6da; --crit:#b02a2a; --crit-bg:#fbe5e3;
+  --mark:#fff2b8; --mark-ink:#111315;
+  --f-head:"Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-body:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d0d0d; --surface:#1a1a19; --raised:#222220; --ink:#f0efec; --ink2:#c3c2b7; --muted:#a3a198; --axis:#898781;
+  --line:#2c2c2a; --line2:#383835; --accent:#6da7ec; --accent-ink:#0d0d0d; --accent-soft:#16263a; --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+  --good:#5fd35f; --good-bg:#12301a; --warn:#f0b948; --warn-bg:#33270b; --ser:#f3a07c; --ser-bg:#3a2216; --crit:#f08a85; --crit-bg:#3a1816;
+  --mark:#4a3f0f; --mark-ink:#f0efec; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d0d0d; --surface:#1a1a19; --raised:#222220; --ink:#f0efec; --ink2:#c3c2b7; --muted:#a3a198; --axis:#898781;
+  --line:#2c2c2a; --line2:#383835; --accent:#6da7ec; --accent-ink:#0d0d0d; --accent-soft:#16263a; --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+  --good:#5fd35f; --good-bg:#12301a; --warn:#f0b948; --warn-bg:#33270b; --ser:#f3a07c; --ser-bg:#3a2216; --crit:#f08a85; --crit-bg:#3a1816;
+  --mark:#4a3f0f; --mark-ink:#f0efec; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--f-body);margin:0;padding-block:0 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-head);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:26px;line-height:1.15;font-weight:700} h2{font-size:18px;font-weight:600} h3{font-size:14px;font-weight:600}
+button,select,input{font:inherit;color:inherit}
+.wrap{max-width:1360px;margin:0 auto}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500}
+header{padding:28px 0 14px} header p{margin:6px 0 0;color:var(--ink2);max-width:72ch}
+.banner{background:var(--warn-bg);color:var(--warn);border:1px solid var(--line);border-radius:6px;padding:8px 12px;font-size:12.5px;margin-bottom:14px}
+nav.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto}
+nav.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:10px 14px;cursor:pointer;color:var(--ink2);font-weight:500;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+section[hidden]{display:none!important}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.hint{font-size:12px;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.kpi .l{font-size:12px;color:var(--muted)} .kpi .v{font-family:var(--f-head);font-size:24px;font-weight:600;line-height:1.2;margin-top:2px} .kpi .s{font-size:12px;color:var(--ink2)}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;align-items:start}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:500;text-align:left;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:6px;border-bottom:1px solid var(--line);vertical-align:middle}
+.grid td.cell{padding:4px}
+.cbtn{display:flex;align-items:center;gap:6px;width:100%;min-width:78px;border:1px solid transparent;border-radius:6px;padding:6px 8px;cursor:pointer;font-size:12.5px;font-weight:500;text-align:left;background:none}
+.cbtn:hover{border-color:var(--ink2)}
+.cbtn[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:1px}
+.cbtn .ic{font-size:11px;width:12px;text-align:center}
+.cbtn .vc{margin-left:auto;font-size:11px;color:inherit;opacity:.85}
+.st-good{background:var(--good-bg);color:var(--good)} .st-warn{background:var(--warn-bg);color:var(--warn)}
+.st-ser{background:var(--ser-bg);color:var(--ser)} .st-crit{background:var(--crit-bg);color:var(--crit)}
+.co{white-space:nowrap} .co b{font-weight:600} .co .sub{display:block;color:var(--muted);font-size:12px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12.5px;color:var(--ink2);margin:10px 0 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend .pill{white-space:normal}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:500;white-space:nowrap}
+.detail{position:sticky;top:12px}
+.dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px;margin:12px 0}
+.dl dt{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em} .dl dd{margin:0}
+.callout{background:var(--accent-soft);border-radius:6px;padding:10px 12px;margin-top:10px}
+.callout b{display:block;margin-bottom:2px}
+.chart svg{width:100%;height:auto;display:block}
+.tip{position:absolute;pointer-events:none;background:var(--raised);border:1px solid var(--line2);border-radius:6px;padding:7px 10px;font-size:12.5px;box-shadow:0 4px 14px rgba(0,0,0,.12);z-index:5}
+.btn{background:var(--surface);border:1px solid var(--line2);border-radius:6px;padding:6px 12px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--ink2)} .btn.small{padding:4px 9px;font-size:12px}
+.btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.cands{display:flex;flex-wrap:wrap;gap:6px}
+.sc{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:6px}
+.sc li{display:flex;gap:10px;font-size:13px}
+.sc li b{font-family:var(--f-mono);font-weight:500;color:var(--muted)}
+.ev td{vertical-align:top;padding:9px 8px}
+.ev td:first-child{width:28%}
+.lvl{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;white-space:nowrap}
+.lvl i{display:inline-flex;gap:2px} .lvl i u{display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--line2);text-decoration:none}
+.lvl i u.on{background:var(--s1)}
+.quote{display:block;font-size:12.5px;color:var(--ink2);margin-top:4px;padding-left:8px;border-left:2px solid var(--line2)}
+.quote small{color:var(--muted)}
+.notes p{margin:0 0 6px;font-size:13px}
+.notes .who{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-top:10px}
+mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2px}
+.red{background:var(--crit-bg);color:var(--crit);border-radius:3px;padding:0 4px;text-decoration:line-through}
+.flag{border:1px solid var(--line);border-left:3px solid var(--ser);border-radius:6px;padding:8px 10px;margin:6px 0;font-size:13px}
+.flag b{display:block}
+select{background:var(--surface);border:1px solid var(--line2);border-radius:6px;padding:4px 8px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px}
+ul.clean{margin:6px 0;padding-left:18px} ul.clean li{margin:3px 0}
+.flow{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.step{flex:1 1 150px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.step b{display:block;font-family:var(--f-head);margin-bottom:2px}.step small{color:var(--ink2);display:block}
+.step.mock{border-style:dashed}
+.tag{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.tag.real{color:var(--good)} .tag.mockt{color:var(--warn)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:max(18px,env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:13px;z-index:50}
+footer{color:var(--muted);font-size:12px;margin-top:24px;max-width:90ch}
+@media (max-width:1000px){.main{grid-template-columns:minmax(0,1fr)}.detail{position:static}}
+@media (max-width:560px){h1{font-size:22px}.dl{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Beta · talent and organization</div>
+  <h1>Portfolio leadership bench and executive pay</h1>
+  <p>Leadership risk across the portfolio, tied to each company's value creation plan.</p>
+</header>
+<div class="banner" role="note"><b>Synthetic data.</b> Companies, people and figures are invented.</div>
+
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <button role="tab" id="t-bench" aria-selected="true" aria-controls="p-bench">Leadership bench</button>
+  <button role="tab" id="t-comp" aria-selected="false" aria-controls="p-comp">Executive pay</button>
+</nav>
+
+<section id="p-bench" role="tabpanel" aria-labelledby="t-bench">
+  <div class="kpis" id="kpis"></div>
+  <div class="main">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap">
+        <h2>Ten companies, six leadership roles</h2>
+        <label class="hint"><input type="checkbox" id="vcponly"> Only roles the value-creation plan depends on</label>
+      </div>
+      <div class="tablewrap" style="margin-top:8px"><table class="grid" id="grid"></table></div>
+      <div class="legend">
+        <span class="pill st-good">✓ Strong: fit for the plan</span><span class="pill st-warn">! Gap: in seat, stretched by the plan</span><span class="pill st-ser">◆ Interim or vacant</span><span class="pill st-crit">▲ At risk: plan-critical and vacant, or a gap with no successor</span>
+        <span>★ = the plan depends on this role · S = search open</span>
+      </div>
+    </div>
+    <aside class="card detail" id="detail" aria-live="polite"></aside>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>Where gaps cluster</h3>
+    <p class="hint" style="margin:2px 0 6px">Roles rated a gap, interim or vacant, by role across the ten companies.</p>
+    <div class="chart" id="bars" style="position:relative;max-width:640px"></div>
+  </div>
+</section>
+
+
+<section id="p-comp" role="tabpanel" aria-labelledby="t-comp" hidden>
+  <div class="card" style="margin-bottom:14px">
+    <div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between">
+      <div><h2>Executive pay across the portfolio, by function</h2><p class="hint" style="margin:2px 0 0">Base salary, target bonus and equity (annualized) against a market range sized to each company. Restricted view: talent team and deal leads only.</p></div>
+      <div class="cands" id="fnsel" role="group" aria-label="Function" style="margin:0"></div>
+    </div>
+  </div>
+  <div class="kpis" id="compkpis"></div>
+  <div class="main">
+    <div class="card">
+      <div class="legend" style="margin:0 0 6px"><span><i style="display:inline-block;width:12px;height:12px;border-radius:2px;background:var(--s1)"></i>Base salary</span><span><i style="display:inline-block;width:12px;height:12px;border-radius:2px;background:var(--s2)"></i>Target bonus</span><span><i style="display:inline-block;width:12px;height:12px;border-radius:2px;background:var(--s3)"></i>Equity, per year</span><span><i style="display:inline-block;width:18px;height:10px;border-radius:2px;background:var(--line);border:1px solid var(--line2)"></i>Market 25th to 75th percentile</span><span>│ market median</span></div>
+      <div class="chart" id="compchart" style="position:relative"></div>
+      <button class="btn small" id="tg-comp" type="button" style="margin-top:6px">Show table</button><div id="comptbl" hidden></div>
+    </div>
+    <aside class="card" id="compside" aria-live="polite"></aside>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>How to read this, and its limits</h3>
+    <ul class="clean">
+      <li><b>Market ranges are placeholders</b> built for this demo. Production would load a licensed private-equity compensation survey and size each company by revenue or EBITDA.</li>
+      <li><b>Equity</b> = grant as a share of fully diluted equity × the company's current equity value from the fund's Q3 marks, spread over a five-year hold. It ignores any preferred return or hurdle, so it overstates what an option-like grant is worth today.</li>
+      <li><b>Rolled equity</b> (what an executive reinvested at close) is not pay and should be excluded; the tool flags grants large enough to suggest it is mixed in.</li>
+      <li><b>Access:</b> individual pay is visible to the talent team and deal leads only; anyone else sees function-level medians.</li>
+      <li><b>Open searches:</b> several states, including Illinois, require pay ranges in job postings; confirm requirements for each company's state with counsel.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>Leadership Bench · prototype prepared by JD Elder · invented data to show the workflow. Not legal advice. <a href="../" style="color:inherit">Part of PE AI &amp; Data Tools</a></footer>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function(){
+"use strict";
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2200)}
+function copyText(txt,ok){const fb=()=>{const ta=document.createElement("textarea");ta.value=txt;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();let r=false;try{r=document.execCommand("copy")}catch(e){}ta.remove();toast(r?ok:"Select the text and copy it manually")};if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>toast(ok)).catch(fb);else fb()}
+
+/* ---------------- bench ---------------- */
+const ROLES=["CEO","CFO","COO","Commercial","People / HR","Tech and data"];
+// status: G strong, W gap, R interim/vacant. vcp: indexes of roles the plan depends on. srch: roles with search open. succ: successor per role (N none, L 1-2 yrs, Y ready now)
+const COS=[
+ {n:"Aspen",t:"Multi-site dental",y:2023,plan:"De novo openings and add-ons in two new states",s:"GGWGRW",vcp:[0,2,3],srch:[4],succ:"NLLNNN"},
+ {n:"Birch",t:"Infusion centers",y:2024,plan:"Payer contracting and center expansion",s:"GWGGGW",vcp:[1,3],srch:[],succ:"LNYLNN"},
+ {n:"Cypress",t:"Residential HVAC and plumbing",y:2022,plan:"Technician retention and new-market launches",s:"GGWGWR",vcp:[2,4],srch:[5],succ:"YNLNNN"},
+ {n:"Dogwood",t:"Specialty food distribution",y:2024,plan:"Exclusive brand wins and margin",s:"GGGWGG",vcp:[0,3],srch:[],succ:"LLNNLN"},
+ {n:"Elm",t:"Precision components manufacturing",y:2025,plan:"Two add-ons, ERP migration and lender reporting",s:"GRGGWW",vcp:[1,2,5],srch:[1],succ:"LNNLNN"},
+ {n:"Fir",t:"Receivables management services",y:2023,plan:"Automation and recovery per FTE",s:"WGGGGR",vcp:[0,5],srch:[5],succ:"NYLLNN"},
+ {n:"Ginkgo",t:"Testing and inspection services",y:2025,plan:"Client diversification and lab network",s:"GGWWGG",vcp:[3,2],srch:[],succ:"NLNNNL"},
+ {n:"Hawthorn",t:"Food contract manufacturing",y:2022,plan:"Capacity expansion and exit preparation",s:"GWGGGW",vcp:[1,2],srch:[],succ:"YLLNNN"},
+ {n:"Ivy",t:"Behavioral health",y:2026,plan:"Founder transition and clinical quality build",s:"RGWGWW",vcp:[0,4,2],srch:[0],succ:"NLNNNN"},
+ {n:"Juniper",t:"Marketing services",y:2023,plan:"Offshore delivery and AI-assisted content",s:"GGGWGW",vcp:[3,5],srch:[],succ:"LNLLNN"}
+];
+const TEN={G:[3.1,6.5],W:[1.2,4.8],R:[0,0]};
+const NOTE={
+ CEO:{G:"Proven operator for this stage; board confidence is high.",W:"Strong at today's business; the plan asks for a scale and M&A track record the role has not shown yet.",R:"Founder transition in progress; an interim leader covers day-to-day decisions."},
+ CFO:{G:"Has run lender reporting and integrations at this scale.",W:"Solid controller; the plan needs lender reporting, add-on integration and a systems change the role has not led.",R:"Seat vacant since spring; the controller and an interim CFO cover close and lender reporting."},
+ COO:{G:"Runs a consistent operating cadence across sites.",W:"Good within the current footprint; new-market launches will stretch the role.",R:"Interim coverage."},
+ Commercial:{G:"Owns a repeatable growth engine with clear pipeline metrics.",W:"Relationship-driven selling; the plan needs a measurable, team-based growth function.",R:"Interim coverage."},
+ "People / HR":{G:"Partners well with the CEO on hiring and retention.",W:"Administrative HR today; the plan depends on retention programs and leadership hiring.",R:"No dedicated HR leader; a fractional resource covers payroll and compliance."},
+ "Tech and data":{G:"Leads systems and reporting at the level the plan needs.",W:"IT support focus; the plan depends on systems integration and data the role has not delivered.",R:"Vacant; an outside managed-service firm covers IT."}
+};
+const ACT={
+ G:"Keep in the quarterly talent review; confirm a successor plan.",
+ W:"Agree a development plan with a named coach or adviser, or add a strong number two. Revisit in two quarters.",
+ R:"Prioritize the search; set an interim scorecard so the plan does not stall."
+};
+const SUCC={Y:"Ready now",L:"Ready in 1 to 2 years",N:"None named"};
+function cellState(c,ri){const s=c.s[ri],v=c.vcp.includes(ri);if(s==="G")return "good";if(v&&(s==="R"||(s==="W"&&c.succ[ri]==="N")))return "crit";return s==="R"?"ser":"warn"}
+const LBL={good:["✓","Strong fit","st-good"],warn:["!","Gap vs plan","st-warn"],ser:["◆","Interim or vacant","st-ser"],crit:["▲","Plan-critical, at risk","st-crit"]};
+function tenure(ci,ri){const s=COS[ci].s[ri];if(s==="R")return 0;const r=TEN[s];const x=((ci*7+ri*3)%10)/10;return Math.round((r[0]+(r[1]-r[0])*x)*10)/10}
+let SEL={c:4,r:1};
+function drawKpis(){
+  let strong=0,gap=0,vac=0,crit=0,srch=0,noSucc=0;
+  COS.forEach((c,ci)=>{for(let ri=0;ri<6;ri++){const st=cellState(c,ri);if(c.s[ri]==="G")strong++;else if(c.s[ri]==="W")gap++;else vac++;if(st==="crit")crit++}srch+=c.srch.length;[0,1].forEach(ri=>{if(c.succ[ri]==="N")noSucc++})});
+  $("#kpis").innerHTML=[["Leadership roles in strong fit",strong+" of 60",Math.round(strong/60*100)+"% of seats"],["Gap vs plan",gap+" roles","in seat, stretched by the plan"],["Interim or vacant",vac+" roles",srch+" searches open"],["Plan-critical and at risk",crit+" roles","the plan depends on them"],["CEO or CFO with no named successor",noSucc+" of 20","seats"]]
+   .map(k=>`<div class="kpi"><div class="l">${k[0]}</div><div class="v num">${k[1]}</div><div class="s">${k[2]}</div></div>`).join("");
+}
+function drawGrid(){
+  const only=$("#vcponly").checked;
+  $("#grid").innerHTML=`<thead><tr><th>Company</th>${ROLES.map(r=>`<th>${r}</th>`).join("")}</tr></thead><tbody>${COS.map((c,ci)=>`<tr><td class="co"><b>${c.n}</b><span class="sub">${esc(c.t)} · since ${c.y}</span></td>${ROLES.map((r,ri)=>{
+    const v=c.vcp.includes(ri);if(only&&!v)return `<td class="cell"><span class="hint" style="padding-left:8px">·</span></td>`;
+    const st=cellState(c,ri),L=LBL[st];
+    return `<td class="cell"><button type="button" class="cbtn ${L[2]}" data-c="${ci}" data-r="${ri}" aria-pressed="${SEL.c===ci&&SEL.r===ri}" aria-label="${c.n} ${r}: ${L[1]}${v?", plan-critical":""}${c.srch.includes(ri)?", search open":""}"><span class="ic">${L[0]}</span>${{good:"Strong",warn:"Gap",ser:"Interim",crit:"At risk"}[st]}<span class="vc">${v?"★":""}${c.srch.includes(ri)?" S":""}</span></button></td>`}).join("")}</tr>`).join("")}</tbody>`;
+  $("#grid").querySelectorAll(".cbtn").forEach(b=>b.addEventListener("click",()=>{SEL={c:+b.dataset.c,r:+b.dataset.r};drawGrid();drawDetail()}));
+}
+function drawDetail(){
+  const c=COS[SEL.c],ri=SEL.r,role=ROLES[ri],s=c.s[ri],st=cellState(c,ri),L=LBL[st],v=c.vcp.includes(ri),t=tenure(SEL.c,ri);
+  $("#detail").innerHTML=`<div class="eyebrow">${c.n} · ${esc(c.t)}</div><h2>${role}</h2>
+   <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><span class="pill ${L[2]}">${L[0]} ${L[1]}</span>${v?'<span class="pill" style="background:var(--accent-soft);color:var(--accent)">★ Plan depends on this role</span>':""}${c.srch.includes(ri)?'<span class="pill" style="background:var(--line)">Search open</span>':""}</div>
+   <dl class="dl"><div><dt>Value-creation plan</dt><dd>${esc(c.plan)}</dd></div><div><dt>Owned since</dt><dd>${c.y}</dd></div>
+   <div><dt>Tenure in role</dt><dd class="num">${s==="R"?"Interim / vacant":t+" years"}</dd></div><div><dt>Successor</dt><dd>${SUCC[c.succ[ri]]}</dd></div></dl>
+   <p style="margin:0">${esc(NOTE[role][s])}</p>
+   <div class="callout"><b>Suggested next step</b>${esc(ACT[s])}${st==="crit"?" Raise at the next board meeting: the plan depends on this seat.":""}</div>
+   <p class="hint" style="margin-top:10px">Status is set by the talent partner and deal lead in the quarterly review, not by a model.</p>`;
+  const g=$("#gosearch");if(g)g.addEventListener("click",()=>showTab("search"));
+}
+function drawBars(){
+  const rows=ROLES.map((r,ri)=>({r,n:COS.filter(c=>c.s[ri]!=="G").length,k:COS.filter(c=>c.s[ri]!=="G"&&c.vcp.includes(ri)).length}));
+  const W=600,rh=30,m={l:110,r:230,t:4},H=m.t+rows.length*rh+4,max=10;
+  let s="";rows.forEach((d,i)=>{const y=m.t+i*rh+6,w=Math.max(6,d.n/max*(W-m.l-m.r)),h=18;
+    s+=`<text x="${m.l-10}" y="${y+13}" text-anchor="end" font-size="12.5" fill="var(--ink2)">${d.r}</text><path d="M${m.l} ${y}h${w-4}a4 4 0 0 1 4 4v${h-8}a4 4 0 0 1-4 4h-${w-4}z" fill="var(--s1)"/><text x="${m.l+w+8}" y="${y+13}" font-size="12" fill="var(--ink2)">${d.n} of 10 · ${d.k} where the plan depends on it</text>`});
+  $("#bars").innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Count of companies with a gap or vacancy in each role">${s}</svg>`;
+}
+$("#vcponly").addEventListener("change",drawGrid);
+
+/* ---------------- tabs ---------------- */
+
+/* ---------------- executive pay ---------------- */
+const EQV=[155.8,79.9,55.45,112.5,143.2,105.9,39.0,143.4,49.0,62.15]; // $M equity value at Q3 marks (Fund Metrics Hub)
+const LTMX=[19.6,12.6,12.9,14.2,21.6,10.2,6.0,18.2,7.2,11.7];
+const MK={base:[425,300,290,260,210,240],bon:[75,50,50,60,35,40],eq:[4.0,1.25,1.0,0.8,0.5,0.6]};
+const OVR={"2-2":{bf:0.82,bonus:40,ef:0.6},"7-1":{ef:0.35},"9-3":{bf:1.28,bonus:35},"5-0":{ef:1.6,note:"Grant is about 1.6× the market share for a CEO. Check whether rolled equity from the close is included; if so, exclude it."}};
+const kf=v=>"$"+Math.round(v).toLocaleString("en-US")+"K";
+function mkt(ci,ri){const sz=LTMX[ci]>=12?1:0.85,b=MK.base[ri]*sz,tot=b*(1+MK.bon[ri]/100)+MK.eq[ri]/100*EQV[ci]*1000/5;return{base:b,bon:MK.bon[ri],eq:MK.eq[ri],p50:tot,p25:tot*0.8,p75:tot*1.22,sz}}
+function hh(ci,ri,k){const x=Math.sin(ci*12.9898+ri*78.233+k*37.719)*43758.5453;return x-Math.floor(x)}
+function pay(ci,ri){if(COS[ci].s[ri]==="R")return null;const m=mkt(ci,ri),o=OVR[ci+"-"+ri]||{};
+  const base=Math.round(m.base*(o.bf??(0.88+hh(ci,ri,1)*0.24))/5)*5,bonus=o.bonus??Math.round((m.bon+(hh(ci,ri,2)-0.5)*20)/5)*5;
+  const eq=Math.round(m.eq*(o.ef??(0.75+hh(ci,ri,3)*0.5))*100)/100,eqYr=eq/100*EQV[ci]*1000/5;
+  return{base,bonus,bonAmt:base*bonus/100,eq,eqYr,tot:base*(1+bonus/100)+eqYr,note:o.note}}
+function payState(ci,ri){const p=pay(ci,ri);if(!p)return"vac";const m=mkt(ci,ri);if(p.tot<m.p25)return COS[ci].vcp.includes(ri)?"risk":"below";if(p.tot>m.p75)return"above";return"in"}
+const PS={vac:["◆","Vacant or interim","st-ser"],risk:["▲","Below range, plan-critical","st-crit"],below:["!","Below range","st-warn"],above:["↑","Above range","st-off"],in:["✓","In range","st-good"]};
+let FN=1;
+$("#fnsel").innerHTML=ROLES.map((r,i)=>`<button class="btn small" type="button" data-i="${i}" aria-pressed="${i===FN}">${r}</button>`).join("");
+$("#fnsel").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{FN=+b.dataset.i;$("#fnsel").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",+x.dataset.i===FN));drawComp()}));
+$("#tg-comp").addEventListener("click",()=>{const t=$("#comptbl"),h=t.hidden;t.hidden=!h;$("#compchart").hidden=h;$("#tg-comp").textContent=h?"Show chart":"Show table"});
+function med(a){const s=a.slice().sort((x,y)=>x-y),n=s.length;return n?(n%2?s[(n-1)/2]:(s[n/2-1]+s[n/2])/2):0}
+function drawComp(){
+  const ri=FN,rows=COS.map((c,ci)=>({c,ci,p:pay(ci,ri),m:mkt(ci,ri),st:payState(ci,ri)}));
+  const filled=rows.filter(r=>r.p);
+  $("#compkpis").innerHTML=[["Median total pay, "+ROLES[ri],kf(med(filled.map(r=>r.p.tot))),"vs "+kf(med(filled.map(r=>r.m.p50)))+" market median"],["Below market range",rows.filter(r=>r.st==="below"||r.st==="risk").length+" of "+filled.length,"under the 25th percentile"],["Retention risks",rows.filter(r=>r.st==="risk").length+"","below range in a plan-critical seat"],["Vacant or interim",rows.filter(r=>r.st==="vac").length+"","see offer guidance"]]
+    .map(k=>`<div class="kpi"><div class="l">${k[0]}</div><div class="v num">${k[1]}</div><div class="s">${k[2]}</div></div>`).join("");
+  const W=640,rh=34,m={l:96,r:130,t:6,b:24},H=m.t+m.b+rows.length*rh;
+  const mx=Math.max(...rows.map(r=>Math.max(r.m.p75,r.p?r.p.tot:0)))*1.04,x=v=>m.l+v/mx*(W-m.l-m.r);
+  let g="";const step=mx>2000?500:mx>1000?250:100;for(let v=0;v<=mx;v+=step)g+=`<line x1="${x(v)}" x2="${x(v)}" y1="${m.t}" y2="${H-m.b}" stroke="var(--line)"/><text x="${x(v)}" y="${H-6}" text-anchor="middle" font-size="10.5" fill="var(--axis)">${v>=1000?"$"+(v/1000)+"M":"$"+v+"K"}</text>`;
+  rows.forEach((r,i)=>{const y=m.t+i*rh+8,h=16,P=PS[r.st];
+    g+=`<text x="${m.l-10}" y="${y+12}" text-anchor="end" font-size="12.5" fill="var(--ink2)">${r.c.n}</text>`;
+    g+=`<rect x="${x(r.m.p25)}" y="${y-4}" width="${x(r.m.p75)-x(r.m.p25)}" height="${h+8}" rx="3" fill="var(--line)" stroke="var(--line2)" stroke-width=".5"/>`;
+    if(r.p){let x0=m.l;[[r.p.base,"var(--s1)"],[r.p.bonAmt,"var(--s2)"],[r.p.eqYr,"var(--s3)"]].forEach((s,j)=>{const w=x(s[0])-m.l;g+=`<rect x="${x0+(j?1:0)}" y="${y}" width="${Math.max(1,w-(j?1:0)-1)}" height="${h}" rx="${j===2?3:1}" fill="${s[1]}"/>`;x0+=w})}
+    else g+=`<text x="${m.l+6}" y="${y+12}" font-size="12" fill="var(--muted)">Vacant or interim</text>`;
+    g+=`<line x1="${x(r.m.p50)}" x2="${x(r.m.p50)}" y1="${y-6}" y2="${y+h+6}" stroke="var(--ink)" stroke-width="1.5"/>`;
+    g+=`<text x="${W-m.r+10}" y="${y+12}" font-size="11.5" fill="var(--ink2)">${P[0]} ${r.st==="risk"?"Retention risk":P[1]}</text>`;
+    g+=`<rect class="hb" data-i="${r.ci}" x="0" y="${m.t+i*rh}" width="${W}" height="${rh}" fill="transparent"/>`});
+  $("#compchart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Total pay by company for ${ROLES[ri]} against market range">${g}</svg><div class="tip" hidden></div>`;
+  const tip=$("#compchart .tip");
+  $("#compchart").querySelectorAll(".hb").forEach(hb=>{const r=rows.find(z=>z.ci===+hb.dataset.i);
+    hb.addEventListener("pointermove",ev=>{tip.hidden=false;tip.textContent="";const t=document.createElement("div");t.style.fontWeight="600";t.textContent=r.c.n+" · "+ROLES[ri];tip.appendChild(t);
+      const lines=r.p?[["Base",kf(r.p.base)],["Target bonus",r.p.bonus+"% · "+kf(r.p.bonAmt)],["Equity",r.p.eq.toFixed(2)+"% · "+kf(r.p.eqYr)+"/yr"],["Total",kf(r.p.tot)],["Market median",kf(r.m.p50)]]:[["Status","Vacant or interim"],["Market median",kf(r.m.p50)]];
+      lines.forEach(a=>{const d=document.createElement("div");d.style.display="flex";d.style.justifyContent="space-between";d.style.gap="14px";const k=document.createElement("span");k.textContent=a[0];const v=document.createElement("b");v.className="num";v.style.fontWeight="500";v.textContent=a[1];d.appendChild(k);d.appendChild(v);tip.appendChild(d)});
+      const box=$("#compchart").getBoundingClientRect();tip.style.left=Math.min(ev.clientX-box.left+14,box.width-210)+"px";tip.style.top=(ev.clientY-box.top+12)+"px"});
+    hb.addEventListener("pointerleave",()=>tip.hidden=true)});
+  $("#comptbl").innerHTML=`<div class="tablewrap"><table><thead><tr><th>Company</th><th class="r">Base</th><th class="r">Bonus</th><th class="r">Equity % FD</th><th class="r">Equity / yr</th><th class="r">Total</th><th class="r">vs median</th><th>Status</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.c.n}</td>${r.p?`<td class="r num">${kf(r.p.base)}</td><td class="r num">${r.p.bonus}%</td><td class="r num">${r.p.eq.toFixed(2)}%</td><td class="r num">${kf(r.p.eqYr)}</td><td class="r num">${kf(r.p.tot)}</td><td class="r num">${Math.round((r.p.tot/r.m.p50-1)*100)}%</td>`:`<td colspan="6" class="hint">Vacant or interim</td>`}<td><span class="pill ${PS[r.st][2]}">${PS[r.st][0]} ${PS[r.st][1]}</span></td></tr>`).join("")}</tbody></table></div>`;
+  let s="<h3>What needs attention</h3>";
+  const att=rows.filter(r=>r.st==="risk"||r.st==="vac"||r.st==="above"||(r.p&&r.p.bonus<=r.m.bon-15));
+  if(!att.length)s+='<p class="hint">Every seat in this function is inside its market range.</p>';
+  att.forEach(r=>{const P=PS[r.st];
+    if(r.st==="risk")s+=`<div class="flag" style="border-left-color:var(--crit)"><b>▲ ${r.c.n}: retention risk</b>Total pay ${kf(r.p.tot)} is ${Math.round((1-r.p.tot/r.m.p50)*100)}% under the market median, and the value-creation plan depends on this seat (${esc(r.c.plan.toLowerCase())}). Options: a retention grant, a refreshed equity grant, or a higher bonus target tied to plan milestones.</div>`;
+    else if(r.st==="vac")s+=`<div class="flag"><b>◆ ${r.c.n}: offer guidance for the open seat</b>Base ${kf(r.m.base*0.9)} to ${kf(r.m.base*1.15)}, target bonus around ${r.m.bon}%, equity around ${r.m.eq.toFixed(2)}% of fully diluted equity (${kf(r.m.eq/100*EQV[r.c===COS[r.ci]?r.ci:0]*1000/5)} a year at today's mark). Market median total ${kf(r.m.p50)}.</div>`;
+    else if(r.st==="above")s+=`<div class="flag" style="border-left-color:var(--line2)"><b>↑ ${r.c.n}: above range</b>${r.p.note?esc(r.p.note):"Total pay is above the 75th percentile. Confirm it reflects scope or performance rather than drift."}</div>`;
+    else s+=`<div class="flag"><b>! ${r.c.n}: pay mix leans on base</b>Target bonus ${r.p.bonus}% against about ${r.m.bon}% at market. Moving pay from base to bonus would tie more of it to the plan.</div>`;
+  });
+  s+=`<p class="hint" style="margin-top:10px">Market ranges are demo placeholders, sized to each company's EBITDA (${ROLES[ri]} median base ${kf(MK.base[ri])} at $12M+ EBITDA).</p>`;
+  $("#compside").innerHTML=s;
+}
+const TABS=["bench","comp"];
+function showTab(n){TABS.forEach(t=>{$("#p-"+t).hidden=t!==n;$("#t-"+t).setAttribute("aria-selected",t===n)});window.scrollTo(0,0)}
+TABS.forEach(t=>$("#t-"+t).addEventListener("click",()=>showTab(t)));
+drawKpis();drawGrid();drawDetail();drawBars();drawComp();
+})();
+</script>
+
+</body></html>

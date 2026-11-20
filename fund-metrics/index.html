@@ -1,0 +1,296 @@
+<!doctype html><html><head><meta charset=utf8><meta name="robots" content="noindex,nofollow"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PE Toolkit - Fund Metrics Hub</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Schibsted+Grotesk:wght@600;700&display=swap">
+<style>
+/* Concept: the fund's single source of truth. Ask it a question and see the query; roll the valuation forward with a bridge;
+   catch any number that changed after it went to LPs; fill the LP schedule with lineage on every cell. */
+:root{
+  --bg:#f6f6f4; --surface:#fcfcfb; --raised:#fff; --ink:#111315; --ink2:#52514e; --muted:#6f6d67; --axis:#898781;
+  --line:#e1e0d9; --line2:#c3c2b7; --accent:#256abf; --accent-ink:#fff; --accent-soft:#e6f0fc; --s1:#2a78d6; --s2:#eb6834; --tot:#898781;
+  --good:#0a6b0a; --good-bg:#e4f3e4; --warn:#7a4f00; --warn-bg:#fdf1d3; --crit:#b02a2a; --crit-bg:#fbe5e3;
+  --code:#f0efeb;
+  --f-head:"Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-body:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d0d0d; --surface:#1a1a19; --raised:#222220; --ink:#f0efec; --ink2:#c3c2b7; --muted:#a3a198; --axis:#898781;
+  --line:#2c2c2a; --line2:#383835; --accent:#6da7ec; --accent-ink:#0d0d0d; --accent-soft:#16263a; --s1:#3987e5; --s2:#d95926; --tot:#6f6d67;
+  --good:#5fd35f; --good-bg:#12301a; --warn:#f0b948; --warn-bg:#33270b; --crit:#f08a85; --crit-bg:#3a1816; --code:#141413; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d0d0d; --surface:#1a1a19; --raised:#222220; --ink:#f0efec; --ink2:#c3c2b7; --muted:#a3a198; --axis:#898781;
+  --line:#2c2c2a; --line2:#383835; --accent:#6da7ec; --accent-ink:#0d0d0d; --accent-soft:#16263a; --s1:#3987e5; --s2:#d95926; --tot:#6f6d67;
+  --good:#5fd35f; --good-bg:#12301a; --warn:#f0b948; --warn-bg:#33270b; --crit:#f08a85; --crit-bg:#3a1816; --code:#141413; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--f-body);margin:0;padding-block:0 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-head);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:26px;line-height:1.15;font-weight:700} h2{font-size:18px;font-weight:600} h3{font-size:14px;font-weight:600}
+button,select,input{font:inherit;color:inherit}
+.wrap{max-width:1360px;margin:0 auto}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500}
+header{padding:28px 0 14px;display:flex;flex-wrap:wrap;gap:10px 30px;justify-content:space-between;align-items:flex-end} header p{margin:6px 0 0;color:var(--ink2);max-width:74ch}
+.banner{background:var(--warn-bg);color:var(--warn);border:1px solid var(--line);border-radius:6px;padding:8px 12px;font-size:12.5px;margin-bottom:14px}
+nav.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto}
+nav.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:10px 14px;cursor:pointer;color:var(--ink2);font-weight:500;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+section[hidden]{display:none!important}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.hint{font-size:12px;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.kpi .l{font-size:12px;color:var(--muted)} .kpi .v{font-family:var(--f-head);font-size:24px;font-weight:600;line-height:1.2;margin-top:2px} .kpi .s{font-size:12px;color:var(--ink2)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:16px}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:500;text-align:left;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.r,th.r{text-align:right}
+tfoot td{font-weight:600;border-top:1px solid var(--line2);border-bottom:0}
+.btn{background:var(--surface);border:1px solid var(--line2);border-radius:6px;padding:6px 12px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--ink2)} .btn.small{padding:4px 9px;font-size:12px}
+.btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.chip{background:var(--surface);border:1px solid var(--line2);border-radius:999px;padding:5px 12px;cursor:pointer;font-size:13px;text-align:left}
+.chip:hover{border-color:var(--ink2)} .chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.ask{display:flex;gap:8px;flex-wrap:wrap}
+.ask input{flex:1;min-width:220px;background:var(--surface);border:1px solid var(--line2);border-radius:6px;padding:9px 12px}
+pre.sql{background:var(--code);border:1px solid var(--line);border-radius:6px;padding:10px 12px;font:12.5px/1.5 var(--f-mono);overflow-x:auto;margin:8px 0;white-space:pre}
+.answer{font-size:15px;margin:10px 0 6px}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:500;white-space:nowrap}
+.st-good{background:var(--good-bg);color:var(--good)} .st-warn{background:var(--warn-bg);color:var(--warn)} .st-crit{background:var(--crit-bg);color:var(--crit)} .st-off{background:var(--line);color:var(--muted)}
+.chart{position:relative} .chart svg{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--ink2);margin:6px 0}
+.legend span{display:inline-flex;align-items:center;gap:6px} .legend i{width:12px;height:12px;border-radius:2px;display:inline-block}
+.tip{position:absolute;pointer-events:none;background:var(--raised);border:1px solid var(--line2);border-radius:6px;padding:7px 10px;font-size:12.5px;box-shadow:0 4px 14px rgba(0,0,0,.12);z-index:5;min-width:190px}
+.tip .t{font-weight:600;margin-bottom:3px}.tip .r{display:flex;justify-content:space-between;gap:14px}
+.flag{border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:6px;padding:9px 11px;margin:8px 0;font-size:13px}
+.flag.crit{border-left-color:var(--crit)} .flag b{display:block}
+td.src{cursor:help;text-decoration:underline dotted var(--line2);text-underline-offset:3px}
+.d-pos{color:var(--good)} .d-neg{color:var(--crit)}
+ul.clean{margin:6px 0;padding-left:18px} ul.clean li{margin:3px 0}
+.flow{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.step{flex:1 1 150px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.step b{display:block;font-family:var(--f-head);margin-bottom:2px}.step small{color:var(--ink2);display:block}
+.step.mock{border-style:dashed}
+.tag{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.tag.real{color:var(--good)} .tag.mockt{color:var(--warn)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:max(18px,env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:13px;z-index:50}
+footer{color:var(--muted);font-size:12px;margin-top:24px;max-width:90ch}
+@media (max-width:560px){h1{font-size:22px}}
+</style>
+
+<div class="wrap">
+<header>
+  <div>
+    <div class="eyebrow">Beta · fund finance and LP reporting</div>
+    <h1>Fund metrics hub</h1>
+    <p>One governed source for fund metrics: ask a question, roll the valuation forward, fill LP schedules with sources.</p>
+  </div>
+  <div class="hint num">Model Fund (synthetic) · Q3 2026 marks</div>
+</header>
+<div class="banner" role="note"><b>Synthetic data.</b> Companies, people and figures are invented.</div>
+
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <button role="tab" id="t-ask" aria-selected="true" aria-controls="p-ask">Ask the database</button>
+  <button role="tab" id="t-br" aria-selected="false" aria-controls="p-br">Valuation bridge</button>
+  <button role="tab" id="t-rep" aria-selected="false" aria-controls="p-rep">Reported vs. now</button>
+  <button role="tab" id="t-lp" aria-selected="false" aria-controls="p-lp">LP schedule</button>
+</nav>
+
+<section id="p-ask" role="tabpanel" aria-labelledby="t-ask">
+  <div class="kpis" id="kpis"></div>
+  <div class="card">
+    <h2>Ask a question</h2>
+    <p class="hint" style="margin:4px 0 0">Answers come from a query over approved metric definitions, never from the model's memory, and the query is shown so anyone can check it. In this demo the questions below are pre-built; typing matches the nearest one.</p>
+    <div class="chips" id="chips"></div>
+    <form class="ask" id="askform"><input id="q" type="text" placeholder="e.g. which companies are below cost?" aria-label="Question"><button class="btn" type="submit">Ask</button></form>
+    <div id="ans"></div>
+  </div>
+</section>
+
+<section id="p-br" role="tabpanel" aria-labelledby="t-br" hidden>
+  <div class="grid2">
+    <div class="card">
+      <h2>Fair value, Q2 to Q3 2026</h2>
+      <p class="hint" style="margin:2px 0 4px">Fund share of equity value. Each company's change splits exactly into earnings, multiple and net debt; the parts add to the total.</p>
+      <div class="legend"><span><i style="background:var(--tot)"></i>Quarter-end value</span><span><i style="background:var(--s1)"></i>Increase</span><span><i style="background:var(--s2)"></i>Decrease</span></div>
+      <div class="chart" id="wf"></div>
+    </div>
+    <div class="card">
+      <h2>By company ($M, fund share)</h2>
+      <div class="tablewrap" id="brtbl" style="margin-top:8px"></div>
+      <p class="hint" style="margin-top:8px">Earnings effect = change in LTM EBITDA × Q2 multiple. Multiple effect = change in multiple × Q3 EBITDA. Net debt effect = minus the change in net debt. All × fund ownership.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px" id="brnotes"></div>
+</section>
+
+<section id="p-rep" role="tabpanel" aria-labelledby="t-rep" hidden>
+  <div class="card">
+    <h2>Did anything we already told LPs change?</h2>
+    <p class="hint" style="margin:4px 0 8px">Every quarter's LP report is frozen as an as-reported snapshot. The hub compares it with the current database and lists every difference above $0.1M or 0.1x.</p>
+    <div id="restate"></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2>Consistency checks before the Q3 report</h2>
+    <div class="tablewrap" id="checks" style="margin-top:8px"></div>
+  </div>
+</section>
+
+<section id="p-lp" role="tabpanel" aria-labelledby="t-lp" hidden>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline">
+      <div><h2>Portfolio company schedule, Q3 2026</h2><p class="hint" style="margin:2px 0 0">ILPA-style layout, filled from the hub. Hover any underlined cell to see where it came from.</p></div>
+      <button class="btn" id="copylp" type="button">Copy as CSV</button>
+    </div>
+    <div class="tablewrap chart" id="lp" style="margin-top:10px"></div>
+  </div>
+</section>
+
+<footer>Fund Metrics Hub · prototype prepared by JD Elder · invented data to show the workflow. Valuation method simplified to an EBITDA multiple; not a description of any real fund's policy. <a href="../" style="color:inherit">Part of PE AI &amp; Data Tools</a></footer>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function(){
+"use strict";
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2200)}
+function copyText(txt,ok){const fb=()=>{const ta=document.createElement("textarea");ta.value=txt;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();let r=false;try{r=document.execCommand("copy")}catch(e){}ta.remove();toast(r?ok:"Select the text and copy it manually")};if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>toast(ok)).catch(fb);else fb()}
+const M=v=>"$"+v.toFixed(1)+"M", S=v=>(v>=0?"+":"−")+"$"+Math.abs(v).toFixed(1)+"M", X=v=>v.toFixed(1)+"x";
+// $M. ltm/nd/mult: [Q2, Q3]. own = fund ownership. cost = invested capital. pending = Q3 package missing.
+const C=[
+ {n:"Aspen",t:"Multi-site dental",d:"2023-03",own:.82,cost:60,ltm:[19.1,19.6],nd:[100,99],m:[13.0,13.0],em:11.0},
+ {n:"Birch",t:"Infusion centers",d:"2024-06",own:.75,cost:45,ltm:[12.5,12.6],nd:[64,65],m:[12.0,11.5],em:12.5},
+ {n:"Cypress",t:"Residential HVAC and plumbing",d:"2023-09",own:.90,cost:55,ltm:[13.3,12.9],nd:[80,80],m:[11.0,10.5],em:12.0},
+ {n:"Dogwood",t:"Specialty food distribution",d:"2024-02",own:.70,cost:50,ltm:[13.8,14.2],nd:[66,65],m:[12.5,12.5],em:11.0},
+ {n:"Elm",t:"Precision components manufacturing",d:"2025-01",own:.80,cost:85,ltm:[21.4,21.6],nd:[117,116],m:[12.0,12.0],em:11.5},
+ {n:"Fir",t:"Receivables management services",d:"2023-05",own:.85,cost:40,ltm:[9.8,10.2],nd:[42,42],m:[14.0,14.5],em:12.0},
+ {n:"Ginkgo",t:"Testing and inspection services",d:"2025-04",own:.65,cost:30,ltm:[6.0,6.0],nd:[32,33],m:[13.0,12.0],em:13.5},
+ {n:"Hawthorn",t:"Food contract manufacturing",d:"2023-04",own:.88,cost:45,ltm:[17.8,18.2],nd:[76,75],m:[11.5,12.0],em:10.0},
+ {n:"Ivy",t:"Behavioral health",d:"2026-01",own:.60,cost:28,ltm:[7.2,7.2],nd:[41,41],m:[12.5,12.5],em:12.5,pending:true},
+ {n:"Juniper",t:"Marketing services",d:"2023-08",own:.78,cost:50,ltm:[12.0,11.7],nd:[50,49],m:[10.0,9.5],em:11.0}
+];
+// what went to LPs in the Q2 report (only fields that later changed are listed)
+const REPORTED={Birch:{ltm:12.8,why:"Auditor adjustment to Q2 revenue recognition, booked in the September package"},Elm:{nd:115,why:"Purchase price true-up on the add-on, settled in August, increased Q2 net debt"}};
+C.forEach(c=>{
+  c.ev=[0,1].map(i=>c.ltm[i]*c.m[i]); c.eq=[0,1].map(i=>c.ev[i]-c.nd[i]); c.fv=c.eq.map(e=>e*c.own);
+  c.moic=c.fv[1]/c.cost; c.lev=c.nd[1]/c.ltm[1];
+  c.bE=(c.ltm[1]-c.ltm[0])*c.m[0]*c.own; c.bM=(c.m[1]-c.m[0])*c.ltm[1]*c.own; c.bD=-(c.nd[1]-c.nd[0])*c.own;
+  const r=REPORTED[c.n]; if(r){const l=r.ltm??c.ltm[0], d=r.nd??c.nd[0]; c.fvRep=(l*c.m[0]-d)*c.own}
+});
+const sum=(f)=>C.reduce((a,c)=>a+f(c),0);
+const FV2=sum(c=>c.fv[0]),FV3=sum(c=>c.fv[1]),COST=sum(c=>c.cost),BE=sum(c=>c.bE),BM=sum(c=>c.bM),BD=sum(c=>c.bD);
+const FV2REP=sum(c=>c.fvRep??c.fv[0]);
+$("#kpis").innerHTML=[["Fair value, Q3",M(FV3),"fund share of equity"],["Invested capital",M(COST),"10 companies"],["Gross MOIC",X(FV3/COST),"unrealized"],["Change this quarter",S(FV3-FV2),((FV3/FV2-1)*100).toFixed(1)+"% on Q2"],["Open data flags",String(Object.keys(REPORTED).length+2),"restatements and pending items"]]
+  .map(k=>`<div class="kpi"><div class="l">${k[0]}</div><div class="v num">${k[1]}</div><div class="s">${k[2]}</div></div>`).join("");
+
+/* ---------- ask ---------- */
+const QS=[
+ {q:"Which companies are marked below cost?",kw:["below cost","under cost","underwater","loss","impair","below 1"],
+  sql:"SELECT company, invested_capital, fair_value,\n       fair_value / invested_capital AS gross_moic\nFROM   v_fund_marks\nWHERE  fund = 'Model Fund' AND quarter = '2026Q3'\n  AND  fair_value < invested_capital\nORDER  BY gross_moic;",
+  run(){const r=C.filter(c=>c.moic<1).sort((a,b)=>a.moic-b.moic);return{text:r.length+" companies are marked below cost, together "+M(r.reduce((a,c)=>a+c.cost-c.fv[1],0))+" under invested capital.",cols:["Company","Invested","Fair value","Gross MOIC"],rows:r.map(c=>[c.n,M(c.cost),M(c.fv[1]),X(c.moic)])}}},
+ {q:"What drove the change in fund value this quarter?",kw:["drove","driver","bridge","change in","why did","roll"],
+  sql:"SELECT SUM(ebitda_effect)   AS earnings,\n       SUM(multiple_effect) AS multiple,\n       SUM(net_debt_effect) AS net_debt\nFROM   v_fv_bridge\nWHERE  fund = 'Model Fund' AND from_q = '2026Q2' AND to_q = '2026Q3';",
+  run(){return{text:"Fair value moved "+S(FV3-FV2)+": earnings "+S(BE)+", multiples "+S(BM)+", net debt "+S(BD)+". See the Valuation bridge tab for the company detail.",cols:["Driver","Effect"],rows:[["Earnings (LTM EBITDA)",S(BE)],["Valuation multiple",S(BM)],["Net debt",S(BD)],["Total",S(FV3-FV2)]]}}},
+ {q:"How do current multiples compare with entry multiples?",kw:["entry","multiple","expansion","compression","purchase"],
+  sql:"SELECT c.company, d.entry_multiple, m.multiple AS current_multiple,\n       m.multiple - d.entry_multiple AS change\nFROM   v_fund_marks m JOIN deals d USING (company)\nWHERE  m.quarter = '2026Q3'\nORDER  BY change DESC;",
+  run(){const r=C.slice().sort((a,b)=>(b.m[1]-b.em)-(a.m[1]-a.em));const up=r.filter(c=>c.m[1]>c.em).length;return{text:up+" of 10 companies are marked above their entry multiple; "+r.filter(c=>c.m[1]<c.em).length+" below.",cols:["Company","Entry","Q3 mark","Change"],rows:r.map(c=>[c.n,X(c.em),X(c.m[1]),(c.m[1]-c.em>=0?"+":"")+(c.m[1]-c.em).toFixed(1)+"x"])}}},
+ {q:"Which companies have net leverage above 5x?",kw:["leverage","5x","debt","levered"],
+  sql:"SELECT company, net_debt, ltm_ebitda_valuation,\n       net_debt / ltm_ebitda_valuation AS net_leverage\nFROM   v_fund_marks\nWHERE  quarter = '2026Q3'\n  AND  net_debt / ltm_ebitda_valuation > 5.0\nORDER  BY net_leverage DESC;",
+  run(){const r=C.filter(c=>c.lev>5).sort((a,b)=>b.lev-a.lev);return{text:r.length+" companies are above 5x on valuation EBITDA. Covenant tests use covenant EBITDA, which can differ; see the Portfolio Close beta.",cols:["Company","Net debt","LTM EBITDA","Net leverage"],rows:r.map(c=>[c.n,M(c.nd[1]),M(c.ltm[1]),X(c.lev)])}}},
+ {q:"Which three companies contribute most to unrealized gains?",kw:["contribut","gain","top","winner","best"],
+  sql:"SELECT company, fair_value - invested_capital AS unrealized_gain\nFROM   v_fund_marks\nWHERE  quarter = '2026Q3'\nORDER  BY unrealized_gain DESC\nLIMIT  3;",
+  run(){const r=C.slice().sort((a,b)=>(b.fv[1]-b.cost)-(a.fv[1]-a.cost)).slice(0,3);const tot=sum(c=>c.fv[1]-c.cost);return{text:"The top three account for "+M(r.reduce((a,c)=>a+c.fv[1]-c.cost,0))+" of "+M(tot)+" net unrealized gain.",cols:["Company","Unrealized gain","Gross MOIC"],rows:r.map(c=>[c.n,S(c.fv[1]-c.cost),X(c.moic)])}}},
+ {q:"Which Q2 figures changed after we reported them to LPs?",kw:["changed","restat","reported","revis","after"],
+  sql:"SELECT s.company, s.metric, s.value AS as_reported, m.value AS current\nFROM   lp_report_snapshots s\nJOIN   metrics m USING (company, quarter, metric)\nWHERE  s.report = '2026Q2 LP report'\n  AND  ABS(s.value - m.value) > 0.1;",
+  run(){return{text:"Two Q2 figures changed after the Q2 LP report, moving Q2 fair value by "+S(FV2-FV2REP)+". Details on the Reported vs. now tab.",cols:["Company","Metric","As reported","Now"],rows:Object.entries(REPORTED).map(([n,r])=>{const c=C.find(x=>x.n===n);return r.ltm!=null?[n,"Q2 LTM EBITDA",M(r.ltm),M(c.ltm[0])]:[n,"Q2 net debt",M(r.nd),M(c.nd[0])]})}}}
+];
+let QI=0;
+$("#chips").innerHTML=QS.map((q,i)=>`<button class="chip" type="button" data-i="${i}" aria-pressed="${i===QI}">${esc(q.q)}</button>`).join("");
+$("#chips").querySelectorAll(".chip").forEach(b=>b.addEventListener("click",()=>{QI=+b.dataset.i;$("#q").value="";drawAns()}));
+$("#askform").addEventListener("submit",e=>{e.preventDefault();const t=$("#q").value.toLowerCase().trim();if(!t)return;
+  let best=-1,bs=0;QS.forEach((q,i)=>{const s=q.kw.filter(k=>t.includes(k)).length;if(s>bs){bs=s;best=i}});
+  if(best<0){QI=-1;$("#chips").querySelectorAll(".chip").forEach(b=>b.setAttribute("aria-pressed","false"));$("#ans").innerHTML=`<div class="flag"><b>Not one of the demo questions</b>In production this would be translated into a query over the approved metric definitions, and shown before it runs. If the question is ambiguous, for example "EBITDA" without saying covenant or valuation, the hub asks which one.</div>`;return}
+  QI=best;drawAns(true)});
+function drawAns(matched){
+  $("#chips").querySelectorAll(".chip").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.i===QI));
+  const q=QS[QI],r=q.run();
+  $("#ans").innerHTML=`${matched?`<p class="hint" style="margin:10px 0 0">Matched to: "${esc(q.q)}"</p>`:""}<p class="answer">${esc(r.text)}</p>
+   <div class="tablewrap"><table><thead><tr>${r.cols.map((c,i)=>`<th class="${i?"r":""}">${c}</th>`).join("")}</tr></thead><tbody>${r.rows.map(row=>`<tr>${row.map((v,i)=>`<td class="${i?"r num":""}">${esc(v)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+   <details style="margin-top:10px" open><summary class="hint" style="cursor:pointer">Query that produced this answer</summary><pre class="sql">${esc(q.sql)}</pre></details>
+   <p class="hint">Source: Model Fund marks, Q3 2026 (valuation committee approved Oct 12, synthetic). ${C.some(c=>c.pending)?"Ivy uses Q2 EBITDA until its September package arrives.":""}</p>`;
+}
+drawAns();
+
+/* ---------- bridge ---------- */
+function drawBridge(){
+  const steps=[["Q2 fair value",FV2,"tot"],["Earnings",BE,"d"],["Multiples",BM,"d"],["Net debt",BD,"d"],["Q3 fair value",FV3,"tot"]];
+  const W=560,H=320,m={l:52,r:14,t:24,b:40};const lo=Math.floor((Math.min(FV2,FV3)-30)/10)*10,hi=Math.ceil((Math.max(FV2,FV3)+20)/10)*10;
+  const y=v=>H-m.b-(v-lo)/(hi-lo)*(H-m.t-m.b),bw=(W-m.l-m.r)/steps.length;
+  let g="";for(let v=lo;v<=hi;v+=20)g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${m.l-8}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--axis)">$${v}M</text>`;
+  let run=0;steps.forEach((s,i)=>{const x0=m.l+i*bw+bw*0.22,w=bw*0.56;let a,b,fill;
+    if(s[2]==="tot"){a=lo;b=s[1];run=s[1];fill="var(--tot)"}else{a=run;b=run+s[1];run=b;fill=s[1]>=0?"var(--s1)":"var(--s2)"}
+    const top=y(Math.max(a,b)),hgt=Math.max(2,Math.abs(y(a)-y(b)));
+    g+=`<rect x="${x0}" y="${top}" width="${w}" height="${hgt}" rx="3" fill="${fill}"/>`;
+    g+=`<text x="${x0+w/2}" y="${top-6}" text-anchor="middle" font-size="12" fill="var(--ink)" class="num">${s[2]==="tot"?M(s[1]):S(s[1])}</text>`;
+    g+=`<text x="${x0+w/2}" y="${H-m.b+16}" text-anchor="middle" font-size="11.5" fill="var(--ink2)">${s[0]}</text>`;
+    if(i<steps.length-1)g+=`<line x1="${x0+w}" x2="${x0+bw}" y1="${y(run)}" y2="${y(run)}" stroke="var(--line2)"/>`;
+  });
+  g+=`<text x="${m.l}" y="12" font-size="10.5" fill="var(--muted)">Axis starts at $${lo}M</text>`;
+  $("#wf").innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Fair value bridge from Q2 to Q3">${g}</svg>`;
+  const rows=C.slice().sort((a,b)=>(b.fv[1]-b.fv[0])-(a.fv[1]-a.fv[0]));
+  const cell=v=>`<td class="r num ${v>0.05?"d-pos":v<-0.05?"d-neg":""}">${Math.abs(v)<0.05?"–":S(v).replace("$","").replace("M","")}</td>`;
+  $("#brtbl").innerHTML=`<table><thead><tr><th>Company</th><th class="r">Q2</th><th class="r">Earnings</th><th class="r">Multiple</th><th class="r">Net debt</th><th class="r">Q3</th></tr></thead><tbody>${rows.map(c=>`<tr><td>${c.n}${c.pending?' <span class="pill st-warn">! Q2 EBITDA</span>':""}</td><td class="r num">${c.fv[0].toFixed(1)}</td>${cell(c.bE)}${cell(c.bM)}${cell(c.bD)}<td class="r num">${c.fv[1].toFixed(1)}</td></tr>`).join("")}</tbody><tfoot><tr><td>Fund</td><td class="r num">${FV2.toFixed(1)}</td>${cell(BE)}${cell(BM)}${cell(BD)}<td class="r num">${FV3.toFixed(1)}</td></tr></tfoot></table>`;
+  const fir=C.find(c=>c.n==="Fir"),firAdj=0.16*fir.m[1]*fir.own;
+  const multDown=C.filter(c=>c.m[1]<c.m[0]).map(c=>c.n);
+  $("#brnotes").innerHTML=`<h3>Draft commentary for the LP letter</h3><p style="margin:6px 0 0">Model Fund fair value ${FV3>=FV2?"rose":"fell"} ${S(FV3-FV2).replace("+","")} in the quarter to ${M(FV3)} (${X(FV3/COST)} gross MOIC). Earnings growth added ${M(BE)} and debt paydown ${M(BD)}; lower marks at ${multDown.join(", ")} took ${M(-sum(c=>Math.min(0,c.bM)))}, partly offset by higher marks at ${C.filter(c=>c.m[1]>c.m[0]).map(c=>c.n).join(" and ")}.</p>
+   <div class="flag"><b>! Check before this goes out</b>Fir's Q3 EBITDA includes a $0.16M adjustment still under review on the Portfolio Close page. At Fir's ${X(fir.m[1])} mark and ${Math.round(fir.own*100)}% ownership, it is worth ${M(firAdj)} of fair value. Ivy is carried on Q2 EBITDA pending its September package.</div>
+   <p class="hint">Every figure above is computed from the hub. The sentence structure would be drafted by a model in production; it cannot change a number.</p>`;
+}
+
+/* ---------- reported vs now ---------- */
+function drawRep(){
+  let h=`<div class="tablewrap"><table><thead><tr><th>Company</th><th>Metric</th><th class="r">In Q2 LP report</th><th class="r">Database now</th><th class="r">Q2 fair value impact</th><th>Status</th></tr></thead><tbody>`;
+  Object.entries(REPORTED).forEach(([n,r])=>{const c=C.find(x=>x.n===n);const imp=c.fv[0]-c.fvRep;
+    h+=`<tr><td>${n}</td><td>${r.ltm!=null?"Q2 LTM EBITDA":"Q2 net debt"}</td><td class="r num">${M(r.ltm??r.nd)}</td><td class="r num">${M(r.ltm!=null?c.ltm[0]:c.nd[0])}</td><td class="r num d-neg">${S(imp)}</td><td><span class="pill st-warn">! Needs a disclosure decision</span></td></tr>`});
+  h+=`</tbody></table></div>`;
+  h+=Object.entries(REPORTED).map(([n,r])=>`<div class="flag"><b>${n}: why it changed</b>${esc(r.why)}.</div>`).join("");
+  h+=`<p style="margin:10px 0 0">Q2 fair value as reported: <b class="num">${M(FV2REP)}</b>; on today's data: <b class="num">${M(FV2)}</b> (${S(FV2-FV2REP)}). Suggested handling: show Q2 as restated in the Q3 bridge with a footnote, so the quarter's change isn't overstated by the correction.</p>`;
+  $("#restate").innerHTML=h;
+  const ck=[
+   ["Bridge parts add to the total change",Math.abs(BE+BM+BD-(FV3-FV2))<1e-6,"Earnings + multiple + net debt = "+S(BE+BM+BD)],
+   ["Every company has a Q3 mark approved by the valuation committee",true,"10 of 10"],
+   ["Every company has a Q3 financial package",!C.some(c=>c.pending),"Ivy pending; carried on Q2 EBITDA"],
+   ["No EBITDA adjustments under review in marked EBITDA",false,"Fir: $0.16M under review"],
+   ["Gross MOIC equals fair value ÷ invested capital for every company",C.every(c=>Math.abs(c.moic-c.fv[1]/c.cost)<1e-9),"Recomputed, not copied"],
+   ["Q2 figures unchanged since the Q2 LP report",false,"2 changes, see above"]
+  ];
+  $("#checks").innerHTML=`<table><thead><tr><th>Check</th><th>Result</th><th>Detail</th></tr></thead><tbody>${ck.map(c=>`<tr><td style="white-space:normal">${c[0]}</td><td>${c[1]?'<span class="pill st-good">✓ Pass</span>':'<span class="pill st-warn">! Review</span>'}</td><td style="white-space:normal" class="hint">${esc(c[2])}</td></tr>`).join("")}</tbody></table>`;
+}
+
+/* ---------- LP schedule ---------- */
+const LPCOLS=[["Company",c=>c.n,null],["Industry",c=>c.t,null],["Initial investment",c=>c.d,"deals.close_date · closing binder"],["Invested capital",c=>M(c.cost),"capital_activity.invested · fund admin feed, Sep 30"],["Fair value",c=>M(c.fv[1]),"v_fund_marks.fair_value · computed: (EBITDA × multiple − net debt) × ownership"],["Gross MOIC",c=>X(c.moic),"computed: fair value ÷ invested capital"],["LTM EBITDA",c=>M(c.ltm[1]),"metrics.ltm_ebitda_valuation · Sep package; Ivy: Jun package"],["Net debt",c=>M(c.nd[1]),"metrics.net_debt · Sep balance sheet"],["Net leverage",c=>X(c.lev),"computed: net debt ÷ LTM EBITDA"],["EV / EBITDA",c=>X(c.m[1]),"valuation_marks.multiple · valuation committee, Oct 12"]];
+function drawLP(){
+  $("#lp").innerHTML=`<table><thead><tr>${LPCOLS.map((c,i)=>`<th class="${i>2?"r":""}">${c[0]}</th>`).join("")}</tr></thead><tbody>${C.map((c,ri)=>`<tr>${LPCOLS.map((col,i)=>`<td class="${i>2?"r num":""} ${col[2]?"src":""}" data-r="${ri}" data-c="${i}">${esc(col[1](c))}${i===6&&c.pending?" ‡":""}</td>`).join("")}</tr>`).join("")}</tbody><tfoot><tr><td>Total</td><td></td><td></td><td class="r num">${M(COST)}</td><td class="r num">${M(FV3)}</td><td class="r num">${X(FV3/COST)}</td><td></td><td></td><td></td><td></td></tr></tfoot></table><p class="hint" style="margin-top:8px">‡ Ivy: June quarter EBITDA; September package not yet received.</p><div class="tip" hidden></div>`;
+  const tip=$("#lp .tip");
+  $("#lp").querySelectorAll("td.src").forEach(td=>{const col=LPCOLS[+td.dataset.c],c=C[+td.dataset.r];
+    td.addEventListener("pointermove",ev=>{tip.hidden=false;tip.textContent="";const t=document.createElement("div");t.className="t";t.textContent=c.n+" · "+col[0];tip.appendChild(t);const r=document.createElement("div");r.style.fontSize="12px";r.textContent=col[2];tip.appendChild(r);const box=$("#lp").getBoundingClientRect();tip.style.left=Math.min(ev.clientX-box.left+12,box.width-240)+"px";tip.style.top=(ev.clientY-box.top+14)+"px"});
+    td.addEventListener("pointerleave",()=>tip.hidden=true)});
+}
+$("#copylp").addEventListener("click",()=>{const q=v=>'"'+String(v).replace(/"/g,'""')+'"';copyText([LPCOLS.map(c=>q(c[0])).join(",")].concat(C.map(c=>LPCOLS.map(col=>q(col[1](c))).join(","))).join("\n"),"Schedule copied as CSV")});
+
+const TABS=["ask","br","rep","lp"];
+function showTab(n){TABS.forEach(t=>{$("#p-"+t).hidden=t!==n;$("#t-"+t).setAttribute("aria-selected",t===n)})}
+TABS.forEach(t=>$("#t-"+t).addEventListener("click",()=>showTab(t)));
+drawBridge();drawRep();drawLP();
+window.__f={FV2,FV3,FV2REP,BE,BM,BD,COST,moic:C.map(c=>[c.n,c.fv[1].toFixed(1),c.moic.toFixed(2)])};
+})();
+</script>
+
+</body></html>

@@ -1,0 +1,382 @@
+<!doctype html><html><head><meta charset=utf8><meta name="robots" content="noindex,nofollow"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PE Toolkit - Deal Triage</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Schibsted+Grotesk:wght@600;700&display=swap">
+<style>
+/* Layout: the week's inbound queue as a four-column triage board (the deal screen's four decisions),
+   with the selected deal's screen beside it: process, financials, mandate check, claims vs evidence,
+   firm memory, drafted banker questions. Intake log and "how it would run" sit below.
+   Type and palette match the overview guide. */
+:root {
+  --bg: #f6f6f4; --paper: #ffffff; --panel: #fcfcfb; --ink: #111315; --ink-2: #52514e; --muted: #6f6d67;
+  --line: #e1e0d9; --line-2: #ecebe5;
+  --accent: #256abf; --accent-ink: #1c5299; --accent-soft: #e6f0fc;
+  --pass: #66645e; --pass-bg: #eceae4;
+  --watch: #7a4f00; --watch-bg: #fdf1d3;
+  --rev: #256abf; --rev-bg: #e6f0fc;
+  --pri: #17703f; --pri-bg: #e0f2e7;
+  --bad: #b3332a; --bad-bg: #fbe6e3;
+  --f-head: "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-body: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0d0d0d; --paper: #1a1a19; --panel: #141413; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #a3a198;
+  --line: #2c2c2a; --line-2: #232321;
+  --accent: #6da7ec; --accent-ink: #8db9f0; --accent-soft: #16263a;
+  --pass: #c3c2b7; --pass-bg: #272725;
+  --watch: #f0b948; --watch-bg: #33270b;
+  --rev: #6da7ec; --rev-bg: #16263a;
+  --pri: #62cf8e; --pri-bg: #123020;
+  --bad: #f08a80; --bad-bg: #3d1c19; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0d0d0d; --paper: #1a1a19; --panel: #141413; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #a3a198;
+  --line: #2c2c2a; --line-2: #232321;
+  --accent: #6da7ec; --accent-ink: #8db9f0; --accent-soft: #16263a;
+  --pass: #c3c2b7; --pass-bg: #272725;
+  --watch: #f0b948; --watch-bg: #33270b;
+  --rev: #6da7ec; --rev-bg: #16263a;
+  --pri: #62cf8e; --pri-bg: #123020;
+  --bad: #f08a80; --bad-bg: #3d1c19; color-scheme: dark }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--f-body); margin: 0;
+  padding-block: 0 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1320px; margin: 0 auto; padding-top: 28px; display: grid; gap: 18px; }
+h1, h2, h3 { font-family: var(--f-head); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.08; font-weight: 700; }
+h2 { font-size: 20px; font-weight: 700; line-height: 1.2; }
+h3 { font-family: var(--f-body); font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+p { margin: 0; }
+button, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.eyebrow { font-size: 11.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.beta { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--accent); color: var(--accent-ink); border-radius: 3px; padding: 1px 6px; margin-left: 10px; vertical-align: middle; font-weight: 500; }
+header { display: grid; gap: 8px; }
+.lede { color: var(--ink-2); max-width: 72ch; font-size: 16px; }
+.note { font-size: 12.5px; color: var(--muted); }
+.banner { background: var(--accent-soft); border: 1px solid var(--line); border-radius: 6px; padding: 9px 12px; font-size: 13.5px; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+.summary { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; }
+.summary span { font-size: 13px; color: var(--ink-2); }
+.summary b { font-family: var(--f-mono); font-size: 20px; font-weight: 500; margin-right: 5px; color: var(--ink); }
+
+.main { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 1080px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.left { display: grid; gap: 10px; min-width: 0; }
+.board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 640px) { .board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.col { background: var(--panel); border: 1px solid var(--line-2); border-radius: 8px; padding: 8px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.col-head { display: flex; justify-content: space-between; align-items: center; padding: 2px 3px; gap: 6px; }
+.dec { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; font-weight: 700; border-radius: 3px; padding: 1px 7px; line-height: 1.5; }
+.d-pass { background: var(--pass-bg); color: var(--pass); } .d-watch { background: var(--watch-bg); color: var(--watch); }
+.d-rev { background: var(--rev-bg); color: var(--rev); } .d-pri { background: var(--pri-bg); color: var(--pri); }
+.card { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; text-align: left; cursor: pointer; display: grid; gap: 3px; min-width: 0; width: 100%; }
+.card:hover { border-color: var(--ink-2); }
+.card[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.card b { font-size: 14px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.card span { font-size: 12px; color: var(--muted); line-height: 1.35; }
+.flags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px; }
+.fl { font-size: 10.5px; font-weight: 600; border-radius: 3px; padding: 0 5px; background: var(--bad-bg); color: var(--bad); }
+.fl.memo { background: var(--rev-bg); color: var(--rev); }
+.fl.over { background: var(--pass-bg); color: var(--pass); }
+.fl.soon { background: var(--watch-bg); color: var(--watch); }
+
+.detail { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; display: grid; gap: 16px; min-width: 0; }
+.dhead { display: grid; gap: 6px; }
+.dhead .row { display: flex; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap; align-items: baseline; }
+.why { margin: 0; padding-left: 1.1em; display: grid; gap: 3px; color: var(--ink-2); }
+dl { margin: 0; }
+.snap { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 10px 16px; }
+.snap div { display: grid; align-content: start; min-width: 0; }
+.snap dt { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.snap dd { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+.fin { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px; }
+.fin div { background: var(--panel); border: 1px solid var(--line-2); border-radius: 6px; padding: 8px 10px; display: grid; gap: 1px; }
+.fin dt { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.fin dd { margin: 0; font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 17px; font-weight: 500; }
+.fin dd.neg { color: var(--bad); }
+.fin dd.hi { color: var(--watch); }
+.reqs { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.reqs li { display: grid; grid-template-columns: 1.6em minmax(0, 1fr); gap: 6px; font-size: 14px; }
+.ok { color: var(--pri); font-weight: 700; } .no { color: var(--bad); font-weight: 700; } .q { color: var(--watch); font-weight: 700; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { padding: 7px 8px; border-bottom: 1px solid var(--line-2); text-align: left; vertical-align: top; }
+th { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 600; white-space: nowrap; }
+.ev { font-size: 11px; font-weight: 700; border-radius: 3px; padding: 1px 6px; white-space: nowrap; }
+.ev.claim { background: var(--watch-bg); color: var(--watch); } .ev.sup { background: var(--pri-bg); color: var(--pri); } .ev.con { background: var(--bad-bg); color: var(--bad); }
+.lens { display: flex; flex-wrap: wrap; gap: 6px; }
+.lens span { font-size: 12.5px; border: 1px solid var(--line); border-radius: 4px; padding: 2px 8px; }
+.lens b { font-weight: 600; }
+.l-strong { color: var(--pri); } .l-mixed { color: var(--watch); } .l-weak { color: var(--bad); } .l-unknown { color: var(--muted); }
+.memobox { border-left: 3px solid var(--rev); background: var(--rev-bg); padding: 8px 12px; border-radius: 0 4px 4px 0; font-size: 14px; display: grid; gap: 2px; }
+.memobox.conflict { border-left-color: var(--bad); background: var(--bad-bg); }
+.must { margin: 0; padding-left: 1.2em; display: grid; gap: 3px; }
+.draft { font-size: 14.5px; background: var(--panel); border: 1px solid var(--line-2); border-radius: 6px; padding: 12px 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+.btn { border: 1px solid var(--line); background: var(--paper); border-radius: 6px; padding: 7px 12px; font-size: 13.5px; font-weight: 500; cursor: pointer; min-height: 36px; }
+.btn:hover { border-color: var(--ink-2); }
+.actions select { border: 1px solid var(--line); background: var(--panel); border-radius: 6px; padding: 6px 8px; min-height: 36px; }
+.reading { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--line-2); padding-top: 10px; }
+
+details.more { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 11px 16px; min-width: 0; }
+details.more > summary { cursor: pointer; font-weight: 600; font-size: 14.5px; }
+details.more > summary span { font-weight: 400; color: var(--muted); font-size: 13px; margin-left: 6px; }
+details.more[open] > summary { margin-bottom: 12px; }
+.chip { font-size: 11px; font-weight: 600; border-radius: 3px; padding: 1px 6px; white-space: nowrap; background: var(--rev-bg); color: var(--rev); }
+.chip.skip { background: var(--pass-bg); color: var(--pass); }
+.chip.nda { background: var(--watch-bg); color: var(--watch); }
+td button.link { background: none; border: 0; padding: 0; color: var(--accent); font: 600 13.5px var(--f-body); cursor: pointer; text-align: left; }
+td button.link:hover { text-decoration: underline; }
+.how { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 16px; }
+.how div { border-top: 2px solid var(--ink); padding-top: 9px; display: grid; gap: 5px; align-content: start; }
+.how h4 { margin: 0; font-family: var(--f-head); font-size: 15.5px; }
+.how p { font-size: 14px; color: var(--ink-2); }
+footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Prototype · deal team</div>
+    <h1>Deal Triage<span class="beta">Beta</span></h1>
+    <p class="lede">The week's inbound teasers and CIMs, read from a deals mailbox, screened and sorted into the four deal screen decisions, with banker questions or a pass note drafted for each.</p>
+  </header>
+  <div class="banner" role="note"><b>Fictional deals.</b> Every company, banker and portfolio company on this page is invented. The mandate check uses an invented firm profile: four sectors, $10–$40M of EBITDA and control investments. A firm's own criteria would replace it.</div>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="main">
+    <div class="left">
+      <div class="board" id="board"></div>
+      <p class="note" id="week-note">Week of Nov 2, 2026, as of Nov 5 · partner calls are saved in this browser only.</p>
+    </div>
+    <article class="detail" id="detail" aria-live="polite"></article>
+  </div>
+
+  <details class="more" id="intake">
+    <summary>Intake log<span id="intake-sum"></span></summary>
+    <div class="scroll"><table>
+      <thead><tr><th>Received</th><th>From</th><th>Subject</th><th>Read as</th><th>Result</th></tr></thead>
+      <tbody id="intake-rows"></tbody>
+    </table></div>
+  </details>
+
+  <details class="more">
+    <summary>How the Beta would run</summary>
+    <div class="how">
+      <div><h4>Intake</h4><p>A shared deals mailbox, read in the firm's own enterprise AI account, not partners' personal inboxes. The firm's IT and compliance teams would review the setup before any real mail is read.</p></div>
+      <div><h4>The deal screen</h4><p>Each teaser or CIM gets the same deal screen: a mandate check, a first-pass view, and questions for the banker. The firm's own criteria replace the invented ones used here.</p></div>
+      <div><h4>Firm memory</h4><p>Returning companies match their last screen, and portfolio overlaps and add-on fits surface first. This needs the portfolio list and past screens from the CRM.</p></div>
+      <div><h4>People decide</h4><p>The Beta drafts. A person makes every call, and nothing goes to a banker or seller automatically.</p></div>
+      <div><h4>Success test</h4><p>Less time per teaser, and no pass that turns out to be a deal the partners wanted.</p></div>
+    </div>
+  </details>
+
+  <footer>Deal Triage · prototype prepared by JD Elder · Fictional deals; every screen is a draft for partner review. <a href="../" style="color:inherit">Part of PE AI &amp; Data Tools</a></footer>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const DEC = { pri: ["Priority diligence", "d-pri"], rev: ["Partner review", "d-rev"], watch: ["Watch", "d-watch"], pass: ["Pass", "d-pass"] };
+  const ORDER = ["pri", "rev", "watch", "pass"];
+  // Rolling week: the inbound was written for the week of Mon Nov 2, 2026; every date in that week's story is shifted so it reads as the current week.
+  const DAY = 86400000;
+  const BASE = Date.UTC(2026, 10, 2);
+  const _t = new Date(), TODAY = Date.UTC(_t.getFullYear(), _t.getMonth(), _t.getDate());
+  const THIS_MONDAY = TODAY - ((new Date(TODAY).getUTCDay() + 6) % 7) * DAY;
+  const OFFSET = Math.round((THIS_MONDAY - BASE) / DAY);
+  const AS_OF = TODAY;
+  const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const isoMs = iso => { const p = iso.split("-").map(Number); return Date.UTC(p[0], p[1] - 1, p[2]); };
+  const msIso = ms => { const d = new Date(ms); return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0"); };
+  const fmtDate = iso => { const p = iso.split("-").map(Number); return MON[p[1] - 1] + " " + p[2]; };
+  const daysTo = iso => Math.round((isoMs(iso) - AS_OF) / 86400000);
+  const shift = iso => msIso(isoMs(iso) + OFFSET * DAY);
+  const wk = i => ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i] + " " + fmtDate(msIso(THIS_MONDAY + i * DAY));
+  const weekNote = $("week-note"); if (weekNote) weekNote.textContent = "Week of " + fmtDate(msIso(THIS_MONDAY)) + ", " + new Date(THIS_MONDAY).getUTCFullYear() + ", as of " + fmtDate(msIso(AS_OF)) + " · partner calls are saved in this browser only.";
+  const money = v => (v < 0 ? "-$" : "$") + Math.abs(v).toFixed(1) + "M";
+
+  // req: [label, "ok" | "no" | "q", note]. claims: [statement, "claim" | "sup" | "con", basis]. lens: [dimension, strength]
+  // Dollar figures in $M. Revenue and EBITDA are reported; "adj" is the seller's adjusted EBITDA.
+  const DEALS = [
+    { id: "nor", n: "Northfield Infusion Partners", sub: "Home infusion", sector: "Healthcare services", hq: "Ohio", src: "Calloway Hale", recv: wk(0), returning: true, rec: "pri", type: "Platform",
+      rev: 212, ebitda: 24.1, adj: 27.0, ioi: shift("2026-11-19"), nda: "Signed Jun 2026",
+      why: ["The June screen was Watch because payer mix and gross-to-net were missing; the CIM now has both", "Platform-size home infusion with a commercial-heavy payer base and a long record in the category", "Founder-owned, and the CIM says the owners want to roll equity"],
+      req: [["Sector the firm invests in", "ok", "Healthcare services: home infusion and specialty pharmacy"], ["Size near $10–$40M of EBITDA", "ok", "Reported $24.1M"], ["Control or governance influence", "ok", "Majority recapitalization proposed"], ["Not venture-stage", "ok", "Established, profitable"], ["On a current sector thesis", "ok", "Home-based care and pharmacy services"]],
+      claims: [["78% of revenue from commercial payers", "claim", "CIM payer table; ask for remittance data by payer"], ["Gross margin steady near 31% for three years", "sup", "Consistent with audited statements in the CIM; no QoE yet"], ["No payer above 12% of revenue", "claim", "CIM only; check against the AR aging"], ["Licensed to dispense in all 14 states", "con", "State board lookup shows one pharmacy license expired in 2025"]],
+      lens: [["Industry", "strong"], ["Differentiation", "mixed"], ["Team", "strong"], ["Economics and cash flow", "mixed"], ["Growth levers", "strong"]],
+      must: ["Commercial payer mix and collections hold up in remittance data", "Manufacturer rebates and gross-to-net are stable", "The lapsed license is administrative, not a compliance gap"],
+      memo: "Screened Jun 9, 2026 · Watch: payer mix and gross-to-net data missing. The CIM now includes both.", mk: "Seen before",
+      dt: "First banker-call questions", draft: ["What do remittance files show for commercial payer mix and days in AR by payer over the last 24 months?", "How much gross margin comes from the three largest drugs, and what are the manufacturer rebate terms?", "Which location does the expired pharmacy license cover, and what is its status?", "Which of the add-backs recur, and what has the sell-side QoE tested so far?", "How much equity do the owners plan to roll?"] },
+    { id: "cal", n: "Calder Thermal Systems", sub: "Engineered components for OEMs", sector: "Industrials", hq: "Minnesota", src: "Harwick Partners", recv: wk(0), returning: false, rec: "pri", type: "Platform",
+      rev: 148, ebitda: 21.4, adj: 24.0, ioi: shift("2026-11-24"), nda: "Needed before the CIM",
+      why: ["Maker of engineered heat-exchanger and thermal components with certified plants and long OEM program lives", "One customer is 41% of revenue; the question is contract term and switching cost, not whether it exists", "Family-owned, with an add-on path in adjacent components"],
+      req: [["Sector the firm invests in", "ok", "Industrials: engineered components"], ["Size near $10–$40M of EBITDA", "ok", "Reported $21.4M"], ["Control or governance influence", "ok", "Majority sale; family wants to keep a stake"], ["Not venture-stage", "ok", "Established, profitable"], ["On a current sector thesis", "ok", "Outsourced engineered components"]],
+      claims: [["ISO 9001 certified at all three plants", "sup", "Registrar listings match three sites; certificates requested"], ["Largest customer is 41% of revenue", "claim", "Teaser; ask for contract term and renewal history"], ["Sole-source supplier on 9 OEM programs", "claim", "Teaser; ask which programs are sole-source by contract"], ["Can double output without new capex", "claim", "Teaser; ask for utilization by line"]],
+      lens: [["Industry", "strong"], ["Differentiation", "strong"], ["Team", "mixed"], ["Economics and cash flow", "mixed"], ["Growth levers", "mixed"]],
+      must: ["The top customer's contract runs long enough to underwrite", "Sole-source status is written into agreements", "Plant utilization supports growth without large capex"],
+      memo: null, mk: "",
+      dt: "First banker-call questions", draft: ["What are the term, pricing and termination rights in the largest customer's agreement?", "Which of the 9 sole-source programs are sole-source by contract, and for how long?", "What is utilization by line today, and what does the next 20% of volume require?", "How many customer audit findings and quality escapes did each plant have in the last three years, and how were they closed?", "What role do the family owners want after the sale?"] },
+    { id: "mer", n: "Meridian Comfort Services", sub: "Residential HVAC services", sector: "Consumer services", hq: "Indiana", src: "Bellmore & Co", recv: wk(0), returning: false, rec: "rev", type: "Add-on for a platform",
+      rev: 61, ebitda: 7.8, adj: 9.1, ioi: shift("2026-12-03"), nda: "Draft received; in review",
+      why: ["Below the stated range as a standalone, so the question is add-on fit, not platform fit", "A portfolio platform already operates in the neighboring states, and Meridian would add two", "38% of revenue is new-construction installs, which makes the housing cycle part of the screen"],
+      req: [["Sector the firm invests in", "ok", "Consumer services: residential HVAC and plumbing"], ["Size near $10–$40M of EBITDA", "q", "Reported $7.8M; below the range as a standalone"], ["Control or governance influence", "ok", "Majority sale"], ["Not venture-stage", "ok", "Established, profitable"], ["On a current sector thesis", "ok", "Residential services"]],
+      claims: [["Same-branch revenue up 11% year over year", "claim", "Teaser; ask for job counts and price changes"], ["62% of revenue is replacement and service", "claim", "Teaser; confirm against the job ledger by type"], ["Licensed and operating in two new states", "sup", "State contractor boards show active licenses"]],
+      lens: [["Industry", "mixed"], ["Differentiation", "mixed"], ["Team", "unknown"], ["Economics and cash flow", "mixed"], ["Growth levers", "strong"]],
+      must: ["The platform's management wants and can absorb the add-on", "Replacement and service revenue holds up in the job ledger", "Technician retention holds through a change of ownership"],
+      memo: "Add-on fit: Cypress (portfolio platform, residential HVAC and plumbing) operates in four neighboring states. Meridian would add two.", mk: "Add-on fit",
+      dt: "First banker-call questions", draft: ["Are the owners open to a bilateral approach from a platform, or is this a full process?", "Which branches are in the two new states, and are they operating or planned?", "What share of revenue is new construction versus replacement and service?", "How many maintenance memberships are active, and what is the renewal rate?", "What was technician turnover over the last 24 months?"] },
+    { id: "sab", n: "Sable Ridge Engineering", sub: "Engineering and environmental consulting", sector: "Business services", hq: "North Carolina", src: "Dunmore Advisors", recv: wk(1), returning: false, rec: "rev", type: "Platform",
+      rev: 205, ebitda: 31.0, adj: 36.5, ioi: shift("2026-12-08"), nda: "Needed before the CIM",
+      why: ["Large for the range and sponsor-owned since 2019, so this is a second-time sale with a high ask", "Backlog is the story; its cancellation terms and client mix decide the value", "Customers are public agencies and developers, so funding cycles reach the revenue line"],
+      req: [["Sector the firm invests in", "ok", "Business services: engineering and environmental consulting"], ["Size near $10–$40M of EBITDA", "ok", "Reported $31.0M"], ["Control or governance influence", "ok", "Sponsor sale of a majority"], ["Not venture-stage", "ok", "Established, profitable"], ["On a current sector thesis", "ok", "Technical and compliance services"]],
+      claims: [["$140M of signed backlog", "claim", "Teaser; ask for backlog by client and cancellation terms"], ["Top 10 clients are under 45% of revenue", "claim", "Teaser; confirm against the revenue by customer file"], ["Owned by the same private equity firm since 2019", "sup", "The owner's portfolio page lists it"]],
+      lens: [["Industry", "mixed"], ["Differentiation", "mixed"], ["Team", "mixed"], ["Economics and cash flow", "mixed"], ["Growth levers", "mixed"]],
+      must: ["Backlog converts to revenue at the stated pace", "Public funding cuts do not cancel a material share of backlog", "A second-time sale price leaves room for returns"],
+      memo: "Dunmore Advisors has sent two earlier deals. One was passed in March on size.", mk: "Banker history",
+      dt: "First banker-call questions", draft: ["What are the cancellation and termination terms behind the $140M backlog?", "How has backlog converted to revenue over the last eight quarters?", "What share of revenue comes from clients funded by federal or state programs?", "What did the current owner's hold-period investments change in the business?", "What price expectation is the banker signaling?"] },
+    { id: "lin", n: "Linwood Veterinary Partners", sub: "Veterinary practice group", sector: "Healthcare services", hq: "Texas", src: "Pryor Capital Markets", recv: wk(2), returning: false, rec: "watch", type: "Platform",
+      rev: 118, ebitda: 13.6, adj: 22.0, ioi: null, nda: "Needed before the CIM",
+      why: ["Reported EBITDA is in range, but the seller's headline leans on add-backs from new offices that have not matured", "The seller appears to want to keep a majority, which is a control question", "Revisit once the add-back schedule and cohort P&Ls are in hand"],
+      req: [["Sector the firm invests in", "ok", "Healthcare services: veterinary practices"], ["Size near $10–$40M of EBITDA", "q", "Reported $13.6M; the $22.0M headline needs reconciling"], ["Control or governance influence", "q", "Seller may keep a majority"], ["Not venture-stage", "ok", "Established, profitable"], ["On a current sector thesis", "ok", "Multi-site healthcare services"]],
+      claims: [["Adjusted EBITDA of $22.0M", "claim", "Teaser; $8.4M of add-backs, mostly new-office losses"], ["50 offices, 14 opened in the last 24 months", "sup", "Practice locator pages list 50 locations"], ["Same-office production up 9%", "claim", "Teaser; ask for production by office age"]],
+      lens: [["Industry", "mixed"], ["Differentiation", "weak"], ["Team", "unknown"], ["Economics and cash flow", "weak"], ["Growth levers", "mixed"]],
+      must: ["New offices ramp to mature-office margins on a known curve", "A control structure is available", "Add-backs reconcile to a normalized figure inside the range"],
+      memo: null, mk: "",
+      dt: "Watch note", draft: ["Watch note: ask for the add-back schedule and the P&L by office cohort. Revisit if normalized EBITDA is inside the range without the new-office add-backs, and confirm whether a majority sale is on the table."] },
+    { id: "ver", n: "Verity Community Living", sub: "Disability services", sector: "Healthcare services", hq: "Georgia", src: "Whitcomb Securities", recv: wk(2), returning: false, rec: "watch", type: "Platform",
+      rev: 97, ebitda: 15.8, adj: 17.0, ioi: shift("2026-12-01"), nda: "Needed before the CIM",
+      why: ["Medicaid is 70% of revenue, and the 6% rate increase in the teaser is proposed, not final", "Founder-owned and open to a recapitalization with a rollover, which fits how the firm describes its transactions", "The state's rate decision lands after the IOI date, so timing matters"],
+      req: [["Sector the firm invests in", "ok", "Healthcare services: residential and day services for people with disabilities"], ["Size near $10–$40M of EBITDA", "ok", "Reported $15.8M"], ["Control or governance influence", "ok", "Majority recapitalization with rollover"], ["Not venture-stage", "ok", "Established, profitable"], ["On a current sector thesis", "ok", "Multi-site healthcare services"]],
+      claims: [["Medicaid is 70% of revenue", "claim", "Teaser; ask for payer mix by state"], ["6% state rate increase effective January", "con", "State register shows the increase is proposed, not adopted"], ["No payer audits in five years", "claim", "Teaser; ask for payer correspondence"]],
+      lens: [["Industry", "mixed"], ["Differentiation", "mixed"], ["Team", "mixed"], ["Economics and cash flow", "mixed"], ["Growth levers", "mixed"]],
+      must: ["The final state rate holds or improves", "Referral relationships do not depend on the founder", "Staffing costs fit the rate environment"],
+      memo: null, mk: "",
+      dt: "Watch note", draft: ["Watch note: wait for the state's final rate decision before spending more time. Ask the banker whether the IOI date can move, and ask for payer mix by state."] },
+    { id: "ald", n: "Aldermere Software", sub: "Field-service scheduling software", sector: "Software", hq: "California", src: "Direct from founder", recv: wk(2), returning: false, rec: "pass", type: "Growth round",
+      rev: 14, ebitda: -9.2, adj: null, ioi: null, nda: "Not applicable",
+      why: ["Venture-stage and loss-making, with a minority growth round on offer", "The firm's profile says it does not make venture investments", "Outside the control buyout strategy on both size and structure"],
+      req: [["Sector the firm invests in", "no", "Software; outside the four sectors"], ["Size near $10–$40M of EBITDA", "no", "Reported EBITDA is negative"], ["Control or governance influence", "no", "Minority growth round"], ["Not venture-stage", "no", "Venture-backed, pre-profit"], ["On a current sector thesis", "no", "Not on the list"]],
+      claims: [["$14M of run-rate revenue", "claim", "Founder email; no financials attached"], ["Cash-flow positive by Q2 2027", "claim", "Founder email; reported EBITDA is negative"], ["SOC 2 Type II certified", "claim", "Founder email; no report attached"]],
+      lens: [["Industry", "mixed"], ["Economics and cash flow", "weak"]],
+      must: ["Not applicable: outside the mandate"],
+      memo: null, mk: "",
+      dt: "Draft pass note", draft: "Thank you for sending Aldermere our way. Our firm invests in profitable lower-middle-market companies where we can lead or have significant governance influence, so a minority growth round isn't a fit. We appreciate you thinking of us and wish you success with the raise." },
+    { id: "key", n: "Keystone Specialty Foods", sub: "Specialty food distribution", sector: "Food and consumer", hq: "Illinois", src: "Hartwell Group", recv: wk(3), returning: false, rec: "pass", type: "Platform",
+      rev: 176, ebitda: 18.3, adj: 19.5, ioi: shift("2026-12-04"), nda: "Needed before the CIM",
+      why: ["Direct competitor to a portfolio company in the same states", "In range and on a current thesis, so the conflict is the only reason to pass; partners can override", "Share the conflict with the covering partner before replying"],
+      req: [["Sector the firm invests in", "ok", "Food and consumer: specialty distribution"], ["Size near $10–$40M of EBITDA", "ok", "Reported $18.3M"], ["Control or governance influence", "ok", "Majority sale"], ["Not venture-stage", "ok", "Established, profitable"], ["On a current sector thesis", "ok", "Specialty food distribution"]],
+      claims: [["Top-three specialty distributor in the Midwest", "claim", "Teaser; ask how rank is measured"], ["SQF-certified warehouses", "sup", "The SQF directory lists both sites"], ["Exclusive rights to six imported brands", "claim", "Teaser; ask for the supplier agreements"]],
+      lens: [["Industry", "strong"], ["Differentiation", "mixed"], ["Economics and cash flow", "mixed"], ["Portfolio fit", "weak"]],
+      must: ["Not applicable: conflict with a portfolio company"],
+      memo: "Conflict: competes with portfolio company Dogwood in the Midwest.", mk: "Conflict check",
+      dt: "Draft pass note", draft: "Thank you for sharing Keystone with us. We looked at the materials closely, and because we have an existing investment in a closely related area, we are not in a position to participate in this process. We appreciate you thinking of us and would welcome the chance to work together on future opportunities." }
+  ];
+
+  // kind: teaser | cim | process | nda | direct | skip
+  const KIND = { teaser: "New teaser", cim: "CIM, returning deal", process: "Process update", nda: "NDA", direct: "Direct inbound", skip: "Not a deal" };
+  const INTAKE = [
+    ["Mon 7:12 AM", "Calloway Hale", "Project Beacon: CIM and process letter", "cim", "Re-screened as Priority diligence", "nor"],
+    ["Mon 9:40 AM", "Harwick Partners", "Project Gauge: confidential teaser", "teaser", "Screened as Priority diligence", "cal"],
+    ["Mon 11:05 AM", "Bellmore & Co", "Residential HVAC group: confidential teaser", "teaser", "Screened as Partner review, add-on fit", "mer"],
+    ["Tue 8:20 AM", "Dunmore Advisors", "Project Anchor: teaser", "teaser", "Screened as Partner review", "sab"],
+    ["Tue 10:15 AM", "Calloway Hale", "Project Beacon: management meeting dates", "process", "Dates added to the Northfield process", "nor"],
+    ["Tue 1:30 PM", "Middle Market M&A Weekly", "This week's deals", "skip", "Not a deal; skipped", null],
+    ["Wed 8:05 AM", "Pryor Capital Markets", "Project Willow: teaser", "teaser", "Screened as Watch", "lin"],
+    ["Wed 9:50 AM", "Whitcomb Securities", "Project Cobalt: teaser", "teaser", "Screened as Watch", "ver"],
+    ["Wed 3:10 PM", "Founder, Aldermere", "Raising a growth round", "direct", "Screened as Pass; draft reply ready", "ald"],
+    ["Thu 7:45 AM", "Hartwell Group", "Project Ember: teaser", "teaser", "Screened as Pass; conflict flagged", "key"],
+    ["Thu 8:30 AM", "Bellmore & Co", "NDA attached for review", "nda", "Sent to the NDA markup queue for counsel", "mer"]
+  ];
+
+  let SEL = "nor", CALL = {};
+  try { CALL = JSON.parse(localStorage.getItem("dt-calls") || "{}") || {}; } catch (e) { CALL = {}; }
+  const save = () => { try { localStorage.setItem("dt-calls", JSON.stringify(CALL)); } catch (e) {} };
+  const now = d => CALL[d.id] || d.rec;
+  const addbacks = d => d.adj == null ? null : d.adj - d.ebitda;
+  const addPct = d => d.adj == null ? null : Math.round(100 * (d.adj - d.ebitda) / d.adj);
+  const ioiText = d => { if (!d.ioi) return d.rec === "pass" ? "Not applicable" : "Not set"; const n = daysTo(d.ioi); return fmtDate(d.ioi) + " (" + (n === 0 ? "today" : n + " days") + ")"; };
+  const byIoi = (a, b) => { const x = a.ioi ? isoMs(a.ioi) : Infinity, y = b.ioi ? isoMs(b.ioi) : Infinity; return x - y || a.n.localeCompare(b.n); };
+
+  function summary() {
+    const c = k => DEALS.filter(d => now(d) === k).length;
+    const soon = DEALS.filter(d => d.ioi && now(d) !== "pass" && daysTo(d.ioi) <= 14).length;
+    const flagged = DEALS.filter(d => d.memo).length, called = Object.keys(CALL).length;
+    const fresh = DEALS.filter(d => !d.returning).length;
+    $("summary").innerHTML = `<span><b>${INTAKE.length}</b>messages read</span><span><b>${DEALS.length}</b>deals surfaced (${fresh} new)</span>`
+      + ORDER.map(k => `<span><b>${c(k)}</b>${DEC[k][0].toLowerCase()}</span>`).join("")
+      + `<span><b>${soon}</b>IOI within 14 days</span><span><b>${flagged}</b>flagged by firm memory</span><span><b>${called}</b>partner calls made</span>`;
+  }
+  function board() {
+    $("board").innerHTML = ORDER.map(k => {
+      const ds = DEALS.filter(d => now(d) === k).sort(byIoi);
+      return `<div class="col" role="group" aria-label="${DEC[k][0]}"><div class="col-head"><span class="dec ${DEC[k][1]}">${DEC[k][0]}</span><span class="mono note">${ds.length}</span></div>${ds.map(d => {
+        const fl = [];
+        if (d.mk === "Conflict check") fl.push(`<span class="fl">Conflict check</span>`);
+        else if (d.mk) fl.push(`<span class="fl memo">${esc(d.mk)}</span>`);
+        if (d.ioi && k !== "pass" && daysTo(d.ioi) <= 14) fl.push(`<span class="fl soon">IOI in ${daysTo(d.ioi)} days</span>`);
+        if (CALL[d.id] && CALL[d.id] !== d.rec) fl.push(`<span class="fl over">Partner moved</span>`);
+        const e = d.ebitda < 0 ? "negative EBITDA" : "EBITDA " + money(d.ebitda);
+        return `<button type="button" class="card" aria-pressed="${d.id === SEL}" data-id="${d.id}"><b>${esc(d.n)}</b><span>${esc(d.sub)} · ${e}</span>${fl.length ? `<span class="flags">${fl.join("")}</span>` : ""}</button>`;
+      }).join("") || `<span class="note" style="padding:4px">None</span>`}</div>`;
+    }).join("");
+    $("board").querySelectorAll(".card").forEach(b => b.addEventListener("click", () => { SEL = b.dataset.id; render(); }));
+  }
+  function detail() {
+    const d = DEALS.find(x => x.id === SEL), cur = now(d);
+    const reqIcon = s => s === "ok" ? `<span class="ok" aria-label="meets">✓</span>` : s === "no" ? `<span class="no" aria-label="does not meet">✗</span>` : `<span class="q" aria-label="question for the deal team">?</span>`;
+    const evLabel = { claim: "Seller claim", sup: "Corroborated", con: "Contradicted" };
+    const draft = Array.isArray(d.draft) ? (d.draft.length > 1 ? d.draft.map((q, i) => `${i + 1}. ${q}`).join("\n") : d.draft[0]) : d.draft;
+    const ab = addbacks(d), ap = addPct(d);
+    const fin = `<dl class="fin">
+      <div><dt>Revenue</dt><dd>${money(d.rev)}</dd></div>
+      <div><dt>Reported EBITDA</dt><dd class="${d.ebitda < 0 ? "neg" : ""}">${money(d.ebitda)}</dd></div>
+      <div><dt>Seller-adjusted</dt><dd>${d.adj == null ? "n/a" : money(d.adj)}</dd></div>
+      <div><dt>Add-backs</dt><dd class="${ap != null && ap > 25 ? "hi" : ""}">${ab == null ? "n/a" : money(ab) + " · " + ap + "%"}</dd></div></dl>`;
+    $("detail").innerHTML = `
+      <div class="dhead"><div class="eyebrow">${esc(d.src)} · ${esc(d.recv)}${d.returning ? " · returning deal" : ""}</div>
+        <div class="row"><h2>${esc(d.n)}</h2><span class="dec ${DEC[d.rec][1]}">Screen: ${DEC[d.rec][0]}</span></div>
+        <ul class="why">${d.why.map(w => `<li>${esc(w)}</li>`).join("")}</ul></div>
+      ${d.memo ? `<div class="memobox${d.mk === "Conflict check" ? " conflict" : ""}"><b>Firm memory</b><span>${esc(d.memo)}</span></div>` : ""}
+      <dl class="snap">${[["Subsector", d.sub + " · " + d.hq], ["Deal type", d.type], ["IOI due", ioiText(d)], ["NDA", d.nda]].map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>
+      <div><h3>Financials as stated by the seller</h3>${fin}<p class="note" style="margin-top:6px">Add-backs are candidates for QoE review, not accepted figures. Above 25% of adjusted EBITDA is highlighted.</p></div>
+      <div><h3>Mandate check against the firm's stated criteria</h3><ul class="reqs">${d.req.map(r => `<li>${reqIcon(r[1])}<span><b>${esc(r[0])}.</b> ${esc(r[2])}</span></li>`).join("")}</ul></div>
+      <div><h3>Claims and evidence</h3><div class="scroll"><table><thead><tr><th>Statement</th><th>Status</th><th>Basis</th></tr></thead><tbody>${d.claims.map(c => `<tr><td>${esc(c[0])}</td><td><span class="ev ${c[1]}">${evLabel[c[1]]}</span></td><td>${esc(c[2])}</td></tr>`).join("")}</tbody></table></div></div>
+      <div><h3>First-pass view</h3><div class="lens">${d.lens.map(l => `<span>${esc(l[0])}: <b class="l-${l[1]}">${l[1]}</b></span>`).join("")}</div></div>
+      <div><h3>What must be true</h3><ol class="must">${d.must.map(m => `<li>${esc(m)}</li>`).join("")}</ol></div>
+      <div><h3>${esc(d.dt)}</h3><div class="draft" id="draft">${esc(draft)}</div></div>
+      <div class="actions">
+        <label for="call" class="note">Partner call</label>
+        <select id="call">${ORDER.map(k => `<option value="${k}"${k === cur ? " selected" : ""}>${DEC[k][0]}${k === d.rec ? " (screen)" : ""}</option>`).join("")}</select>
+        <button class="btn" type="button" id="copy">Copy ${esc(d.dt.toLowerCase())}</button><span class="note" id="copymsg" role="status"></span>
+      </div>
+      <p class="reading">A screen is a first pass, not a recommendation to bid. A CIM or teaser can only corroborate a claim; remittance files, contracts, the ledger or a buy-side QoE can validate one. Findings on this page are hand-written examples; the Beta does not query external registers.</p>`;
+    $("call").addEventListener("change", e => { const v = e.target.value; if (v === d.rec) delete CALL[d.id]; else CALL[d.id] = v; save(); render(); });
+    $("copy").addEventListener("click", () => {
+      const msg = $("copymsg"), txt = $("draft").textContent;
+      const fb = () => { const r = document.createRange(); r.selectNodeContents($("draft")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); msg.textContent = "Copy is blocked here. The text is selected; press Ctrl+C or ⌘C."; };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => { msg.textContent = "Copied."; }, fb); else fb();
+    });
+  }
+  function intake() {
+    const deals = INTAKE.filter(r => r[5]).length, skipped = INTAKE.filter(r => r[3] === "skip").length;
+    $("intake-sum").textContent = INTAKE.length + " messages read, " + DEALS.length + " deals surfaced, " + skipped + " skipped";
+    $("intake-rows").innerHTML = INTAKE.map(r => {
+      const cls = r[3] === "skip" ? " skip" : r[3] === "nda" ? " nda" : "";
+      const res = r[5] ? `<button type="button" class="link" data-id="${r[5]}">${esc(r[4])}</button>` : esc(r[4]);
+      return `<tr><td class="mono" style="white-space:nowrap">${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td><span class="chip${cls}">${esc(KIND[r[3]])}</span></td><td>${res}</td></tr>`;
+    }).join("");
+    $("intake-rows").querySelectorAll("button.link").forEach(b => b.addEventListener("click", () => { SEL = b.dataset.id; render(); window.scrollTo({ top: 0, behavior: "smooth" }); }));
+  }
+  function render() { summary(); board(); detail(); }
+  intake(); render();
+})();
+</script>
+
+</body></html>

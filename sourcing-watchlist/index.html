@@ -1,0 +1,603 @@
+<!doctype html><html><head><meta charset=utf8><meta name="robots" content="noindex,nofollow"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PE Toolkit - Sourcing Watchlist</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Albert+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a sourcing radar, A dark rail holds the views, filters and
+   headline counts; the main pane switches between a ranked watchlist with a "why now" panel, a hold map, a sponsor
+   table and the scoring rules. Every company is either a new platform or an add-on to one. */
+:root{
+  --bg:#f2f0f4; --surface:#fbfafc; --raised:#fff; --ink:#221a2e; --ink2:#4f4660; --muted:#675e75;
+  --line:#e2dde8; --line2:#c6bed2; --accent:#c2410c; --accent-ink:#fff; --accent-soft:#fdebe1;
+  --rail:#2a1f3d; --rail-ink:#f4effa; --rail-ink2:#c9bedb; --rail-line:#41345a; --rail-on:#f08a4b;
+  --hs:#3552d4; --ph:#a55209; --mp:#0f766e;
+  --good:#11703a; --good-bg:#e1f3e8; --warn:#7d4a00; --warn-bg:#fcefd2; --crit:#b42318; --crit-bg:#fde6e3;
+  --f-head:"Bricolage Grotesque",system-ui,sans-serif; --f-body:"Albert Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --f-mono:"DM Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#110d17; --surface:#1a1522; --raised:#221c2c; --ink:#f1ecf7; --ink2:#c8bfd6; --muted:#a297b2;
+  --line:#2d2539; --line2:#43384f; --accent:#f08a4b; --accent-ink:#1f0f04; --accent-soft:#3a2216;
+  --rail:#1c1528; --rail-ink:#f1ecf7; --rail-ink2:#b9add0; --rail-line:#342a46; --rail-on:#f08a4b;
+  --hs:#8ea2ff; --ph:#f2a85c; --mp:#4fd1bf;
+  --good:#5fd38b; --good-bg:#12301e; --warn:#f0bd55; --warn-bg:#33270c; --crit:#f38b80; --crit-bg:#3a1714; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#110d17; --surface:#1a1522; --raised:#221c2c; --ink:#f1ecf7; --ink2:#c8bfd6; --muted:#a297b2;
+  --line:#2d2539; --line2:#43384f; --accent:#f08a4b; --accent-ink:#1f0f04; --accent-soft:#3a2216;
+  --rail:#1c1528; --rail-ink:#f1ecf7; --rail-ink2:#b9add0; --rail-line:#342a46; --rail-on:#f08a4b;
+  --hs:#8ea2ff; --ph:#f2a85c; --mp:#4fd1bf;
+  --good:#5fd38b; --good-bg:#12301e; --warn:#f0bd55; --warn-bg:#33270c; --crit:#f38b80; --crit-bg:#3a1714; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--f-body);margin:0;padding-block:max(16px,env(safe-area-inset-top,0px)) max(40px,env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-head);margin:0;text-wrap:balance}
+h1{font-size:30px;font-weight:800;letter-spacing:-.025em;line-height:1.05}
+h2{font-size:19px;font-weight:700;letter-spacing:-.01em} h3{font-size:14px;font-weight:700}
+button,select,input,textarea{font:inherit;color:inherit}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.app{max-width:1400px;margin:0 auto;display:grid;grid-template-columns:268px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:960px){.app{grid-template-columns:minmax(0,1fr)}}
+.rail{background:var(--rail);color:var(--rail-ink);border-radius:14px;padding:18px 16px;display:grid;gap:18px;position:sticky;top:12px}
+@media (max-width:960px){.rail{position:static}}
+.rail .eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--rail-on)}
+.rail h1{color:var(--rail-ink);margin-top:4px}
+.rail p{margin:6px 0 0;color:var(--rail-ink2);font-size:13px}
+.rail .lbl{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--rail-ink2);margin-bottom:6px}
+.views{display:grid;gap:2px}
+.views button{display:flex;justify-content:space-between;align-items:center;background:none;border:0;border-radius:8px;padding:8px 10px;text-align:left;color:var(--rail-ink2);cursor:pointer;font-weight:600}
+.views button:hover{background:var(--rail-line);color:var(--rail-ink)}
+.views button[aria-current="page"]{background:var(--rail-ink);color:var(--rail)}
+.views .k{font-family:var(--f-mono);font-size:11px;opacity:.8}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--rail-line);background:none;color:var(--rail-ink2);border-radius:999px;padding:4px 10px;font-size:12.5px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.chip[aria-pressed="true"]{background:var(--rail-ink);color:var(--rail);border-color:var(--rail-ink)}
+.chip i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.rail select,.rail input[type=range]{width:100%}
+.rail select{background:var(--rail-line);border:1px solid var(--rail-line);border-radius:8px;padding:6px 8px;color:var(--rail-ink)}
+.rail input[type=range]{accent-color:var(--rail-on)}
+.tog{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--rail-ink2);cursor:pointer}
+.tog input{accent-color:var(--rail-on);width:16px;height:16px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;border-top:1px solid var(--rail-line);padding-top:14px}
+.stats div{display:grid}
+.stats b{font-family:var(--f-head);font-size:24px;font-weight:800;line-height:1.1}
+.stats span{font-size:11.5px;color:var(--rail-ink2)}
+.rail .syn{font-size:11.5px;color:var(--rail-ink2);border-top:1px solid var(--rail-line);padding-top:12px}
+main{min-width:0;display:grid;gap:14px}
+.bar{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:baseline;justify-content:space-between}
+.bar p{margin:2px 0 0;color:var(--ink2);max-width:80ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.split{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:1180px){.split{grid-template-columns:minmax(0,1fr)}}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;text-align:left;padding:8px 6px;border-bottom:1px solid var(--line2);white-space:nowrap}
+th button{background:none;border:0;padding:0;cursor:pointer;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit}
+th button[aria-pressed="true"]{color:var(--accent)}
+td{padding:9px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+.co{min-width:150px} td.co b{line-height:1.3}
+td.r,th.r{text-align:right}
+tbody tr.pick{cursor:pointer}
+tbody tr.pick:hover{background:var(--accent-soft)}
+tbody tr[aria-selected="true"]{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.co b{display:block;font-weight:700}
+.co small{color:var(--muted);font-size:12px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.meter{display:grid;grid-template-columns:24px 40px;gap:6px;align-items:center;justify-content:end}
+.meter i{display:block;height:6px;border-radius:3px;background:var(--line)}
+.meter i u{display:block;height:6px;border-radius:3px;background:var(--accent);text-decoration:none}
+.meter.fit i u{background:var(--ink2)}
+.star{background:none;border:1px solid var(--line2);border-radius:8px;width:30px;height:30px;cursor:pointer;color:var(--muted);font-size:15px;line-height:1}
+.star[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.empty{padding:24px 8px;color:var(--muted)}
+.detail{position:sticky;top:12px;display:grid;gap:14px}
+@media (max-width:1180px){.detail{position:static}}
+.dhead .sub{color:var(--ink2);font-size:13px;margin-top:2px}
+.scores{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.score{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--raised)}
+.score span{font-size:12px;color:var(--muted)}
+.score b{display:block;font-family:var(--f-head);font-size:30px;font-weight:800;line-height:1.05}
+.score.l b{color:var(--accent)}
+.why{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.why li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px;font-size:13px;align-items:baseline}
+.why .pts{font-family:var(--f-mono);font-size:11.5px;color:var(--accent);text-align:right}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 14px;font-size:13px;margin:0}
+.kv dt{color:var(--muted)} .kv dd{margin:0}
+.next{background:var(--accent-soft);border-radius:12px;padding:10px 12px;font-size:13.5px}
+.next .lbl2{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.pill{display:inline-flex;align-items:center;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600;white-space:nowrap}
+.p-good{background:var(--good-bg);color:var(--good)} .p-warn{background:var(--warn-bg);color:var(--warn)} .p-crit{background:var(--crit-bg);color:var(--crit)} .p-off{background:var(--line);color:var(--ink2)}
+.btn{background:var(--raised);border:1px solid var(--line2);border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:600;font-size:13px}
+.btn:hover{border-color:var(--ink2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.status{font-size:12px;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted)}
+.mapwrap{overflow-x:auto}
+svg.map{display:block;width:100%;min-width:560px;height:auto}
+svg.map text{font-family:var(--f-mono);font-size:11px;fill:var(--muted)}
+svg.map .grid{stroke:var(--line)}
+svg.map .ref{stroke:var(--line2);stroke-dasharray:4 4}
+svg.map .zone{fill:var(--accent-soft)}
+svg.map .pt{cursor:pointer;stroke:var(--surface);stroke-width:1.5}
+svg.map .pt.sel{stroke:var(--ink);stroke-width:2.5}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--ink2);margin-top:8px}
+.calc{display:grid;gap:10px}
+.calc .row{display:grid;grid-template-columns:minmax(0,1fr) 160px 44px;gap:10px;align-items:center;font-size:13px}
+.calc input[type=range]{width:100%;accent-color:var(--accent)}
+.calc input[type=number]{width:100%;border:1px solid var(--line2);border-radius:8px;padding:5px 8px;background:var(--raised)}
+@media (max-width:560px){.calc .row{grid-template-columns:minmax(0,1fr) 110px 40px}}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:14px}
+.guard{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px}
+.guard div{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--raised)}
+.guard p{margin:4px 0 0;color:var(--ink2);font-size:13px}
+.crm-on{display:grid;gap:6px;border:1px dashed var(--line2);border-radius:12px;padding:10px 12px}
+.crm-on .btn{justify-self:start}
+.crm-form{display:grid;gap:10px;border:1px solid var(--accent);border-radius:12px;padding:12px;background:var(--raised)}
+.crm-form .lbl2{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.crm-form .fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:8px 12px}
+.crm-form label{display:grid;gap:3px;font-size:12px;color:var(--muted)}
+.crm-form select,.crm-form input,.crm-form textarea{border:1px solid var(--line2);border-radius:8px;padding:6px 8px;background:var(--surface);color:var(--ink);font-size:13px;width:100%}
+.crm-form textarea{resize:vertical;line-height:1.45}
+.tag{font-family:var(--f-mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;border-radius:4px;padding:0 5px;margin-left:4px;white-space:nowrap}
+.crm-tag{color:var(--good);background:var(--good-bg)}
+.add-tag{color:var(--warn);background:var(--warn-bg)}
+.btn[disabled]{opacity:.5;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+footer{color:var(--muted);font-size:12px;max-width:100ch}
+@media (prefers-reduced-motion:no-preference){tbody tr.pick{transition:background .12s}}
+.mob{display:none}
+@media (max-width:640px){#v-list th:nth-child(2),#v-list td:nth-child(2){display:none}.mob{display:block}.co{min-width:0}}
+.sr{position:absolute;left:-9999px}
+/* Simple view / Full view. The .app root carries data-mode; Full view is the page as first built. Simple view turns the
+   rail into a slim header, shows the top 10 rows and trims the company panel. "More views and filters" adds .more,
+   which brings the rail back as a sidebar in place. */
+.app[data-mode="simple"] .full-only{display:none!important}
+.app[data-mode="full"] .simple-only{display:none!important}
+.modebar{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;min-width:0}
+.modebar .syn1{margin:0;font-size:12px;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:999px;padding:2px;background:var(--surface);margin-left:auto}
+.seg button{border:0;background:none;border-radius:999px;padding:5px 14px;font-size:13px;font-weight:600;color:var(--ink2);cursor:pointer;white-space:nowrap}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.railbtn{background:none;border:1px solid var(--rail-ink2);color:var(--rail-ink);border-radius:8px;padding:7px 12px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
+.railbtn:hover{background:var(--rail-line)}
+.app[data-mode="simple"]:not(.more){grid-template-columns:minmax(0,1fr);row-gap:12px}
+.app[data-mode="simple"]:not(.more) .rail{position:static;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 28px;padding:12px 18px}
+.app[data-mode="simple"]:not(.more) .rail>.adv{display:none!important}
+.app[data-mode="simple"]:not(.more) .railhead{flex:1 1 420px;min-width:0}
+.app[data-mode="simple"]:not(.more) .railhead p{max-width:120ch}
+.app[data-mode="simple"]:not(.more) .rail h1{font-size:26px}
+.app[data-mode="simple"] #v-list th:nth-child(6),.app[data-mode="simple"] #v-list td:nth-child(6){display:none}
+.app[data-mode="simple"] .crm-tag,.app[data-mode="simple"] .crm-on,.app[data-mode="simple"] .crm-form,.app[data-mode="simple"] .detail [data-short]{display:none}
+.app[data-mode="simple"] .bar p{max-width:none}
+.app[data-mode="simple"] .detail .kv{order:1}
+.app[data-mode="simple"] .detail .actions{order:2}
+.app[data-mode="simple"] .detail pre{order:3}
+.rowsmore{margin-top:12px}
+main{grid-template-columns:minmax(0,1fr)}
+</style>
+</head><body>
+
+<div class="app" id="app" data-mode="simple">
+  <div class="modebar">
+    <p class="syn1 simple-only">Synthetic data. All companies, sponsors and signals are invented. As of <span id="asof2"></span>.</p>
+    <div class="seg" role="group" aria-label="Page view">
+      <button type="button" id="modeSimple" aria-pressed="true">Simple view</button>
+      <button type="button" id="modeFull" aria-pressed="false">Full view</button>
+    </div>
+  </div>
+  <aside class="rail" aria-label="Views and filters">
+    <div class="railhead">
+      <div class="eyebrow">Beta · deal sourcing</div>
+      <h1>Sourcing Watchlist</h1>
+      <p class="simple-only">Sponsor-backed companies ranked by how likely they are to trade soon and how well they fit, with who at the firm knows them.</p>
+      <p class="full-only">Sponsor-backed companies ranked by how likely they are to trade soon and how well they fit, as a new platform or as an add-on to one the firm already owns, with who at the firm knows them.</p>
+    </div>
+    <div class="simple-only"><button type="button" class="railbtn" id="moreBtn" aria-expanded="false" aria-controls="railMore">More views and filters</button></div>
+    <nav class="views adv" aria-label="Views" id="views"></nav>
+    <div class="adv" id="railMore"><div class="lbl">Sector</div><div class="chips" id="secChips" role="group" aria-label="Sector"></div></div>
+    <div class="adv"><div class="lbl">Role</div><div class="chips" id="roleChips" role="group" aria-label="Role"></div></div>
+    <div class="adv"><div class="lbl"><label for="minL">Likely to trade, at least <span id="minLv" class="num"></span></label></div><input type="range" id="minL" min="0" max="80" step="5" value="0"></div>
+    <div class="adv"><div class="lbl"><label for="spSel">Sponsor</label></div><select id="spSel"></select></div>
+    <div class="adv" style="display:grid;gap:8px">
+      <label class="tog"><input type="checkbox" id="fitOnly"> Strong fit only (60+)</label>
+      <label class="tog full-only"><input type="checkbox" id="shortOnly"> Shortlist only</label>
+      <label class="tog full-only"><input type="checkbox" id="notCrm"> Not in the CRM yet</label>
+    </div>
+    <div class="stats adv" id="stats"></div>
+    <div class="syn adv full-only">Synthetic data. Companies, sponsors, platforms, signals and relationships are invented; any resemblance to a real company is coincidental. As of <span id="asof"></span>.</div>
+  </aside>
+
+  <main>
+    <section id="v-list" aria-labelledby="h-list">
+      <div class="bar"><div><h2 id="h-list">Watchlist</h2><p class="simple-only">Priority is the likelihood of a sale or recap in the next 12 to 18 months, times fit. Click a company to see why it ranks there.</p><p class="full-only">Ranked by priority: likelihood of a sale or recap in the next 12 to 18 months, times fit as a platform or an add-on. Click a company for the reasons.</p></div><div class="actions"><span class="hint" id="count"></span><button class="btn full-only" type="button" id="bulkBtn"></button></div></div>
+      <div class="panel crm-form full-only" id="bulk" hidden style="margin-top:12px"></div>
+      <div class="split" style="margin-top:12px">
+        <div class="panel">
+          <div class="tablewrap"><table>
+            <thead><tr><th>Company</th><th>Sponsor · held</th><th class="r"><button type="button" data-sort="L">Likely</button></th><th class="r"><button type="button" data-sort="F">Fit</button></th><th class="r"><button type="button" data-sort="P">Priority</button></th><th><span class="sr">Shortlist</span></th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table></div>
+          <div class="rowsmore simple-only" id="rowsMoreWrap"><button class="btn" type="button" id="rowsMore" aria-controls="rows"></button></div>
+        </div>
+        <div class="panel detail" id="detail" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section id="v-map" aria-labelledby="h-map" hidden>
+      <div class="bar"><div><h2 id="h-map">Hold map</h2><p>Years held against the age of the owning fund. Companies in the shaded corner are past their sector's typical hold and sit in a fund that is running out of time. Dot size is EBITDA; a ring marks an add-on candidate.</p></div></div>
+      <div class="split" style="margin-top:12px">
+        <div class="panel"><div class="mapwrap" id="map"></div><div class="legend" id="legend"></div></div>
+        <div class="panel detail" id="detail2" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section id="v-pf" aria-labelledby="h-pf" hidden>
+      <div class="bar"><div><h2 id="h-pf">Platforms</h2><p>Add-on candidates grouped by the platform they would join, so each platform CEO sees who in their space may come to market. Click a platform to filter the watchlist to its add-ons.</p></div></div>
+      <div class="panel" style="margin-top:12px"><div class="tablewrap"><table>
+        <thead><tr><th>Platform</th><th>What it does</th><th class="r">Candidates</th><th class="r">Likely 65+</th><th class="r">Combined EBITDA</th><th>Top candidate</th></tr></thead>
+        <tbody id="pfrows"></tbody>
+      </table></div></div>
+    </section>
+
+    <section id="v-sp" aria-labelledby="h-sp" hidden>
+      <div class="bar"><div><h2 id="h-sp">Sponsors</h2><p>Where pressure to sell sits by owner. A sponsor raising its next fund needs to show cash returned; an old fund has to sell, recap or move companies into a continuation vehicle. Click a sponsor to filter the watchlist.</p></div></div>
+      <div class="panel" style="margin-top:12px"><div class="tablewrap"><table>
+        <thead><tr><th>Sponsor</th><th>Fund</th><th class="r">Fund age</th><th>Raising</th><th class="r">On list</th><th class="r">Past sector norm</th><th class="r">Avg likely</th><th>Relationship</th></tr></thead>
+        <tbody id="sprows"></tbody>
+      </table></div></div>
+    </section>
+
+    <section id="v-how" aria-labelledby="h-how" hidden>
+      <div class="bar"><div><h2 id="h-how">How it scores</h2><p>Change the weights or the size ranges and every ranking updates.</p></div></div>
+      <div class="grid2" style="margin-top:12px">
+        <div class="panel calc"><h3>Likely to trade: signal weights</h3><div id="wrows"></div><div class="hint">Weights are rescaled to 100. Each signal scores 0 to 100 before weighting; see the right-hand panel.</div><div class="actions"><button class="btn" type="button" id="resetW">Reset weights</button><button class="btn" type="button" id="resetDemo">Clear shortlist and CRM sends</button><span class="status" id="rstat"></span></div></div>
+        <div class="panel calc"><h3>How each signal scores</h3>
+          <dl class="kv">
+            <dt>Hold vs norm</dt><dd>0 at three years under the sector's typical hold, 100 at three years over.</dd>
+            <dt>Fund age</dt><dd>0 at year 6 of the owning fund, 100 at year 12 or later.</dd>
+            <dt>Sponsor raising</dt><dd>100 if the sponsor is marketing a new fund, else 0.</dd>
+            <dt>Debt maturity</dt><dd>100 within 12 months, 60 within 24, 25 within 36.</dd>
+            <dt>Exit-prep signals</dt><dd>30 per signal (new CFO, banker, slower add-ons, CEO change, recap, sell-side QoE, continuation vehicle), capped at 100.</dd>
+          </dl>
+          <h3 style="margin-top:6px">Fit</h3>
+          <div class="row"><label for="pMin">New platform: EBITDA floor ($M)</label><input type="number" id="pMin" min="0" max="200" step="1"><span></span></div>
+          <div class="row"><label for="pMax">New platform: EBITDA ceiling ($M)</label><input type="number" id="pMax" min="0" max="400" step="1"><span></span></div>
+          <div class="row"><label for="aMin">Add-on: EBITDA floor ($M)</label><input type="number" id="aMin" min="0" max="100" step="1"><span></span></div>
+          <div class="row"><label for="aMax">Add-on: EBITDA ceiling ($M)</label><input type="number" id="aMax" min="0" max="200" step="1"><span></span></div>
+          <div class="hint">Fit = 40% sector focus (core subsectors score higher), 40% size in range for its role (falling off outside it), 20% platform link: 100 for a named add-on to a current platform, 80 for a new platform inside an active thesis, 30 otherwise. Defaults follow the firm's published $50M to $500M deal range.</div>
+        </div>
+        <div class="panel"><h3>Typical hold by sector</h3>
+          <div class="tablewrap"><table style="margin-top:6px"><thead><tr><th>Sector</th><th class="r">Median hold</th><th>Basis</th></tr></thead><tbody id="norms"></tbody></table></div>
+          <p class="hint" style="margin:8px 0 0">Each sector uses PE Info's 2026 year-to-date median hold at exit for its closest reported category: healthcare services, business and professional services, and industrials and manufacturing. Replace these with the firm's own sector data.</p>
+        </div>
+        <div class="panel"><h3>Guardrails</h3>
+          <div class="guard" style="margin-top:8px">
+            <div><h3>A prompt for a call, not a prediction</h3><p>Scores rank who to call first. They don't claim a sale is coming.</p></div>
+            <div><h3>Signals are checked</h3><p>Banker, CFO and fundraising signals come from licensed data and press, and a person confirms each one before it counts.</p></div>
+            <div><h3>The relationship owner leads</h3><p>No outreach goes out without the person who knows the CEO or sponsor; for an add-on, the platform CEO is part of the plan.</p></div>
+            <div><h3>CRM writes are confirmed</h3><p>Nothing reaches the CRM until a person confirms the list, owner and note. Existing records are matched first, so a send updates rather than duplicates.</p></div>
+            <div><h3>Real data is licensed</h3><p>In real use, ownership, fund and debt data come from the firm's existing sources (PitchBook, Grata, PE Info or similar) and the CRM.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>Sourcing Watchlist · prototype prepared by JD Elder · invented data to show the workflow; no firm's information was used.<span class="full-only"> Shortlist and CRM choices are saved only in your browser; CRM sends are simulated here and in real use would write to the firm's CRM.</span> <a href="../" style="color:inherit">Part of PE AI &amp; Data Tools</a></footer>
+  </main>
+</div>
+
+<script>
+const PLATFORMS=[
+ {"n":"Birch","sec":"hs","w":"Infusion centers"},
+ {"n":"Aspen","sec":"hs","w":"Multi-site dental"},
+ {"n":"Ginkgo","sec":"mp","w":"Testing and inspection services"},
+ {"n":"Elm","sec":"mp","w":"Precision components manufacturing"},
+ {"n":"Juniper","sec":"ph","w":"Marketing services"}];
+const CO=[
+ {"id":1,"n":"Calloway Flow Controls","sec":"mp","sub":"Flow control products","st":"MN","eb":24,"sp":"Cuesta Equity","acq":"2017-06","debt":"2027-06","sig":["bank","cfo"],"imp":true,"pf":null,"rel":{"o":"L. Marsh","w":"CEO","s":82},"note":"Valves and actuators for water and process plants; two OEM private-label programs."},
+ {"id":2,"n":"Fennimore Precision","sec":"mp","sub":"Precision machining","st":"VA","eb":9,"sp":"Tor Equity","acq":"2019-09","debt":"2027-10","sig":["addon"],"imp":true,"pf":"Elm","rel":{"o":"D. Okoye","w":"CEO","s":61},"note":"Swiss-turned components; aerospace and medical OEM channels."},
+ {"id":3,"n":"Tamworth Calibration","sec":"mp","sub":"Testing and calibration","st":"CA","eb":31,"sp":"Fjell Partners","acq":"2018-11","debt":"2027-08","sig":["ceo","qoe"],"imp":true,"pf":null,"rel":{"o":"R. Lindqvist","w":"Sponsor","s":58},"note":"Calibration and metrology labs on multi-year service contracts; about 70% recurring."},
+ {"id":4,"n":"Bexley Materials Testing","sec":"mp","sub":"Materials testing","st":"WI","eb":7,"sp":"Kettle Capital","acq":"2015-08","debt":"2026-12","sig":["cv"],"imp":true,"pf":"Ginkgo","rel":{"o":"P. Sato","w":"CFO","s":49},"note":"Materials and weld testing labs for fabricators; sponsor fund in year 12."},
+ {"id":5,"n":"Ridgemont Sensors","sec":"mp","sub":"Industrial sensors","st":"TX","eb":18,"sp":"Hogback Partners","acq":"2020-04","debt":"2028-03","sig":["cfo"],"imp":true,"pf":null,"rel":{"o":"E. Hart","w":"CEO","s":66},"note":"Gas-detection sensors for refrigeration plants; exposure to changing refrigerant rules."},
+ {"id":6,"n":"Ostler Fabrication","sec":"mp","sub":"Metal fabrication","st":"IN","eb":27,"sp":"Pingo Capital","acq":"2021-07","debt":"2028-11","sig":[],"imp":false,"pf":null,"rel":{"o":"L. Marsh","w":"Sponsor","s":44},"note":"Enclosures and sheet-metal assemblies; data-center share of revenue rising."},
+ {"id":7,"n":"Cresswell Filtration","sec":"mp","sub":"Filtration products","st":"NC","eb":22,"sp":"Butte Capital Partners","acq":"2018-02","debt":"2027-04","sig":["bank"],"imp":true,"pf":null,"rel":{"o":"D. Okoye","w":"CEO","s":74},"note":"Process filters and monitoring for food and beverage plants."},
+ {"id":8,"n":"Ludlow Coatings","sec":"mp","sub":"Specialty coatings","st":"GA","eb":15,"sp":"Gully Capital","acq":"2019-05","debt":"2027-09","sig":["addon","ceo"],"imp":false,"pf":null,"rel":null,"note":"Protective coatings for infrastructure; an environmental rule change ahead."},
+ {"id":9,"n":"Marden Condition Monitoring","sec":"mp","sub":"Condition monitoring","st":"MA","eb":12,"sp":"Kettle Capital","acq":"2016-03","debt":"2027-01","sig":["cv","bank"],"imp":true,"pf":null,"rel":{"o":"R. Lindqvist","w":"CEO","s":55},"note":"Wireless vibration sensors for rotating equipment; sponsor fund past year 12."},
+ {"id":10,"n":"Pargeter Fluid Power","sec":"mp","sub":"Fluid power components","st":"OH","eb":14,"sp":"Tor Equity","acq":"2020-01","debt":"2027-12","sig":["cfo"],"imp":false,"pf":null,"rel":null,"note":"Hydraulic fittings and hose assemblies; tariff exposure on imported components."},
+ {"id":11,"n":"Hollins Fasteners","sec":"mp","sub":"Industrial fasteners","st":"PA","eb":26,"sp":"Nunatak Partners","acq":"2016-07","debt":"2027-02","sig":["recap","qoe"],"imp":false,"pf":null,"rel":{"o":"P. Sato","w":"CFO","s":52},"note":"Consumables sold through industrial distributors."},
+ {"id":12,"n":"Quenby Environmental Labs","sec":"mp","sub":"Testing and calibration","st":"MN","eb":6,"sp":"Cuesta Equity","acq":"2018-08","debt":"2027-05","sig":["addon"],"imp":true,"pf":"Ginkgo","rel":{"o":"E. Hart","w":"Sponsor","s":47},"note":"Environmental and water testing; one lab and a growing field-sampling base."},
+ {"id":13,"n":"Arden Infusion Centers","sec":"hs","sub":"Ambulatory infusion","st":"IL","eb":8,"sp":"Moulin Equity","acq":"2021-03","debt":"2028-08","sig":["ceo"],"imp":true,"pf":"Birch","rel":{"o":"L. Marsh","w":"CEO","s":71},"note":"Eleven ambulatory infusion suites affiliated with 40 Midwest physician practices."},
+ {"id":14,"n":"Corbel Clinical Engineering","sec":"hs","sub":"Clinical equipment management","st":"TN","eb":21,"sp":"Fjell Partners","acq":"2017-10","debt":"2027-03","sig":["bank","cfo"],"imp":true,"pf":null,"rel":{"o":"D. Okoye","w":"CEO","s":79},"note":"Biomedical equipment maintenance for hospitals under multi-year contracts."},
+ {"id":15,"n":"Halsey Dental Group","sec":"hs","sub":"Dental practices","st":"CO","eb":11,"sp":"Butte Capital Partners","acq":"2019-04","debt":"2027-11","sig":["addon"],"imp":true,"pf":"Aspen","rel":{"o":"R. Lindqvist","w":"CFO","s":46},"note":"Fourteen general dentistry offices serving Colorado communities."},
+ {"id":16,"n":"Pennick 340B Services","sec":"hs","sub":"Hospital pharmacy services","st":"OH","eb":17,"sp":"Hogback Partners","acq":"2018-06","debt":"2027-07","sig":["qoe"],"imp":true,"pf":null,"rel":{"o":"P. Sato","w":"CEO","s":63},"note":"340B program administration and audit support; manufacturer rebate model changes ahead."},
+ {"id":17,"n":"Ravensby Benefits Compliance","sec":"hs","sub":"Benefits administration","st":"MN","eb":13,"sp":"Gully Capital","acq":"2020-08","debt":"2028-05","sig":[],"imp":true,"pf":null,"rel":{"o":"E. Hart","w":"COO","s":38},"note":"Plan documents and compliance services for self-insured employers."},
+ {"id":18,"n":"Sallow Senior Care Services","sec":"hs","sub":"Senior care business services","st":"FL","eb":10,"sp":"Kettle Capital","acq":"2015-12","debt":"2026-12","sig":["cv","ceo"],"imp":true,"pf":null,"rel":null,"note":"Billing and business office outsourcing for skilled nursing operators."},
+ {"id":19,"n":"Thistlewood Pharmacy Benefits","sec":"hs","sub":"Pharmacy benefit services","st":"AL","eb":24,"sp":"Nunatak Partners","acq":"2017-02","debt":"2027-02","sig":["bank","recap"],"imp":true,"pf":null,"rel":{"o":"L. Marsh","w":"Sponsor","s":57},"note":"Pass-through PBM for mid-size employers; PBM reform cuts both ways."},
+ {"id":20,"n":"Vance Emergency Response","sec":"hs","sub":"Personal emergency response","st":"PA","eb":19,"sp":"Cuesta Equity","acq":"2019-03","debt":"2027-08","sig":["cfo"],"imp":true,"pf":null,"rel":{"o":"D. Okoye","w":"CEO","s":50},"note":"Monitored alarms with fall detection for older adults; Medicaid waiver mix."},
+ {"id":21,"n":"Ellery Home Infusion","sec":"hs","sub":"Home infusion","st":"NC","eb":23,"sp":"Pingo Capital","acq":"2022-03","debt":"2029-01","sig":[],"imp":false,"pf":null,"rel":{"o":"R. Lindqvist","w":"Sponsor","s":35},"note":"Home infusion nursing and pharmacy across five states."},
+ {"id":22,"n":"Moxley Specialty Pharmacy","sec":"hs","sub":"Specialty pharmacy","st":"AZ","eb":28,"sp":"Fjell Partners","acq":"2018-04","debt":"2027-04","sig":["cfo"],"imp":false,"pf":null,"rel":{"o":"P. Sato","w":"CEO","s":68},"note":"Oncology and rare disease dispensing; limited-distribution drug access."},
+ {"id":23,"n":"Gilchrist Physician Partners","sec":"hs","sub":"Physician practice management","st":"TX","eb":32,"sp":"Hogback Partners","acq":"2019-10","debt":"2027-10","sig":["ceo"],"imp":false,"pf":null,"rel":{"o":"E. Hart","w":"CFO","s":41},"note":"Gastroenterology MSO with ASC and anesthesia revenue."},
+ {"id":24,"n":"Danby Behavioral Health","sec":"hs","sub":"Behavioral health","st":"TN","eb":20,"sp":"Moulin Equity","acq":"2022-06","debt":"2029-04","sig":[],"imp":false,"pf":null,"rel":null,"note":"Outpatient addiction treatment in three states."},
+ {"id":25,"n":"Penhallow Field Marketing","sec":"ph","sub":"Field sales outsourcing","st":"NJ","eb":34,"sp":"Butte Capital Partners","acq":"2017-05","debt":"2027-05","sig":["bank","qoe"],"imp":true,"pf":null,"rel":{"o":"L. Marsh","w":"CEO","s":84},"note":"Outsourced field sales and merchandising teams for consumer product launches."},
+ {"id":26,"n":"Ainsley Loyalty Marketing","sec":"ph","sub":"Loyalty and CRM marketing","st":"PA","eb":9,"sp":"Tor Equity","acq":"2019-11","debt":"2027-09","sig":["addon"],"imp":true,"pf":"Juniper","rel":{"o":"D. Okoye","w":"CEO","s":64},"note":"Loyalty program management and CRM campaigns for specialty brands."},
+ {"id":27,"n":"Brockley Claims Services","sec":"ph","sub":"Insurance claims services","st":"NC","eb":26,"sp":"Cuesta Equity","acq":"2018-01","debt":"2027-01","sig":["cfo","bank"],"imp":true,"pf":null,"rel":{"o":"R. Lindqvist","w":"CEO","s":72},"note":"Property claims adjusting for regional insurers and self-insured groups."},
+ {"id":28,"n":"Lytham Systems Integration","sec":"ph","sub":"Systems integration","st":"MA","eb":16,"sp":"Gully Capital","acq":"2020-02","debt":"2028-02","sig":["ceo"],"imp":true,"pf":null,"rel":{"o":"P. Sato","w":"Sponsor","s":53},"note":"ERP and warehouse-systems integration for mid-size distributors."},
+ {"id":29,"n":"Carrow Fulfillment","sec":"ph","sub":"Outsourced fulfillment","st":"MD","eb":38,"sp":"Pingo Capital","acq":"2021-09","debt":"2028-09","sig":["addon"],"imp":false,"pf":null,"rel":{"o":"E. Hart","w":"Sponsor","s":45},"note":"E-commerce fulfillment for consumer brands; capacity utilization about 65%."},
+ {"id":30,"n":"Inchbrook Compliance","sec":"ph","sub":"Compliance services","st":"MD","eb":12,"sp":"Nunatak Partners","acq":"2016-04","debt":"2026-11","sig":["recap","cv"],"imp":true,"pf":null,"rel":{"o":"L. Marsh","w":"CEO","s":60},"note":"Regulatory filings and safety compliance consulting; sponsor fund in year 12."},
+ {"id":31,"n":"Frome Print and Mail","sec":"ph","sub":"Transactional print and mail","st":"IN","eb":20,"sp":"Kettle Capital","acq":"2016-09","debt":"2027-03","sig":["cv","cfo"],"imp":true,"pf":null,"rel":{"o":"D. Okoye","w":"CFO","s":51},"note":"Statement printing, mailing and e-delivery for utilities and lenders."},
+ {"id":32,"n":"Wetherby Background Screening","sec":"ph","sub":"Background screening","st":"WI","eb":8,"sp":"Hogback Partners","acq":"2020-10","debt":"2028-06","sig":[],"imp":false,"pf":null,"rel":null,"note":"Employment and tenant screening; one customer at 22% of revenue."},
+ {"id":33,"n":"Gosforth Content Studio","sec":"ph","sub":"Content production","st":"PA","eb":7,"sp":"Tor Equity","acq":"2019-06","debt":"2027-12","sig":["addon"],"imp":true,"pf":"Juniper","rel":{"o":"R. Lindqvist","w":"CFO","s":37},"note":"Content and creative production; AI pressure on pricing."},
+ {"id":34,"n":"Marlow Pricing Advisory","sec":"ph","sub":"Pricing and revenue consulting","st":"NJ","eb":14,"sp":"Moulin Equity","acq":"2022-01","debt":"2029-02","sig":[],"imp":true,"pf":null,"rel":{"o":"P. Sato","w":"CEO","s":56},"note":"Pricing strategy and revenue management for consumer and industrial clients."},
+ {"id":35,"n":"Kilburn Data Services","sec":"ph","sub":"Data and analytics services","st":"MA","eb":11,"sp":"Fjell Partners","acq":"2019-07","debt":"2027-06","sig":["qoe"],"imp":true,"pf":null,"rel":{"o":"E. Hart","w":"CEO","s":69},"note":"Licensed transaction datasets with analytics services for retailers and brands."},
+ {"id":36,"n":"Sheringham Staffing","sec":"ph","sub":"Technical staffing","st":"CA","eb":15,"sp":"Gully Capital","acq":"2021-04","debt":"2028-10","sig":[],"imp":false,"pf":null,"rel":null,"note":"Engineering and IT contract staffing; backlog shortening."}];
+const SPONSORS=[{"n":"Butte Capital Partners","v":2017,"f":"Fund IV","rs":true},{"n":"Cuesta Equity","v":2016,"f":"Fund III","rs":false},{"n":"Fjell Partners","v":2018,"f":"Fund V","rs":true},{"n":"Kettle Capital","v":2014,"f":"Fund III","rs":false},{"n":"Tor Equity","v":2019,"f":"Fund II","rs":false},{"n":"Hogback Partners","v":2019,"f":"Fund IV","rs":true},{"n":"Gully Capital","v":2018,"f":"Fund II","rs":false},{"n":"Moulin Equity","v":2021,"f":"Fund I","rs":false},{"n":"Nunatak Partners","v":2015,"f":"Fund III","rs":true},{"n":"Pingo Capital","v":2021,"f":"Fund II","rs":false}];
+(()=>{
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ASOF=new Date();ASOF.setHours(0,0,0,0);const ASOF_Y=ASOF.getFullYear()+(ASOF-new Date(ASOF.getFullYear(),0,1))/(365.25*864e5);
+const ASOF_TXT=ASOF.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});$("asof").textContent=ASOF_TXT;$("asof2").textContent=ASOF_TXT;
+const SECN={mp:"Industrial products and services",hs:"Healthcare services",ph:"Business and tech-enabled services"};
+const SECS={mp:"Industrials",hs:"Healthcare services",ph:"Business services"};
+const NORM={hs:6.1,ph:6.0,mp:6.3};
+const NORMB={hs:"PE Info healthcare services, 2026 YTD",ph:"PE Info business and professional services, 2026 YTD",mp:"PE Info industrials and manufacturing, 2026 YTD"};
+const CORE={mp:["Flow control products","Precision machining","Testing and calibration","Materials testing","Industrial sensors","Filtration products","Condition monitoring","Specialty coatings","Fluid power components"],
+  hs:["Ambulatory infusion","Clinical equipment management","Dental practices","Hospital pharmacy services","Benefits administration","Senior care business services","Pharmacy benefit services","Personal emergency response","Home infusion"],
+  ph:["Field sales outsourcing","Loyalty and CRM marketing","Insurance claims services","Systems integration","Outsourced fulfillment","Compliance services","Transactional print and mail","Data and analytics services","Pricing and revenue consulting","Content production"]};
+const SIG={cfo:"New CFO hired in the last 12 months",bank:"Banker engaged, per press or market chatter",addon:"Add-on pace has slowed",ceo:"CEO change in the last 12 months",recap:"Dividend recap taken",cv:"Named as a continuation vehicle candidate",qoe:"Sell-side quality of earnings reported"};
+const WDEF={hold:25,fund:25,raise:15,debt:15,sig:20};
+const WN={hold:"Hold vs sector norm",fund:"Age of the owning fund",raise:"Sponsor raising a new fund",debt:"Debt maturity",sig:"Exit-prep signals"};
+const SP=Object.fromEntries(SPONSORS.map(s=>[s.n,s]));
+const PF=Object.fromEntries(PLATFORMS.map(p=>[p.n,p]));
+const EBDEF={pmin:8,pmax:45,amin:3,amax:20};
+let W={...WDEF}, EB={...EBDEF};
+const S={view:"list",secs:new Set(["mp","hs","ph"]),role:"",pf:"",minL:0,sp:"",fitOnly:false,shortOnly:false,notCrm:false,sel:null,sort:"P",crmOpen:null,bulk:false,mode:"simple",more:false,allRows:false};
+const TOP=10;
+try{if(localStorage.getItem("ws-watch-mode")==="full")S.mode="full"}catch(e){}
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let SHORT=new Set(store.get("ws-short",[]));
+const saveShort=()=>store.set("ws-short",[...SHORT]);
+const TEAM=["L. Marsh","D. Okoye","R. Lindqvist","P. Sato","E. Hart"];
+const LISTS=["New platforms, 2027",...PLATFORMS.map(p=>"Add-ons: "+p.n),"Industrial products and services","Healthcare services","Business and tech-enabled services"];
+const defList=c=>c.pf?"Add-ons: "+c.pf:"New platforms, 2027";
+const CRM0={14:{stage:"Tracking",owner:"D. Okoye",list:"New platforms, 2027",last:"Aug 2026",pre:true},25:{stage:"Met management",owner:"L. Marsh",list:"New platforms, 2027",last:"Sep 2026",pre:true},13:{stage:"Tracking",owner:"L. Marsh",list:"Add-ons: Larkhill Logistics",last:"Jul 2026",pre:true}};
+let SENT=store.get("ws-crm",{})||{};
+const saveSent=()=>store.set("ws-crm",SENT);
+const crmRec=id=>SENT[id]||CRM0[id]||null;
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const DUE=(d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"))(new Date(ASOF.getFullYear(),ASOF.getMonth(),ASOF.getDate()+14));
+const fmtD=s=>{const[y,m,dd]=s.split("-").map(Number);return MON[m-1]+" "+dd+", "+y};
+const clamp=x=>Math.max(0,Math.min(100,x));
+const ym=s=>{const[y,m]=s.split("-").map(Number);return new Date(y,m-1,15)};
+const fmtYM=s=>{const d=ym(s);return MON[d.getMonth()]+" "+d.getFullYear()};
+
+function score(c){
+  const hold=(ASOF-ym(c.acq))/(365.25*864e5);
+  const sp=SP[c.sp], fundAge=ASOF_Y-(sp.v+0.5);
+  const mo=Math.round((ym(c.debt)-ASOF)/(30.44*864e5));
+  const comp={
+    hold:clamp((hold-(NORM[c.sec]-3))/6*100),
+    fund:clamp((fundAge-6)/6*100),
+    raise:sp.rs?100:0,
+    debt:mo<=12?100:mo<=24?60:mo<=36?25:0,
+    sig:Math.min(100,c.sig.length*30)};
+  const wt=Object.values(W).reduce((a,b)=>a+b,0)||1;
+  const L=Math.round(Object.keys(comp).reduce((a,k)=>a+comp[k]*W[k],0)/wt);
+  const secF=CORE[c.sec].includes(c.sub)?100:45;
+  const lo=c.pf?EB.amin:EB.pmin, hi=c.pf?EB.amax:EB.pmax;
+  let size=100; if(c.eb<lo) size=clamp(100-(lo-c.eb)/Math.max(lo,1)*160); else if(c.eb>hi) size=clamp(100-(c.eb-hi)/Math.max(hi,1)*160);
+  const link=c.pf?100:c.imp?80:30;
+  const F=Math.round(.4*secF+.4*size+.2*link);
+  const P=Math.round(L*F/100);
+  return {...c,hold,fundAge,mo,comp,L,F,P,secF,size,link};
+}
+const all=()=>CO.map(score);
+function visible(list){
+  const r=list.filter(c=>S.secs.has(c.sec)&&c.L>=S.minL&&(!S.sp||c.sp===S.sp)&&(!S.role||(S.role==="addon")===!!c.pf)&&(!S.pf||c.pf===S.pf)&&(!S.fitOnly||c.F>=60)&&(!S.shortOnly||SHORT.has(c.id))&&(!S.notCrm||!crmRec(c.id)));
+  return r.sort((a,b)=>b[S.sort]-a[S.sort]||b.P-a.P);
+}
+function why(c){
+  const wt=Object.values(W).reduce((a,b)=>a+b,0)||1, sp=SP[c.sp], out=[];
+  const pts=k=>Math.round(c.comp[k]*W[k]/wt);
+  const d=c.hold-NORM[c.sec];
+  out.push([pts("hold"),`Held ${c.hold.toFixed(1)} years, ${Math.abs(d).toFixed(1)} ${d>=0?"over":"under"} the ${SECS[c.sec].toLowerCase()} norm of ${NORM[c.sec]}`]);
+  out.push([pts("fund"),`${sp.f} (${sp.v} vintage) is in year ${Math.ceil(c.fundAge)}${c.fundAge>=10?"; past a standard ten-year life":""}`]);
+  if(sp.rs) out.push([pts("raise"),`${c.sp} is raising its next fund`]);
+  out.push([pts("debt"),c.mo<=0?`Credit facility was due ${fmtYM(c.debt)}; check for an extension`:`Credit facility matures ${fmtYM(c.debt)} (${c.mo} months)`]);
+  if(c.sig.length) out.push([pts("sig"),c.sig.map(s=>SIG[s]).join("; ")]);
+  return out.sort((a,b)=>b[0]-a[0]);
+}
+const roleTxt=c=>c.pf?`Add-on for ${c.pf}`:c.imp?"New platform, inside an active thesis":"New platform, outside current theses";
+function nextStep(c){
+  const who=c.rel?(c.rel.w==="Sponsor"?"sponsor":c.rel.w):"";
+  const hot=c.sig.includes("bank")||c.sig.includes("qoe");
+  if(c.pf){
+    const p=c.pf.split(" ")[0];
+    if(c.rel&&c.rel.s>=60) return hot?`A process looks close. Have ${c.rel.o} and the ${p} CEO call the ${who} this week; as a platform buyer the firm can move before the book goes out.`:`Have the ${p} CEO meet the target's ${who}, with ${c.rel.o} making the introduction. Frame it as a combination, not a bid.`;
+    if(c.rel) return `${c.rel.o}'s tie to the ${who} is light. Open through ${p}'s management on a customer, supplier or integration angle${hot?", and soon, since a process may be starting":""}.`;
+    return `No one at the firm knows them. ${p}'s management team is the natural first call${hot?"; move quickly, a process may be starting":""}.`;
+  }
+  if(c.rel&&c.rel.s>=60) return hot?`A process looks close. Ask ${c.rel.o} to call the ${who} this week and ask for an early look before the book goes out.`:`Ask ${c.rel.o} to catch up with the ${who} before a banker is hired; bring an operating partner and a view on the sector rather than a bid.`;
+  if(c.rel) return `${c.rel.o}'s tie to the ${who} is light. Warm it up first: a sector dinner or an operating-partner introduction${hot?", soon, since a process may be starting":""}.`;
+  return hot?"No one at the firm knows them and a process may be starting. Ask the banker coverage team for an introduction.":"No relationship on file. Find a path through the sponsor's other portfolio CEOs, a corporate partner or an operating partner.";
+}
+function brief(c){
+  return `${c.n} (${c.sub}, ${c.st}; EBITDA about $${c.eb}M)\nRole: ${roleTxt(c)}\nOwner: ${c.sp}, held since ${fmtYM(c.acq)}\nLikely to trade ${c.L}/100 · Fit ${c.F}/100 · Priority ${c.P}\nWhy now:\n${why(c).map(w=>"- "+w[1]).join("\n")}\nNext step: ${nextStep(c)}\n(Synthetic example)`;
+}
+const meter=(v,cls)=>`<div class="meter ${cls||""}"><span class="num">${v}</span><i><u style="width:${v}%"></u></i></div>`;
+function detailHTML(c){
+  if(!c) return `<div class="empty">Pick a company to see why it ranks where it does.</div>`;
+  const sp=SP[c.sp];
+  return `<div class="dhead"><div class="hint"><span class="dot" style="background:var(--${c.sec})"></span>${esc(SECN[c.sec])} · ${esc(c.sub)}</div><h2>${esc(c.n)}</h2><div class="sub">${esc(c.st)} · EBITDA about <span class="num">$${c.eb}M</span> · ${esc(c.note)}</div></div>
+  <div class="scores"><div class="score l"><span>Likely to trade</span><b class="num">${c.L}</b></div><div class="score"><span>Fit</span><b class="num">${c.F}</b></div></div>
+  <div><h3>Why now</h3><ul class="why" style="margin-top:6px">${why(c).map(w=>`<li><span class="pts">+${w[0]}</span><span>${esc(w[1])}</span></li>`).join("")}</ul><div class="hint" style="margin-top:4px">Points are each signal's weighted share of the likelihood score.</div></div>
+  <dl class="kv"><dt>Role</dt><dd>${c.pf?`<span class="pill p-warn">Add-on</span> for ${esc(c.pf)}`:esc(roleTxt(c))}</dd><dt>Owner</dt><dd>${esc(c.sp)} · ${esc(sp.f)}${sp.rs?' <span class="pill p-warn">Raising</span>':""}</dd><dt class="full-only">Acquired</dt><dd class="full-only">${fmtYM(c.acq)}</dd><dt>Relationship</dt><dd>${c.rel?`${esc(c.rel.o)} knows the ${esc(c.rel.w==="Sponsor"?"sponsor":c.rel.w)} · strength <span class="num">${c.rel.s}</span>`:"None on file"}</dd></dl>
+  <div class="next"><div class="lbl2">Suggested next step</div>${esc(nextStep(c))}</div>
+  ${crmBlock(c)}
+  <div class="actions"><button class="btn ${SHORT.has(c.id)?"primary":""}" type="button" data-short="${c.id}" aria-pressed="${SHORT.has(c.id)}">${SHORT.has(c.id)?"On shortlist":"Add to shortlist"}</button><button class="btn" type="button" data-copy="1">Copy brief</button><span class="status" data-cstat="1"></span></div>`;
+}
+function crmBlock(c){
+  const r=crmRec(c.id);
+  if(S.crmOpen===c.id){
+    const own=r?r.owner:(c.rel?c.rel.o:"");
+    const lst=r?r.list:defList(c);
+    return `<div class="crm-form" role="group" aria-label="Send to CRM">
+      <div class="lbl2">${r?"Update the existing CRM record":"Send to CRM"}</div>
+      ${r?`<p class="hint" style="margin:0">Matched an existing record by company name and website. This adds a note and a task; it won't create a duplicate.</p>`:""}
+      <div class="fields">
+        <label>Target list<select data-f="list">${LISTS.map(l=>`<option ${lst===l?"selected":""}>${esc(l)}</option>`).join("")}</select></label>
+        <label>Deal owner<select data-f="owner"><option value="">Unassigned</option>${TEAM.map(t=>`<option ${own===t?"selected":""}>${t}</option>`).join("")}</select></label>
+        <label>Stage<select data-f="stage">${["Target","Tracking","Outreach","Met management"].map(s=>`<option ${(r?r.stage:"Target")===s?"selected":""}>${s}</option>`).join("")}</select></label>
+        <label>Follow-up due<input type="date" data-f="due" value="${DUE}"></label>
+      </div>
+      <label>Note<textarea data-f="note" rows="4">${esc(roleTxt(c)+". Why now: "+why(c).map(w=>w[1]).join("; ")+".")}</textarea></label>
+      <label>Follow-up task<textarea data-f="task" rows="2">${esc(nextStep(c))}</textarea></label>
+      <div class="actions"><button class="btn primary" type="button" data-crm="go">${r?"Confirm update":"Confirm and send"}</button><button class="btn" type="button" data-crm="cancel">Cancel</button></div>
+    </div>`;
+  }
+  if(r) return `<div class="crm-on"><div><span class="pill p-good">In CRM</span> <b>${esc(r.list)}</b></div><div class="hint">Stage: ${esc(r.stage)} · owner ${esc(r.owner||"unassigned")} · ${r.pre?"last activity "+esc(r.last):"sent "+esc(r.date)+(r.due?", follow-up due "+fmtD(r.due):"")}</div><button class="btn" type="button" data-crm="open">Update CRM record</button></div>`;
+  return `<div class="crm-on"><div class="hint">Not in the CRM yet.</div><button class="btn primary" type="button" data-crm="open">Send to CRM</button></div>`;
+}
+function wireDetail(root,c){
+  if(!c) return;
+  const q=s=>root.querySelector(s);
+  const o=q('[data-crm="open"]'); if(o) o.onclick=()=>{S.crmOpen=c.id;render()};
+  const x=q('[data-crm="cancel"]'); if(x) x.onclick=()=>{S.crmOpen=null;render()};
+  const g=q('[data-crm="go"]'); if(g) g.onclick=()=>{
+    const prev=crmRec(c.id), f=k=>q(`[data-f="${k}"]`).value;
+    SENT[c.id]={list:f("list"),owner:f("owner"),stage:f("stage"),due:f("due")||DUE,note:f("note"),task:f("task"),date:ASOF_TXT,upd:!!prev};
+    saveSent(); S.crmOpen=null; render();
+    const st=document.querySelector("#"+(S.view==="map"?"detail2":"detail")+" [data-cstat]"); if(st) st.textContent=prev?"CRM record updated (simulated).":"Sent to the CRM (simulated).";
+  };
+  root.querySelectorAll("[data-short]").forEach(b=>b.onclick=()=>toggleShort(+b.dataset.short));
+  const cb=q("[data-copy]");
+  if(cb) cb.onclick=async()=>{const t=brief(c),st=q("[data-cstat]");
+    try{await navigator.clipboard.writeText(t);st.textContent="Copied."}catch(e){st.textContent="Copy blocked here; the brief is below.";const pre=document.createElement("pre");pre.className="num";pre.style.cssText="white-space:pre-wrap;font-size:12px;margin:0";pre.textContent=t;root.appendChild(pre)}};
+}
+function toggleShort(id){SHORT.has(id)?SHORT.delete(id):SHORT.add(id);saveShort();render()}
+function renderRail(list,vis){
+  const V=[["list","Watchlist",vis.length],["map","Hold map",""],["pf","Platforms",PLATFORMS.length],["sp","Sponsors",SPONSORS.length],["how","How it scores",""]];
+  $("views").innerHTML=V.map(([k,n,c])=>`<button type="button" data-v="${k}" ${S.view===k?'aria-current="page"':""}><span>${n}</span><span class="k">${c}</span></button>`).join("");
+  $("views").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.view=b.dataset.v;render()});
+  $("secChips").innerHTML=Object.keys(SECN).map(k=>`<button type="button" class="chip" data-s="${k}" aria-pressed="${S.secs.has(k)}"><i style="background:var(--${k})"></i>${SECS[k]}</button>`).join("");
+  $("secChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{const k=b.dataset.s;if(S.secs.has(k)){if(S.secs.size>1)S.secs.delete(k)}else S.secs.add(k);render()});
+  const R=[["","All"],["platform","New platforms"],["addon","Add-ons"]];
+  $("roleChips").innerHTML=R.map(([k,n])=>`<button type="button" class="chip" data-r="${k}" aria-pressed="${S.role===k&&!S.pf}">${n}</button>`).join("")+(S.pf?`<button type="button" class="chip" data-r="addon" aria-pressed="true">${esc(S.pf.split(" ")[0])} add-ons ×</button>`:"");
+  $("roleChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.role=b.dataset.r;S.pf="";render()});
+  $("minLv").textContent=S.minL;
+  const past=list.filter(c=>c.hold>NORM[c.sec]).length, hot=list.filter(c=>c.L>=65).length, warm=list.filter(c=>c.rel&&c.rel.s>=60&&c.P>=40).length, adds=list.filter(c=>c.pf).length;
+  $("stats").innerHTML=`<div><b class="num">${hot}</b><span>likely to trade, 65+</span></div><div><b class="num">${past}</b><span>past their sector's norm</span></div><div><b class="num">${warm}</b><span>high priority with a warm tie</span></div><div><b class="num">${adds}</b><span>add-ons for ${PLATFORMS.length} platforms</span></div>`;
+}
+function renderBulk(list){
+  const todo=list.filter(c=>SHORT.has(c.id)&&!crmRec(c.id)).sort((a,b)=>b.P-a.P);
+  $("bulkBtn").textContent=`Send shortlist to CRM (${todo.length})`; $("bulkBtn").disabled=!todo.length;
+  $("bulkBtn").onclick=()=>{S.bulk=!S.bulk;render()};
+  const box=$("bulk");
+  if(!S.bulk||!todo.length){box.hidden=true;box.innerHTML="";return}
+  box.hidden=false;
+  box.innerHTML=`<div class="lbl2">Send ${todo.length} shortlisted ${todo.length===1?"company":"companies"} to the CRM</div>
+   <div class="fields"><label>Stage<select id="bStage"><option>Target</option><option>Tracking</option></select></label></div>
+   <div class="tablewrap"><table><thead><tr><th>Company</th><th>Target list</th><th>Deal owner</th><th class="r">Priority</th></tr></thead><tbody>${todo.map(c=>`<tr><td>${esc(c.n)}</td><td><select data-lst="${c.id}" aria-label="Target list for ${esc(c.n)}">${LISTS.map(l=>`<option ${defList(c)===l?"selected":""}>${esc(l)}</option>`).join("")}</select></td><td><select data-own="${c.id}" aria-label="Deal owner for ${esc(c.n)}"><option value="">Unassigned</option>${TEAM.map(t=>`<option ${c.rel&&c.rel.o===t?"selected":""}>${t}</option>`).join("")}</select></td><td class="r num">${c.P}</td></tr>`).join("")}</tbody></table></div>
+   <p class="hint" style="margin:0">Add-ons default to their platform's list. Each record gets a why-now note and a follow-up task for its owner, due ${fmtD(DUE)}. Companies already in the CRM are left out.</p>
+   <div class="actions"><button class="btn primary" type="button" id="bGo">Confirm and send ${todo.length}</button><button class="btn" type="button" id="bCancel">Cancel</button></div>`;
+  $("bCancel").onclick=()=>{S.bulk=false;render()};
+  $("bGo").onclick=()=>{const stg=$("bStage").value;
+    todo.forEach(c=>{SENT[c.id]={list:box.querySelector(`[data-lst="${c.id}"]`).value,owner:box.querySelector(`[data-own="${c.id}"]`).value,stage:stg,due:DUE,note:roleTxt(c)+". Why now: "+why(c).map(w=>w[1]).join("; ")+".",task:nextStep(c),date:ASOF_TXT}});
+    saveSent(); S.bulk=false; render(); $("count").textContent=`${todo.length} sent to the CRM (simulated) · `+$("count").textContent;};
+}
+function renderList(vis){
+  const simple=S.mode==="simple", shown=simple&&!S.allRows?vis.slice(0,TOP):vis;
+  $("count").textContent=shown.length<vis.length?`Top ${shown.length} of ${vis.length}${vis.length<CO.length?" matching the filters":""}`:`${vis.length} of ${CO.length} shown`;
+  $("rowsMoreWrap").hidden=vis.length<=TOP;
+  $("rowsMore").textContent=S.allRows?`Show top ${TOP} only`:`Show all ${vis.length}`;
+  $("rowsMore").setAttribute("aria-expanded",String(S.allRows));
+  $("rowsMore").onclick=()=>{S.allRows=!S.allRows;render()};
+  renderBulk(all());
+  document.querySelectorAll("th button[data-sort]").forEach(b=>{b.setAttribute("aria-pressed",String(b.dataset.sort===S.sort));b.onclick=()=>{S.sort=b.dataset.sort;render()}});
+  if(!shown.some(c=>c.id===S.sel)) S.sel=shown[0]?shown[0].id:null;
+  $("rows").innerHTML=shown.length?shown.map(c=>`<tr class="pick" data-id="${c.id}" aria-selected="${c.id===S.sel}" tabindex="0"><td class="co"><b><span class="dot" style="background:var(--${c.sec})"></span>${esc(c.n)}</b><small>${esc(c.sub)} · $${c.eb}M${c.pf?` <span class="tag add-tag">Add-on · ${esc(c.pf.split(" ")[0])}</span>`:""}${crmRec(c.id)?' <span class="tag crm-tag">In CRM</span>':""}</small><small class="mob num">${esc(c.sp)} · ${c.hold.toFixed(1)} yrs</small></td><td class="co"><b style="font-weight:500">${esc(c.sp)}</b><small class="num">${c.hold.toFixed(1)} yrs · fund yr ${Math.ceil(c.fundAge)}</small></td><td class="r">${meter(c.L)}</td><td class="r">${meter(c.F,"fit")}</td><td class="r"><span class="pill ${(c.P>=50?"p-crit":c.P>=35?"p-warn":"p-off")} num">${c.P}</span></td><td><button type="button" class="star" data-short="${c.id}" aria-pressed="${SHORT.has(c.id)}" aria-label="${SHORT.has(c.id)?"Remove from":"Add to"} shortlist: ${esc(c.n)}">${SHORT.has(c.id)?"★":"☆"}</button></td></tr>`).join(""):`<tr><td colspan="6" class="empty">No companies match these filters.</td></tr>`;
+  $("rows").querySelectorAll("tr.pick").forEach(tr=>{tr.onclick=e=>{if(e.target.closest("[data-short]"))return;S.sel=+tr.dataset.id;S.crmOpen=null;render();if(window.innerWidth<1180)$("detail").scrollIntoView({block:"start"})};tr.onkeydown=e=>{if(e.key==="Enter"){S.sel=+tr.dataset.id;S.crmOpen=null;render()}}});
+  $("rows").querySelectorAll("[data-short]").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleShort(+b.dataset.short)});
+  const c=vis.find(x=>x.id===S.sel);
+  $("detail").innerHTML=detailHTML(c); wireDetail($("detail"),c);
+}
+function renderMap(vis){
+  const Wd=640,H=420,m={l:48,r:16,t:16,b:40}, X=v=>m.l+v/13*(Wd-m.l-m.r), Y=v=>H-m.b-v/15*(H-m.t-m.b);
+  let g=`<rect class="zone" x="${X(6)}" y="${Y(15)}" width="${X(13)-X(6)}" height="${Y(8)-Y(15)}"/>`;
+  for(let i=0;i<=13;i++) g+=`<line class="grid" x1="${X(i)}" x2="${X(i)}" y1="${Y(0)}" y2="${Y(15)}"/><text x="${X(i)}" y="${H-m.b+16}" text-anchor="middle">${i}</text>`;
+  for(let j=0;j<=15;j+=3) g+=`<line class="grid" x1="${X(0)}" x2="${X(13)}" y1="${Y(j)}" y2="${Y(j)}"/><text x="${m.l-8}" y="${Y(j)+4}" text-anchor="end">${j}</text>`;
+  g+=`<line class="ref" x1="${X(6)}" x2="${X(6)}" y1="${Y(0)}" y2="${Y(15)}"/><text x="${X(6)+4}" y="${Y(14.4)}">~6-yr typical hold</text>`;
+  g+=`<line class="ref" x1="${X(0)}" x2="${X(13)}" y1="${Y(8)}" y2="${Y(8)}"/><text x="${X(0.15)}" y="${Y(8)-5}">fund year 8</text>`;
+  g+=`<text x="${X(12.9)}" y="${Y(14.4)}" text-anchor="end" style="fill:var(--accent)">overdue</text>`;
+  g+=`<text x="${(X(0)+X(13))/2}" y="${H-6}" text-anchor="middle">years held</text><text transform="translate(12 ${(Y(0)+Y(15))/2}) rotate(-90)" text-anchor="middle">age of owning fund (years)</text>`;
+  const shape=(c,x,y,r)=>c.sec==="ph"?`<rect x="${x-r}" y="${y-r}" width="${2*r}" height="${2*r}"`:c.sec==="mp"?`<path d="M${x} ${y-r*1.25}L${x+r*1.25} ${y}L${x} ${y+r*1.25}L${x-r*1.25} ${y}Z"`:`<circle cx="${x}" cy="${y}" r="${r}"`;
+  const close={hs:"</circle>",ph:"</rect>",mp:"</path>"};
+  const pts=[...vis].sort((a,b)=>b.eb-a.eb).map(c=>{const r=4+Math.sqrt(c.eb)*1.1,x=X(Math.min(c.hold,12.8)),y=Y(Math.min(c.fundAge,14.8));
+    const ring=c.pf?`<circle cx="${x}" cy="${y}" r="${r+5}" fill="none" stroke="var(--${c.sec})" stroke-width="1.5" stroke-dasharray="3 2" pointer-events="none"/>`:"";
+    return ring+`${shape(c,x,y,r)} class="pt${c.id===S.sel?" sel":""}" data-id="${c.id}" tabindex="0" role="button" aria-label="${esc(c.n)}${c.pf?", add-on":""}: held ${c.hold.toFixed(1)} years, fund year ${Math.ceil(c.fundAge)}" style="fill:var(--${c.sec});fill-opacity:.82"><title>${esc(c.n)} · likely ${c.L} · fit ${c.F}</title>${close[c.sec]}`}).join("");
+  $("map").innerHTML=`<svg class="map" viewBox="0 0 ${Wd} ${H}" role="group" aria-label="Hold map">${g}${pts}</svg>`;
+  $("map").querySelectorAll(".pt").forEach(p=>{const go=()=>{S.sel=+p.dataset.id;S.crmOpen=null;render()};p.onclick=go;p.onkeydown=e=>{if(e.key==="Enter")go()}});
+  $("legend").innerHTML=`<span><svg width="12" height="12" aria-hidden="true"><path d="M6 0L12 6L6 12L0 6Z" fill="var(--mp)"/></svg> Industrials</span><span><svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="var(--hs)"/></svg> Healthcare services</span><span><svg width="12" height="12" aria-hidden="true"><rect x="1" y="1" width="10" height="10" fill="var(--ph)"/></svg> Business services</span><span><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="6" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="3 2"/></svg> Add-on candidate</span><span class="hint">Click a point for its detail.</span>`;
+  if(!vis.some(c=>c.id===S.sel)) S.sel=vis[0]?vis[0].id:null;
+  const c=vis.find(x=>x.id===S.sel);
+  $("detail2").innerHTML=detailHTML(c); wireDetail($("detail2"),c);
+}
+function renderPf(list){
+  $("pfrows").innerHTML=PLATFORMS.map(p=>{const cs=list.filter(c=>c.pf===p.n).sort((a,b)=>b.P-a.P);const top=cs[0];
+    return `<tr class="pick" data-pf="${esc(p.n)}" tabindex="0"><td><b><span class="dot" style="background:var(--${p.sec})"></span>${esc(p.n)}</b></td><td>${esc(p.w)}</td><td class="r num">${cs.length}</td><td class="r num">${cs.filter(c=>c.L>=65).length}</td><td class="r num">$${cs.reduce((a,c)=>a+c.eb,0)}M</td><td>${top?`${esc(top.n)} <span class="hint">priority ${top.P}</span>`:'<span class="hint">None yet</span>'}</td></tr>`}).join("");
+  $("pfrows").querySelectorAll("tr").forEach(tr=>{const go=()=>{S.pf=tr.dataset.pf;S.role="addon";S.view="list";render()};tr.onclick=go;tr.onkeydown=e=>{if(e.key==="Enter")go()}});
+}
+function renderSp(list){
+  const rows=SPONSORS.map(s=>{const cs=list.filter(c=>c.sp===s.n);const age=ASOF_Y-(s.v+0.5);
+    const best=cs.filter(c=>c.rel).sort((a,b)=>b.rel.s-a.rel.s)[0];
+    return {s,cs,age,past:cs.filter(c=>c.hold>NORM[c.sec]).length,avg:cs.length?Math.round(cs.reduce((a,c)=>a+c.L,0)/cs.length):0,best}}).sort((a,b)=>b.avg-a.avg);
+  $("sprows").innerHTML=rows.map(r=>`<tr class="pick" data-sp="${esc(r.s.n)}" tabindex="0"><td><b>${esc(r.s.n)}</b></td><td>${esc(r.s.f)} · ${r.s.v}</td><td class="r num">${r.age.toFixed(1)}</td><td>${r.s.rs?'<span class="pill p-warn">Raising</span>':'<span class="hint">No</span>'}</td><td class="r num">${r.cs.length}</td><td class="r num">${r.past}</td><td class="r">${meter(r.avg)}</td><td>${r.best?`${esc(r.best.rel.o)} <span class="hint">via ${esc(r.best.n.split(" ")[0])}</span>`:'<span class="hint">None</span>'}</td></tr>`).join("");
+  $("sprows").querySelectorAll("tr").forEach(tr=>{const go=()=>{S.sp=tr.dataset.sp;S.view="list";$("spSel").value=S.sp;render()};tr.onclick=go;tr.onkeydown=e=>{if(e.key==="Enter")go()}});
+}
+function renderHow(){
+  $("wrows").innerHTML=Object.keys(W).map(k=>`<div class="row"><label for="w-${k}">${WN[k]}</label><input type="range" id="w-${k}" min="0" max="50" step="5" value="${W[k]}"><span class="num">${W[k]}</span></div>`).join("");
+  Object.keys(W).forEach(k=>{const el=$("w-"+k);el.oninput=()=>{W[k]=+el.value;el.nextElementSibling.textContent=W[k];renderRail(all(),visible(all()))}});
+  [["pMin","pmin"],["pMax","pmax"],["aMin","amin"],["aMax","amax"]].forEach(([id,k])=>$(id).value=EB[k]);
+  $("norms").innerHTML=Object.keys(SECN).map(k=>`<tr><td><span class="dot" style="background:var(--${k})"></span>${SECN[k]}</td><td class="r num">${NORM[k].toFixed(1)} yrs</td><td class="hint">${NORMB[k]}</td></tr>`).join("");
+}
+function setMode(m){
+  S.mode=m; try{localStorage.setItem("ws-watch-mode",m)}catch(e){}
+  if(m==="simple"){S.more=false;S.allRows=false;S.view="list";S.crmOpen=null;S.bulk=false;S.shortOnly=false;S.notCrm=false;$("shortOnly").checked=false;$("notCrm").checked=false}
+  render();
+}
+function render(){
+  const simple=S.mode==="simple";
+  if(simple&&!S.more) S.view="list";
+  $("app").dataset.mode=S.mode; $("app").classList.toggle("more",simple&&S.more);
+  $("modeSimple").setAttribute("aria-pressed",String(simple)); $("modeFull").setAttribute("aria-pressed",String(!simple));
+  $("moreBtn").textContent=S.more?"Hide views and filters":"More views and filters"; $("moreBtn").setAttribute("aria-expanded",String(S.more));
+  const list=all(), vis=visible(list);
+  renderRail(list,vis);
+  ["list","map","pf","sp","how"].forEach(v=>$("v-"+v).hidden=S.view!==v);
+  if(S.view==="list") renderList(vis);
+  if(S.view==="map") renderMap(vis);
+  if(S.view==="pf") renderPf(list);
+  if(S.view==="sp") renderSp(list);
+  if(S.view==="how") renderHow();
+}
+$("spSel").innerHTML=`<option value="">All sponsors</option>`+SPONSORS.map(s=>`<option>${esc(s.n)}</option>`).join("");
+$("spSel").onchange=e=>{S.sp=e.target.value;render()};
+$("minL").oninput=e=>{S.minL=+e.target.value;render()};
+$("fitOnly").onchange=e=>{S.fitOnly=e.target.checked;render()};
+$("shortOnly").onchange=e=>{S.shortOnly=e.target.checked;render()};
+$("notCrm").onchange=e=>{S.notCrm=e.target.checked;render()};
+$("resetDemo").onclick=()=>{SHORT=new Set();SENT={};saveShort();saveSent();$("rstat").textContent="Cleared.";renderRail(all(),visible(all()))};
+$("resetW").onclick=()=>{W={...WDEF};EB={...EBDEF};renderHow();renderRail(all(),visible(all()))};
+const ebIn=(id,k,lowK)=>$(id).onchange=e=>{let v=Math.max(0,+e.target.value||0);if(lowK)v=Math.max(EB[lowK],v);EB[k]=v;e.target.value=v;renderRail(all(),visible(all()))};
+ebIn("pMin","pmin");ebIn("pMax","pmax","pmin");ebIn("aMin","amin");ebIn("aMax","amax","amin");
+$("modeSimple").onclick=()=>setMode("simple");
+$("modeFull").onclick=()=>setMode("full");
+$("moreBtn").onclick=()=>{S.more=!S.more;render()};
+render();
+})();
+</script>
+</body></html>
+
+</body></html>

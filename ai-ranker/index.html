@@ -1,0 +1,508 @@
+<!doctype html><html><head><meta charset=utf8><meta name="robots" content="noindex,nofollow"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PE Toolkit - AI Opportunity Ranker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: company brief, then value x feasibility map beside ranked table, then pilot cards for the top three. */
+:root{
+  --bg:#f6f7f6; --panel:#ffffff; --ink:#18201d; --muted:#5b6762; --line:#dde3e0;
+  --accent:#1d6b57; --accent-soft:#e3efea; --warn:#a46412; --warn-soft:#f7ecdc; --bad:#a83a32; --bad-soft:#f6e1de;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111614; --panel:#18201d; --ink:#e4ebe7; --muted:#97a59f; --line:#2a3531;
+  --accent:#5fbf9f; --accent-soft:#1e3a31; --warn:#e0a457; --warn-soft:#3a2c17; --bad:#ec8a80; --bad-soft:#3e211e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111614; --panel:#18201d; --ink:#e4ebe7; --muted:#97a59f; --line:#2a3531;
+  --accent:#5fbf9f; --accent-soft:#1e3a31; --warn:#e0a457; --warn-soft:#3a2c17; --bad:#ec8a80; --bad-soft:#3e211e; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 48px}
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--f-display);font-weight:600;font-size:clamp(28px,5vw,40px);line-height:1.05;margin:0;text-wrap:balance}
+.lede{color:var(--muted);max-width:68ch;margin:0}
+h2{font-family:var(--f-display);font-weight:600;font-size:19px;margin:0}
+h3{font-family:var(--f-display);font-weight:600;font-size:16px;margin:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:12px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.grow{flex:1 1 auto}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.field{display:grid;gap:4px;min-width:0}
+label{font-size:13px;color:var(--muted)}
+input,textarea{width:100%;font-family:var(--f-body);font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+textarea{min-height:92px;resize:vertical}
+button{font-family:var(--f-body);font-size:14px;font-weight:600;border-radius:6px;padding:9px 14px;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:disabled{opacity:.55;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.status{font-size:13px;color:var(--muted)} .status.err{color:var(--bad)}
+.badge{display:inline-block;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.badge.example{background:var(--warn-soft);color:var(--warn)}
+.split{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:18px;align-items:start}
+@media (max-width:900px){.split{grid-template-columns:1fr}}
+.chart svg{width:100%;height:auto;display:block}
+.chart text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
+.chart .lab{font-family:var(--f-body);font-size:10.5px;fill:var(--ink)}
+.chart .q{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;fill:var(--muted)}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:13.5px}
+th{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;font-weight:500;padding:9px 10px;border-bottom:1px solid var(--line);background:var(--bg)}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rank{font-family:var(--f-mono);color:var(--muted)}
+.dr{font-family:var(--f-mono);font-size:11px;padding:2px 7px;border-radius:999px;white-space:nowrap}
+.dr.good{background:var(--accent-soft);color:var(--accent)} .dr.partial{background:var(--warn-soft);color:var(--warn)} .dr.poor{background:var(--bad-soft);color:var(--bad)}
+.meter{display:inline-flex;gap:2px;vertical-align:middle}
+.meter i{width:7px;height:10px;border-radius:2px;background:var(--line)}
+.meter i.on{background:var(--accent)}
+.sub{font-size:12.5px;color:var(--muted)}
+.pilots{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.pilot{border:1px solid var(--line);border-radius:8px;padding:14px;display:grid;gap:8px;align-content:start}
+.pilot dl{margin:0;display:grid;gap:6px}
+.pilot dt{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pilot dd{margin:0;font-size:13.5px}
+.pilot dd.stop{color:var(--bad)}
+.foot{font-size:12.5px;color:var(--muted);max-width:72ch}
+.banner{background:var(--warn-soft);border-radius:8px;padding:9px 12px;font-size:13.5px}
+.flow{display:flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
+.flow>*{flex:1 1 170px;padding:9px 14px;border-right:1px solid var(--line);display:grid;gap:1px;text-decoration:none;color:inherit}
+.flow>*:last-child{border-right:0}
+.flow b{font-size:13.5px;font-weight:600}.flow span{font-size:12px;color:var(--muted)}
+.flow .here{background:var(--accent-soft)}.flow .here b{color:var(--accent)}
+.flow a:hover b{text-decoration:underline}
+.step{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.weights{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 16px}
+.weights label{display:grid;gap:3px;font-size:12.5px}
+.weights label span{display:flex;justify-content:space-between}
+.weights label b{font-family:var(--f-mono);font-weight:500;color:var(--ink)}
+input[type=range]{padding:0;border:0;background:none;accent-color:var(--accent)}
+.presets button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.presets button{padding:5px 10px;font-size:13px}
+.pmap{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:16px;align-items:start}
+@media (max-width:900px){.pmap{grid-template-columns:1fr}}
+.bub circle{cursor:pointer}
+.bub circle:focus-visible{outline:none;stroke-width:3}
+.pdetail{border:1px solid var(--line);border-radius:8px;padding:14px;display:grid;gap:10px;align-content:start}
+.pdetail dl{margin:0;display:grid;grid-template-columns:minmax(90px,max-content) minmax(0,1fr);gap:5px 12px;font-size:13.5px}
+.pdetail dt{color:var(--muted);font-size:12px}.pdetail dd{margin:0}
+.bk{font-family:var(--f-mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.bk.now{background:var(--accent-soft);color:var(--accent)}.bk.toward{background:var(--warn-soft);color:var(--warn)}.bk.quick{background:var(--line);color:var(--ink)}.bk.hold{background:var(--bad-soft);color:var(--bad)}
+.heat{min-width:880px;font-size:12.5px}
+.heat th{white-space:normal;vertical-align:bottom;font-size:10px;line-height:1.25;padding:7px 6px}
+.heat td{padding:6px;text-align:center;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.heat td.co{text-align:left;font-family:var(--f-body);white-space:nowrap}
+.heat tr.sel td.co{font-weight:600}
+.h0{color:var(--muted)}.h1{background:color-mix(in srgb,var(--accent) 14%,transparent)}.h2{background:color-mix(in srgb,var(--accent) 30%,transparent)}.h3{background:color-mix(in srgb,var(--accent) 50%,transparent)}
+.heat th.shared{color:var(--accent)}
+.shared-list{list-style:none;margin:0;padding:0;display:grid;gap:5px;font-size:13.5px}
+.shared-list li{padding:7px 10px;border-radius:6px;background:var(--accent-soft)}
+/* Simple view / Full view. Full view is the original page; simple view hides, collapses and reorders with these rules only. */
+.toprow{gap:8px 12px}
+.viewsw{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel)}
+.viewsw button{border:0;border-radius:0;padding:5px 11px;font-size:13px;font-weight:500;color:var(--muted);background:none}
+.viewsw button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.viewsw button:focus-visible{outline-offset:-2px}
+:root[data-view="simple"] .f-only,:root[data-view="full"] .s-only{display:none!important}
+:root[data-view="simple"][data-tab="map"] [data-pane="score"],:root[data-view="simple"][data-tab="score"] [data-pane="map"]{display:none!important}
+:root[data-view="simple"] .collapsible:not(.open){display:none!important}
+:root[data-view="simple"] .wrap{gap:14px}
+.bare{display:contents}
+:root[data-view="simple"] .bare.open{display:grid;gap:10px;min-width:0}
+:root[data-view="simple"] .bare.open>*{min-width:0}
+.topline{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+.topline .banner{flex:1 1 260px}
+.suite{font-size:13px;color:var(--accent);text-underline-offset:2px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tabs button{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;padding:8px 14px;margin-bottom:-1px;font-family:var(--f-display);font-size:16px;color:var(--muted)}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs button:focus-visible{outline-offset:-2px}
+.answer{margin:0;font-size:16px;line-height:1.35;text-wrap:pretty}
+.answer .fig{font-family:var(--f-display);font-weight:600;font-size:28px;line-height:1;color:var(--accent);margin-right:2px}
+.disc-btn{display:inline-flex;align-items:center;gap:7px;justify-self:start;padding:5px 10px;font-size:13px;font-weight:500}
+.disc-btn::before{content:"";flex:none;border-left:5px solid currentColor;border-top:4px solid transparent;border-bottom:4px solid transparent}
+.disc-btn[aria-expanded="true"]::before{transform:rotate(90deg)}
+.sharedhead{display:grid;gap:3px}
+:root[data-view="simple"] .sharedhead,:root[data-view="simple"] #shared{order:1}
+:root[data-view="simple"] #heatBtn{order:2}
+:root[data-view="simple"] #d-heat{order:3}
+:root[data-view="simple"] #headline{font-size:15px;color:var(--ink)}
+.scorehead b{color:var(--ink)}
+@media (min-width:901px){:root[data-view="simple"] .pmap{grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr)}}
+</style>
+<script>
+(function(){var v="simple";try{if(localStorage.getItem("wsView")==="full")v="full"}catch(e){}var r=document.documentElement;r.setAttribute("data-view",v);r.setAttribute("data-tab","map")})();
+</script>
+
+<div class="wrap">
+  <header>
+    <div class="row toprow"><div class="eyebrow grow">Prototype · Portfolio value creation</div>
+      <div class="viewsw" role="group" aria-label="Page view"><button type="button" id="viewSimple" aria-pressed="true">Simple view</button><button type="button" id="viewFull" aria-pressed="false">Full view</button></div></div>
+    <h1>Portfolio AI Opportunity Ranker</h1>
+    <p class="lede s-only">Which portfolio companies should start on AI first, and what is it worth a year?</p>
+    <p class="lede f-only">See where AI pays across the portfolio first, then score any one company in depth. The map is computed in code from use-case estimates; Claude only drafts the estimates for a new company, and keeps freed-up capacity separate from cash.</p>
+  </header>
+  <div class="topline s-only"><div class="banner" role="note"><b>Invented portfolio.</b> Every company and figure on this page is fictional.</div>
+    <a class="suite" href="../">Part of PE AI &amp; Data Tools</a></div>
+  <div class="banner f-only" role="note"><b>Invented portfolio.</b> All six companies and every figure are fictional, styled on a lower-middle-market portfolio across four sectors. Estimates are directional; people decide what to pilot.</div>
+
+  <nav class="flow f-only" aria-label="Related prototypes">
+    <a href="../#thesis-sourcer"><b>1 · Thesis Sourcer</b><span>Find platforms and add-ons</span></a>
+    <a href="../#contract-reader"><b>2 · Contract Reader</b><span>Diligence the agreements</span></a>
+    <a href="../#coa-mapper"><b>3 · COA Mapper</b><span>Integrate the add-on</span></a>
+    <div class="here"><b>4 · AI Ranker</b><span>Find value after close</span></div>
+  </nav>
+
+  <div class="tabs s-only" role="tablist" aria-label="Tools on this page">
+    <button type="button" role="tab" id="tab-map" data-tab="map" aria-selected="true">Portfolio map</button>
+    <button type="button" role="tab" id="tab-score" data-tab="score" aria-selected="false" tabindex="-1">Score one company</button>
+  </div>
+
+  <section class="panel" aria-labelledby="pm-h" data-pane="map">
+    <div class="step f-only">Portfolio map</div>
+    <div class="row"><h2 id="pm-h" class="grow">Where AI pays first</h2><span class="badge example">Example portfolio</span></div>
+    <div class="row s-only"><p class="answer grow" id="pmSimple"></p>
+      <button type="button" class="disc-btn" id="buildBtn" aria-expanded="false" aria-controls="d-build">How this figure is built</button></div>
+    <div class="collapsible bare" id="d-build">
+    <p class="sub" id="pmHead" style="margin:0"></p>
+    <p class="sub s-only" style="margin:0">These six companies are a pre-scored illustrative set: their use-case estimates are fixed in the page and the map, heatmap and shared builds are arithmetic on them, not live Claude output. The Score one company tab scores a new company live; “Add this company to the portfolio map” places its result here.</p>
+    <p class="sub f-only" style="margin:0">These six companies are a pre-scored illustrative set: their use-case estimates are fixed in the page and the map, heatmap and shared builds are arithmetic on them, not live Claude output. The scorer below scores a new company live; “Add this company to the portfolio map” places its result here.</p>
+    </div>
+    <div class="row presets" role="group" aria-label="Weight presets">
+      <span class="sub f-only">Presets:</span><span class="sub s-only">Prioritize:</span>
+      <button type="button" data-p="balanced">Balanced</button><button type="button" data-p="fast">Fastest wins</button><button type="button" data-p="big">Biggest EBITDA</button><button type="button" data-p="platform">Build once, use everywhere</button>
+      <button type="button" class="disc-btn s-only" id="weightsBtn" aria-expanded="false" aria-controls="weights">Adjust weights</button>
+    </div>
+    <div class="weights collapsible" id="weights"></div>
+    <div class="pmap">
+      <div style="min-width:0;display:grid;gap:6px"><div class="chart" id="pchart" role="img" aria-label="Portfolio companies by readiness and net AI EBITDA potential"></div>
+        <p class="sub s-only" style="margin:0">Click a bubble to open that company. Bubble size is revenue. The shaded corner is Start now.</p></div>
+      <div class="pdetail" id="pdetail" aria-live="polite"></div>
+    </div>
+    <div class="sharedhead s-only"><h3>Builds worth doing once</h3><p class="sub" style="margin:0">Each use case below is worth $400K or more a year at two or more companies. Build it once and roll it out.</p></div>
+    <button type="button" class="disc-btn s-only" id="heatBtn" aria-expanded="false" aria-controls="d-heat" data-show="Show use cases by company" data-hide="Hide use cases by company">Show use cases by company</button>
+    <div class="collapsible bare" id="d-heat">
+    <h3>Use cases by company</h3>
+    <div class="tablebox"><table class="heat" id="heat"></table></div>
+    <p class="sub" style="margin:0">Cells show annual EBITDA midpoint in $K, gross of cost; hover a cell for its one-time and run cost. Darker means larger. Prior authorization and denials and collections draw on the same unpaid-revenue pool, so where both appear the company total takes a 20% haircut on the smaller of the two. A green column header is a shared build: worth $400K or more at two or more companies, so build it once and roll it out.</p>
+    </div>
+    <ul class="shared-list" id="shared"></ul>
+  </section>
+
+  <div class="step f-only" style="margin-bottom:-12px">Score one company</div>
+  <div class="row s-only scorehead" data-pane="score"><p class="sub grow" style="margin:0;font-size:14px">Company scored: <b id="scName"></b></p>
+    <button type="button" class="disc-btn" id="briefBtn" aria-expanded="false" aria-controls="d-brief">Score your own company</button></div>
+  <section class="panel collapsible" aria-labelledby="co-h" id="d-brief" data-pane="score">
+    <div class="row"><h2 id="co-h" class="grow">Company brief</h2><span class="badge example" id="inBadge">Example company</span></div>
+    <div class="fields">
+      <div class="field"><label for="name">Company</label><input id="name"></div>
+      <div class="field"><label for="sector">Segment</label><input id="sector"></div>
+      <div class="field"><label for="rev">Revenue ($M)</label><input id="rev" inputmode="decimal"></div>
+      <div class="field"><label for="ebitda">EBITDA ($M)</label><input id="ebitda" inputmode="decimal"></div>
+      <div class="field"><label for="fte">Employees</label><input id="fte" inputmode="numeric"></div>
+    </div>
+    <div class="field"><label for="desc">Business model, systems and known pain points</label><textarea id="desc"></textarea></div>
+    <div class="row">
+      <button class="primary" id="run">Rank opportunities with Claude</button>
+      <button id="reset">Load example</button>
+      <span class="status" id="status" role="status"></span>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="r-h" data-pane="score">
+    <div class="row"><h2 id="r-h" class="grow">Ranked opportunities</h2><span class="badge example" id="srcBadge">Example result</span></div>
+    <p class="sub" id="headline" style="margin:0"></p>
+    <div class="split">
+      <div class="chart" id="chart" role="img" aria-label="Opportunities plotted by feasibility and annual EBITDA impact"></div>
+      <div class="tablebox"><table>
+        <thead><tr><th>#</th><th>Use case</th><th class="num">EBITDA / yr</th><th class="num">Capacity</th><th>Feasibility</th><th>Data</th><th class="num">Months</th><th class="num">Cost</th><th class="num">Payback</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+    </div>
+    <p class="sub" style="margin:0">EBITDA is cash impact (cost removed or revenue gained), gross of cost. Cost is the one-time build plus the annual run cost; payback is one-time cost over monthly net value (midpoint less run cost). Capacity is staff time freed, shown in FTEs; it becomes cash only if roles are redeployed or hiring is avoided.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="p-h" data-pane="score">
+    <h2 id="p-h">Pilot plans for the top three</h2>
+    <div class="pilots" id="pilots"></div>
+    <div class="row"><button id="copy">Copy scorecard for the 100-day plan</button><button id="addMap">Add this company to the portfolio map</button><span class="status" id="copyStatus" role="status"></span></div>
+  </section>
+
+  <p class="foot s-only">Prototype for discussion. Every company and figure is invented. Estimates are directional; validate each against the company's own data before it goes into a value-creation plan.</p>
+  <p class="foot f-only">Prototype for discussion. The example company and every figure in it are invented. Claude's estimates are directional, built from the brief alone; validate each against the company's own data before it goes into a value-creation plan. Ranking runs on the viewer's own Claude account and asks permission the first time.</p>
+</div>
+
+<script>
+const EX={name:"Birch (illustrative)",sector:"Healthcare services: home & ambulatory infusion",rev:"75",ebitda:"12.6",fte:"420",
+desc:`Specialty infusion provider with 14 ambulatory suites and home nursing across 4 states. ~60% commercial payers, 30% Medicare, 10% Medicaid. Epic-adjacent EHR (CPR+), separate billing system, referrals arrive by fax and portal. Pain points: prior authorization backlog delays starts by 6-9 days; initial denial rate ~11%; intake team of 38 re-keys referral packets; nurse scheduling done in spreadsheets with high overtime; drug inventory write-offs from expired biologics.`};
+const EXR={headline:"Front-end revenue cycle is the prize: prior auth and intake automation shorten time-to-first-infusion and cut denials, worth roughly $1.9M of EBITDA a year together after run costs.",
+items:[
+{name:"Prior authorization automation",cash_low:900,cash_high:1500,capacity_fte:9,feasibility:4,months:6,one_time:350,run_cost:150,data:"partial",why:"Faster starts recover lost referrals and cut write-offs.",risk:"Payer portal variability",kpi:"Days referral-to-auth; auths per specialist per day",stop:"Stop if auth turnaround hasn't dropped 25% by week 10"},
+{name:"Denial prediction & prevention",cash_low:700,cash_high:1200,capacity_fte:3,feasibility:4,months:5,one_time:300,run_cost:120,data:"good",why:"11% initial denial rate on high-cost drugs.",risk:"Needs clean claim history",kpi:"Initial denial rate; cash collected per claim",stop:"Stop if denial rate isn't below 9% after 3 months"},
+{name:"Referral intake extraction",cash_low:350,cash_high:600,capacity_fte:12,feasibility:5,months:3,one_time:150,run_cost:80,data:"good",why:"38-person team re-keys fax packets.",risk:"PHI handling; needs a BAA",kpi:"Minutes per referral; data-entry error rate",stop:"Stop if accuracy is below 97% on a 200-packet test"},
+{name:"Nurse scheduling optimization",cash_low:400,cash_high:800,capacity_fte:4,feasibility:3,months:7,one_time:250,run_cost:90,data:"partial",why:"Spreadsheet scheduling drives overtime.",risk:"Nurse adoption and union rules",kpi:"Overtime hours as % of total; visits per nurse-day",stop:"Stop if overtime isn't down 15% in two pilot regions"},
+{name:"Biologic inventory forecasting",cash_low:250,cash_high:500,capacity_fte:1,feasibility:3,months:6,one_time:120,run_cost:40,data:"partial",why:"Expired biologics are pure write-off.",risk:"Patient schedule volatility",kpi:"Expired drug write-offs ($/month)",stop:"Stop if write-offs aren't down 30% in two quarters"},
+{name:"Clinical documentation assist",cash_low:100,cash_high:300,capacity_fte:6,feasibility:3,months:8,one_time:200,run_cost:100,data:"poor",why:"Nurse charting time after visits.",risk:"EHR integration; clinical review",kpi:"Charting minutes per visit",stop:"Stop if nurses don't use it on 60% of visits by month 3"},
+{name:"Patient contact center agent",cash_low:150,cash_high:300,capacity_fte:5,feasibility:4,months:4,one_time:120,run_cost:60,data:"good",why:"Scheduling and benefits calls are repetitive.",risk:"Patient experience",kpi:"Calls resolved without staff; CSAT",stop:"Stop if CSAT falls more than 5 points"}]};
+
+const $=id=>document.getElementById(id);
+let result=EXR, source="example";
+const mid=i=>(Number(i.cash_low)+Number(i.cash_high))/2;
+const score=i=>mid(i)*(Number(i.feasibility)/5);
+const k=n=>"$"+(n>=1000?(n/1000).toFixed(1)+"M":Math.round(n)+"K");
+const pb=i=>{const n=mid(i)-(Number(i.run_cost)||0),o=Number(i.one_time)||0;return o>0&&n>0?Math.round(o/(n/12))+" mo":"—"};
+
+function setForm(o){for(const f of ["name","sector","rev","ebitda","fte","desc"]) $(f).value=o[f]}
+function render(){
+  const items=[...result.items].sort((a,b)=>score(b)-score(a));
+  $("headline").textContent=result.headline||"";
+  const tb=$("rows"); tb.textContent="";
+  items.forEach((it,i)=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td class="rank">${i+1}</td><td><div class="u"></div><div class="sub w"></div></td><td class="num"></td><td class="num"></td><td><span class="meter">${[1,2,3,4,5].map(n=>`<i class="${n<=it.feasibility?"on":""}"></i>`).join("")}</span></td><td><span class="dr"></span></td><td class="num"></td><td class="num"></td><td class="num"></td>`;
+    tr.querySelector(".u").textContent=it.name; tr.querySelector(".w").textContent=it.why||"";
+    tr.children[2].textContent=k(it.cash_low)+"–"+k(it.cash_high);
+    tr.children[3].textContent=(Number(it.capacity_fte)||0)+" FTE";
+    const d=tr.querySelector(".dr"); d.className="dr "+(["good","partial","poor"].includes(it.data)?it.data:"partial"); d.textContent=it.data;
+    tr.children[6].textContent=it.months; tr.children[7].textContent=k(Number(it.one_time)||0)+" + "+k(Number(it.run_cost)||0)+"/yr"; tr.children[8].textContent=pb(it); tb.append(tr);
+  });
+  drawChart(items);
+  const p=$("pilots"); p.textContent="";
+  items.slice(0,3).forEach((it,i)=>{
+    const c=document.createElement("article"); c.className="pilot";
+    c.innerHTML=`<h3></h3><dl><dt>Target</dt><dd class="t"></dd><dt>Measure</dt><dd class="m"></dd><dt>Key risk</dt><dd class="r"></dd><dt>Stop rule</dt><dd class="stop"></dd></dl>`;
+    c.querySelector("h3").textContent=(i+1)+". "+it.name;
+    c.querySelector(".t").textContent=k(it.cash_low)+"–"+k(it.cash_high)+" EBITDA a year, value within "+it.months+" months"+(Number(it.one_time)>0?"; payback "+pb(it)+" on "+k(Number(it.one_time))+" one-time":"");
+    c.querySelector(".m").textContent=it.kpi||""; c.querySelector(".r").textContent=it.risk||""; c.querySelector(".stop").textContent=it.stop||"";
+    p.append(c);
+  });
+  $("srcBadge").textContent=source==="example"?"Example result":"Ranked by Claude";
+  $("srcBadge").className="badge"+(source==="example"?" example":"");
+  if($("scName")) $("scName").textContent=$("name").value.trim()||"New company";
+}
+
+function drawChart(items){
+  const W=420,H=330,L=48,R=14,T=16,B=40, maxY=Math.max(500,...items.map(i=>Number(i.cash_high)||0));
+  const yMax=Math.ceil(maxY/500)*500;
+  const x=f=>L+(f-1)/4*(W-L-R), y=v=>T+(1-v/yMax)*(H-T-B);
+  let s=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  s+=`<rect x="${x(3)}" y="${T}" width="${W-R-x(3)}" height="${y(yMax/2)-T}" fill="var(--accent-soft)"/>`;
+  s+=`<text class="q" x="${W-R-4}" y="${T+12}" text-anchor="end">DO FIRST</text>`;
+  for(let v=0;v<=yMax;v+=yMax/4){s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${y(v)+3}" text-anchor="end">${k(v)}</text>`}
+  for(let f=1;f<=5;f++) s+=`<text x="${x(f)}" y="${H-B+14}" text-anchor="middle">${f}</text>`;
+  s+=`<text x="${(L+W-R)/2}" y="${H-6}" text-anchor="middle">Feasibility (1 hard – 5 easy)</text>`;
+  s+=`<text transform="translate(11 ${(T+H-B)/2}) rotate(-90)" text-anchor="middle">EBITDA / yr</text>`;
+  const placed=[];
+  items.forEach((it,i)=>{
+    const jitter=items.slice(0,i).filter(o=>o.feasibility===it.feasibility&&Math.abs(mid(o)-mid(it))<yMax*.06).length*9;
+    const cx=x(Number(it.feasibility))+(jitter? (jitter%18?jitter:-jitter):0), cy=y(mid(it));
+    s+=`<line x1="${cx}" x2="${cx}" y1="${y(it.cash_low)}" y2="${y(it.cash_high)}" stroke="var(--accent)" stroke-opacity=".45" stroke-width="2"/>`;
+    s+=`<circle cx="${cx}" cy="${cy}" r="${i<3?6:4.5}" fill="${i<3?"var(--accent)":"var(--panel)"}" stroke="var(--accent)" stroke-width="1.5"/>`;
+    const right=cx<W-120, tx=right?cx+9:cx-9;
+    let ty=cy+3; while(placed.some(p=>Math.abs(p.y-ty)<12&&Math.abs(p.x-tx)<90)) ty+=12; placed.push({x:tx,y:ty});
+    s+=`<text class="lab" x="${tx}" y="${ty}" text-anchor="${right?"start":"end"}">${i+1}. ${it.name.replace(/[<&]/g,"").slice(0,22)}${it.name.length>22?"…":""}</text>`;
+  });
+  $("chart").innerHTML=s+"</svg>";
+}
+
+function errCopy(c){return({not_granted:"Claude wasn't allowed for this page, so ranking is off.",sampling_disabled:"Claude isn't available on this account.",rate_limited:"Too many requests right now. Wait a minute, then try again.",session_expired:"Your session expired. Sign in again, then retry.",invalid_json:"Claude's reply couldn't be read as a scorecard. Try again.",refused:"Claude declined this input. Revise the brief and try again."})[c]||"Ranking failed. Try again in a moment."}
+
+const samplePromise=window.claude?claude.use("sample"):Promise.resolve(null);
+samplePromise.then(s=>{if(!s){$("run").disabled=true;$("status").textContent="Live scoring is switched off on this hosted copy. The worked example shows how it works."}});
+["name","sector","rev","ebitda","fte","desc"].forEach(f=>$(f).addEventListener("input",()=>{$("inBadge").hidden=true}));
+
+$("run").onclick=async()=>{
+  const sample=await samplePromise; if(!sample) return;
+  if($("desc").value.trim().length<60){$("status").className="status err";$("status").textContent="Add a few sentences on the business model, systems and pain points.";return}
+  $("run").disabled=true; $("status").className="status"; $("status").textContent="Scoring use cases… this can take up to a minute.";
+  const prompt=`You are an AI value-creation lead at a lower-middle-market private equity firm. Score 6 to 8 AI and automation use cases for this portfolio company. Prefer proven use cases (order and document intake, scheduling and dispatch, quoting and change orders, pricing and contract leakage, demand and inventory forecasting, collections and denial prevention, prior authorization where the company bills payers, contact center, quality and compliance documentation, spend consolidation, finance close) and only those that fit this company.
+
+Company: ${$("name").value}
+Segment: ${$("sector").value}
+Revenue $M: ${$("rev").value}; EBITDA $M: ${$("ebitda").value}; Employees: ${$("fte").value}
+Brief: ${$("desc").value.slice(0,6000)}
+
+For each use case give:
+- name (max 5 words)
+- cash_low, cash_high: annual EBITDA impact in $ thousands (cost removed or revenue gained), conservative and realistic for this company's size
+- capacity_fte: staff capacity freed, in FTEs, counted separately from cash
+- one_time: one-time implementation cost in $ thousands (licenses, integration, change management), realistic for this company's size
+- run_cost: annual run cost in $ thousands (subscriptions, usage, support)
+- feasibility: integer 1-5 (5 = easy: data available, off-the-shelf tools, low change management)
+- months: months to first measurable value
+- data: "good", "partial" or "poor" data readiness
+- why: max 12 words, tied to the brief
+- risk: max 8 words
+- kpi: the pilot's measure, max 14 words
+- stop: a concrete pilot stop rule with a threshold and a date, max 18 words
+Also give headline: one sentence on where the value concentrates, with a dollar figure net of run cost.
+
+Reply with only JSON: {"headline":"...","items":[{"name":"...","cash_low":500,"cash_high":900,"capacity_fte":4,"one_time":250,"run_cost":90,"feasibility":4,"months":6,"data":"partial","why":"...","risk":"...","kpi":"...","stop":"..."}]}`;
+  try{
+    const r=await sample.json(prompt);
+    if(!r||!Array.isArray(r.items)||!r.items.length) throw {code:"invalid_json"};
+    result={headline:String(r.headline||""),items:r.items.slice(0,10).map(i=>({name:String(i.name||"Use case"),cash_low:Math.max(0,Number(i.cash_low)||0),cash_high:Math.max(0,Number(i.cash_high)||0),
+      capacity_fte:Number(i.capacity_fte)||0,one_time:Math.max(0,Number(i.one_time)||0),run_cost:Math.max(0,Number(i.run_cost)||0),feasibility:Math.min(5,Math.max(1,Math.round(Number(i.feasibility)||3))),months:Number(i.months)||0,
+      data:String(i.data||"partial"),why:String(i.why||""),risk:String(i.risk||""),kpi:String(i.kpi||""),stop:String(i.stop||"")}))};
+    result.items.forEach(i=>{if(i.cash_high<i.cash_low)[i.cash_low,i.cash_high]=[i.cash_high,i.cash_low]});
+    source="claude"; $("status").textContent="Ranked "+result.items.length+" use cases."; render();
+  }catch(e){$("status").className="status err";$("status").textContent=errCopy(e&&e.code);if(e&&(e.code==="not_granted"||e.code==="sampling_disabled"))$("run").dataset.off="1"}
+  finally{$("run").disabled=!!$("run").dataset.off}
+};
+$("reset").onclick=()=>{setForm(EX);result=EXR;source="example";$("inBadge").hidden=false;$("status").textContent="";render()};
+$("copy").onclick=()=>{
+  const items=[...result.items].sort((a,b)=>score(b)-score(a));
+  const tsv=[["Rank","Use case","EBITDA low $K","EBITDA high $K","Capacity FTE","One-time $K","Run $K/yr","Feasibility","Months","Data","KPI","Stop rule"].join("\t"),
+    ...items.map((i,n)=>[n+1,i.name,i.cash_low,i.cash_high,i.capacity_fte,i.one_time||0,i.run_cost||0,i.feasibility,i.months,i.data,i.kpi,i.stop].join("\t"))].join("\n");
+  const blocked=()=>{$("copyStatus").textContent="Clipboard blocked in this view."};
+  if(!(navigator.clipboard&&navigator.clipboard.writeText)){blocked(); return;}
+  navigator.clipboard.writeText(tsv).then(()=>{$("copyStatus").textContent="Copied "+items.length+" rows. Paste into Excel or Sheets."}).catch(blocked);
+};
+$("addMap").onclick=()=>{ if(window.__addToMap){ window.__addToMap({name:$("name").value,sector:$("sector").value,rev:Number($("rev").value)||0,ebitda:Number($("ebitda").value)||0,items:result.items}); $("copyStatus").textContent="Added to the portfolio map above."; } };
+setForm(EX); render();
+</script>
+<script>
+(() => {
+"use strict";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const K=n=>"$"+(n>=1000?(n/1000).toFixed(1)+"M":Math.round(n)+"K");
+const UC=[["pa","Prior authorization",/prior auth/i],["den","Denials & collections",/denial|collect|receivable|dispute|deduction/i],["intake","Order & document intake",/intake|referral|order entry|order capture|document/i],
+ ["sched","Scheduling & dispatch",/schedul|staff|dispatch|routing/i],["capa","Quality & complaint triage",/complaint|capa|nonconform|quality/i],["reg","Compliance documents",/regulat|submission|label|compliance|audit/i],
+ ["inv","Demand & inventory",/inventory|demand|forecast/i],["price","Pricing & contract leakage",/pric|rebate|contract/i],["quote","Quoting & change orders",/quot|proposal|change order/i],
+ ["close","Close & KPI pack",/close|kpi|reporting|finance/i],["spend","Spend consolidation",/spend|procure|purchas/i],["pv","Contact center & service",/contact center|call|service desk|customer service/i]];
+// cells: [low $K, high $K, feasibility 1-5, one-time cost $K, run cost $K/yr]. data/app: 1-5, higher = better. comp: compliance burden 1-5, higher = harder (regulated data, validated systems); readiness credits (6 - comp)/5 so low burden scores high.
+const CO=[
+ {n:"Birch",s:"Healthcare services: infusion centers",rev:75,eb:12.6,data:3,app:4,comp:4,c:{pa:[900,1500,4,350,150],den:[700,1200,4,300,120],intake:[350,600,5,150,80],sched:[400,800,3,250,90],inv:[250,500,3,120,40],close:[80,150,4,50,20],spend:[150,300,4,60,25]},
+  lever:"Front-end revenue cycle: prior auth and intake",pilot:"Prior-auth packet drafting in two regions, 10 weeks",caveat:"Patient data needs a tool covered by a business associate agreement"},
+ {n:"Hawthorn",s:"Food and consumer: contract manufacturing",rev:103,eb:18.2,data:4,app:5,comp:3,c:{capa:[300,550,4,150,60],reg:[150,300,3,150,50],inv:[600,1000,4,300,100],price:[800,1400,4,250,90],quote:[250,450,5,100,50],sched:[450,800,4,200,70],close:[120,220,5,60,25],spend:[400,700,4,80,30]},
+  lever:"Price realization: raw-material pass-through and rebate leakage across customer contracts",pilot:"Invoice-level price audit against customer contracts, one quarter",caveat:"Annual price windows limit how fast prices can be corrected"},
+ {n:"Dogwood",s:"Food and consumer: specialty distribution",rev:179,eb:14.2,data:3,app:4,comp:2,c:{den:[250,450,4,100,40],intake:[400,700,5,150,70],inv:[500,900,4,250,90],price:[700,1200,4,220,80],quote:[150,250,4,60,25],close:[100,180,4,50,20],spend:[300,500,4,70,25]},
+  lever:"Order intake and price leakage on customer-specific deals",pilot:"Email and PDF order capture for the top 50 accounts, 8 weeks",caveat:"Customer-specific pricing lives in spreadsheets outside the ERP"},
+ {n:"Fir",s:"Business services: receivables management",rev:54,eb:10.2,data:4,app:4,comp:4,c:{den:[900,1600,4,350,150],intake:[300,500,5,120,60],sched:[100,200,3,80,30],close:[80,140,4,50,20],pv:[500,900,4,200,90]},
+  lever:"Collections follow-up automation and contact-center agents",pilot:"Automated follow-up on low-balance accounts, 3 months",caveat:"Client contracts and consumer-contact rules need compliance review"},
+ {n:"Cypress",s:"Consumer services: residential HVAC and plumbing",rev:89,eb:12.9,data:2,app:3,comp:1,c:{sched:[700,1200,4,300,110],inv:[150,300,3,80,30],price:[300,550,3,120,40],quote:[350,600,4,120,50],close:[60,100,3,50,20],spend:[200,350,3,60,25],pv:[400,700,4,150,70]},
+  lever:"Dispatch and technician scheduling across branches",pilot:"Dispatch optimization in two branches through peak season",caveat:"Branch systems are not yet on one platform"},
+ {n:"Elm",s:"Industrials: precision components",rev:64,eb:21.6,data:2,app:2,comp:3,c:{capa:[250,450,3,150,50],inv:[500,900,2,500,120],price:[300,500,3,150,50],quote:[400,700,4,120,40],sched:[300,550,3,200,60],spend:[350,600,3,80,30]},
+  lever:"Quoting speed and production scheduling",pilot:"Start with item-master clean-up once the ERP migration lands",caveat:"ERP migration is behind schedule; needs an operating-partner sponsor"}];
+const CRIT=[["value","EBITDA potential"],["feas","Feasibility"],["data","Data readiness"],["app","Management appetite"],["comp","Compliance burden","higher = harder"],["rep","Platform repeatability"]];
+const PRESETS={balanced:{value:3,feas:3,data:3,app:3,comp:3,rep:3},fast:{value:1,feas:5,data:4,app:4,comp:3,rep:1},big:{value:5,feas:2,data:1,app:1,comp:1,rep:1},platform:{value:2,feas:2,data:2,app:2,comp:1,rep:5}};
+let W={...PRESETS.balanced}, preset="balanced", SEL=CO[1].n;
+const mid=c=>(c[0]+c[1])/2;
+const OVERLAP=[["pa","den",.2]]; // use cases drawing on the same pool (denied revenue): 20% haircut on the smaller where a company has both
+function metrics(){
+  const shared={}; UC.forEach(([k])=>shared[k]=CO.filter(o=>o.c[k]&&mid(o.c[k])>=400).length);
+  CO.forEach(o=>{
+    const cells=Object.values(o.c); o.gross=cells.reduce((a,c)=>a+mid(c),0); o.one=cells.reduce((a,c)=>a+(c[3]||0),0); o.run=cells.reduce((a,c)=>a+(c[4]||0),0);
+    o.hair=OVERLAP.reduce((a,[p,q,h])=>a+(o.c[p]&&o.c[q]?h*Math.min(mid(o.c[p]),mid(o.c[q])):0),0);
+    o.value=Math.max(0,o.gross-o.hair-o.run); o.payback=o.value>0&&o.one>0?o.one/(o.value/12):null;
+  });
+  const maxV=Math.max(1,...CO.map(o=>o.value));
+  CO.forEach(o=>{
+    const cells=Object.entries(o.c); const v=o.value, g=o.gross;
+    o.feas=g?cells.reduce((a,[,c])=>a+mid(c)*c[2],0)/g:0;
+    o.rep=g?cells.filter(([k])=>shared[k]>=2).reduce((a,[,c])=>a+mid(c),0)/g:0;
+    const n={value:v/maxV,feas:o.feas/5,data:o.data/5,app:o.app/5,comp:(6-o.comp)/5,rep:o.rep};
+    const rw=["feas","data","app","comp","rep"], rs=rw.reduce((a,k)=>a+W[k],0);
+    o.ready=Math.round(100*(rs?rw.reduce((a,k)=>a+W[k]*n[k],0)/rs:rw.reduce((a,k)=>a+n[k],0)/rw.length));
+    const ts=CRIT.reduce((a,[k])=>a+W[k],0); o.priority=Math.round(100*(ts?CRIT.reduce((a,[k])=>a+W[k]*n[k],0)/ts:0));
+    o.bucket=o.ready>=60?(v>=2000?"now":"quick"):(v>=2000?"toward":"hold");
+  });
+  return shared;
+}
+const BK={now:"Start now",toward:"Build toward",quick:"Quick help",hold:"Hold"};
+function weights(){
+  $("weights").innerHTML=CRIT.map(([k,l,h])=>`<label for="w-${k}"><span><span>${esc(l)}${h?` <small class="sub">(${esc(h)})</small>`:""}</span><b id="wv-${k}">${W[k]}</b></span><input type="range" id="w-${k}" min="0" max="5" step="1" value="${W[k]}"></label>`).join("");
+  CRIT.forEach(([k])=>$("w-"+k).oninput=e=>{W[k]=Number(e.target.value);$("wv-"+k).textContent=W[k];preset=null;draw();});
+  document.querySelectorAll(".presets [data-p]").forEach(b=>{b.setAttribute("aria-pressed",b.dataset.p===preset);b.onclick=()=>{preset=b.dataset.p;W={...PRESETS[preset]};weights();draw();};});
+}
+function chart(){
+  const w=460,h=320,L=50,R=14,T=14,B=40, yMax=Math.max(2500,Math.ceil(Math.max(...CO.map(o=>o.value))/1000)*1000);
+  const x=r=>L+r/100*(w-L-R), y=v=>T+(1-v/yMax)*(h-T-B), rad=r=>5+Math.sqrt(r)*1.3;
+  let s=`<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" class="bub">`;
+  s+=`<rect x="${x(60)}" y="${T}" width="${x(100)-x(60)}" height="${y(2000)-T}" fill="var(--accent-soft)"/>`;
+  [["START NOW",x(100)-4,T+12,"end"],["BUILD TOWARD",L+4,T+12,"start"],["QUICK HELP",x(100)-4,h-B-6,"end"],["HOLD",L+4,h-B-6,"start"]].forEach(([t,a,b,an])=>s+=`<text class="q" x="${a}" y="${b}" text-anchor="${an}">${t}</text>`);
+  for(let v=0;v<=yMax;v+=yMax/5) s+=`<line x1="${L}" x2="${w-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${y(v)+3}" text-anchor="end">${K(v)}</text>`;
+  for(let r=0;r<=100;r+=20) s+=`<text x="${x(r)}" y="${h-B+14}" text-anchor="middle">${r}</text>`;
+  s+=`<line x1="${x(60)}" x2="${x(60)}" y1="${T}" y2="${h-B}" stroke="var(--muted)" stroke-dasharray="3 3"/><line x1="${L}" x2="${w-R}" y1="${y(2000)}" y2="${y(2000)}" stroke="var(--muted)" stroke-dasharray="3 3"/>`;
+  s+=`<text x="${(L+w-R)/2}" y="${h-6}" text-anchor="middle">Readiness (weighted score, 0–100)</text><text transform="translate(12 ${(T+h-B)/2}) rotate(-90)" text-anchor="middle">Net AI EBITDA / yr</text>`;
+  CO.slice().sort((a,b)=>b.rev-a.rev).forEach(o=>{const cx=x(o.ready),cy=y(o.value),sel=o.n===SEL;
+    s+=`<circle cx="${cx}" cy="${cy}" r="${rad(o.rev)}" fill="var(--accent)" fill-opacity="${sel?.55:.22}" stroke="var(--accent)" stroke-width="${sel?2.5:1.2}" tabindex="0" role="button" aria-label="${esc(o.n)}" data-n="${esc(o.n)}"/>`;
+    const right=cx<w-150; s+=`<text class="lab" x="${right?cx+rad(o.rev)+4:cx-rad(o.rev)-4}" y="${cy+4}" text-anchor="${right?"start":"end"}">${esc(o.n.split(" ")[0])}</text>`;});
+  $("pchart").innerHTML=s+"</svg>";
+  $("pchart").querySelectorAll("circle").forEach(c=>{const go=()=>{SEL=c.dataset.n;draw();}; c.onclick=go; c.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};});
+}
+function detail(){
+  const o=CO.find(c=>c.n===SEL)||CO[0];
+  const top=Object.entries(o.c).sort((a,b)=>mid(b[1])*b[1][2]-mid(a[1])*a[1][2]).slice(0,3).map(([k,c])=>`${UC.find(u=>u[0]===k)[1]} (${K(c[0])}–${K(c[1])})`);
+  $("pdetail").innerHTML=`<div class="row"><h3 class="grow">${esc(o.n)}</h3><span class="bk ${o.bucket}">${BK[o.bucket]}</span></div>
+   <dl><dt>Segment</dt><dd>${esc(o.s)}</dd><dt>Revenue / EBITDA</dt><dd>$${o.rev}M / $${o.eb}M</dd><dt>Gross potential</dt><dd>${K(o.gross)} a year before costs</dd><dt>Net annual value</dt><dd>${K(o.value)} a year (${o.eb>0?(o.value/10/o.eb).toFixed(0)+"%":"n/a"} of EBITDA), after ${K(o.run)}/yr run cost${o.hair?" and a "+K(o.hair)+" overlap haircut":""}</dd><dt>Payback</dt><dd>${o.payback!=null?Math.round(o.payback)+" months on "+K(o.one)+" one-time":"—"}</dd>
+   <dt>Readiness</dt><dd>${o.ready} of 100 · priority ${o.priority}</dd><dt>Top use cases</dt><dd>${esc(top.join("; "))}</dd>
+   <dt>Top lever</dt><dd>${esc(o.lever||"—")}</dd><dt>First pilot</dt><dd>${esc(o.pilot||"—")}</dd><dt>Caveat</dt><dd>${esc(o.caveat||"—")}</dd></dl>`;
+}
+function heat(shared){
+  const rows=CO.slice().sort((a,b)=>b.priority-a.priority);
+  let t=`<thead><tr><th>Company · priority</th>${UC.map(([k,l])=>`<th class="${shared[k]>=2?"shared":""}">${esc(l)}</th>`).join("")}</tr></thead><tbody>`;
+  rows.forEach(o=>{t+=`<tr class="${o.n===SEL?"sel":""}"><td class="co">${esc(o.n)} · ${o.priority}</td>${UC.map(([k])=>{const c=o.c[k]; if(!c) return `<td class="h0">·</td>`; const m=mid(c);
+    return `<td class="${m>=900?"h3":m>=450?"h2":"h1"}" title="${K(c[0])}–${K(c[1])}, feasibility ${c[2]}, ${K(c[3]||0)} one-time, ${K(c[4]||0)}/yr run">${Math.round(m)}</td>`;}).join("")}</tr>`;});
+  $("heat").innerHTML=t+"</tbody>";
+  const sh=UC.filter(([k])=>shared[k]>=2).map(([k,l])=>{const os=CO.filter(o=>o.c[k]&&mid(o.c[k])>=400);return {l,n:os.length,tot:os.reduce((a,o)=>a+mid(o.c[k]),0),who:os.map(o=>o.n.split(" ")[0])};}).sort((a,b)=>b.tot-a.tot);
+  $("shared").innerHTML=sh.map(s=>`<li><b>${esc(s.l)}</b>: build once for ${s.n} companies (${esc(s.who.join(", "))}), ${K(s.tot)} a year combined.</li>`).join("");
+}
+function draw(){
+  const shared=metrics(); chart(); detail(); heat(shared);
+  const sum=k=>CO.reduce((a,o)=>a+(o[k]||0),0), tot=sum("value"), now=CO.filter(o=>o.bucket==="now");
+  $("pmHead").textContent=`${CO.length} companies, ${K(tot)} a year of net AI EBITDA at midpoint (${K(sum("gross"))} gross, less ${K(sum("run"))}/yr run cost and ${K(sum("hair"))} of overlap), for ${K(sum("one"))} one-time. Start now: ${now.map(o=>o.n).join(", ")||"none at these weights"}.`;
+  const nm=now.map(o=>`<b>${esc(o.n)}</b>`); // simple-view headline: same total and same Start now list as the sentence above
+  $("pmSimple").innerHTML=`<span class="fig">${K(tot)}</span> a year of net AI EBITDA. `+(nm.length?`Start with ${nm.length>1?nm.slice(0,-1).join(", ")+" and "+nm[nm.length-1]:nm[0]}.`:"No company is in Start now at these weights.");
+}
+window.__addToMap=(c)=>{
+  const nm=(c.name||"New company").replace(/\s*\(illustrative\)\s*/i,"").trim();
+  const cells={}, dm={good:5,partial:3,poor:1}; let dsum=0; const simple=document.documentElement.getAttribute("data-view")==="simple";
+  (c.items||[]).forEach(i=>{const u=UC.find(u=>u[2].test(i.name)); dsum+=dm[i.data]||3; if(!u) return; const prev=cells[u[0]];
+    const cell=[Number(i.cash_low)||0,Number(i.cash_high)||0,Number(i.feasibility)||3,Number(i.one_time)||0,Number(i.run_cost)||0]; cells[u[0]]=prev?[prev[0]+cell[0],prev[1]+cell[1],Math.round((prev[2]+cell[2])/2),prev[3]+cell[3],prev[4]+cell[4]]:cell;});
+  const o={n:nm,s:c.sector||"—",rev:c.rev||0,eb:c.ebitda||0,data:Math.max(1,Math.round(dsum/Math.max(1,(c.items||[]).length))),app:3,comp:3,c:cells,lever:simple?"From the Score one company tab":"From the company scorecard below",pilot:simple?"See the pilot plans on the Score one company tab":"See the pilot plans below",caveat:"Appetite and compliance set to 3 until assessed; use cases outside the twelve columns are not mapped"};
+  const ix=CO.findIndex(x=>x.n.toLowerCase()===nm.toLowerCase()); if(ix>=0) CO[ix]={...CO[ix],...o,lever:CO[ix].lever,pilot:CO[ix].pilot,caveat:CO[ix].caveat}; else CO.push(o);
+  SEL=nm; draw(); if(window.__showTab) window.__showTab("map"); $("pm-h").scrollIntoView({block:"start",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
+};
+weights(); draw();
+})();
+</script>
+<script>
+(() => {
+"use strict";
+// Simple / Full view switch, the two simple-view tabs, and the disclosure buttons. None of this touches data or scoring.
+const root=document.documentElement, $=id=>document.getElementById(id);
+function setView(v,save){
+  root.setAttribute("data-view",v);
+  $("viewSimple").setAttribute("aria-pressed",v==="simple"); $("viewFull").setAttribute("aria-pressed",v==="full");
+  if(save){try{localStorage.setItem("wsView",v)}catch(e){}}
+}
+$("viewSimple").onclick=()=>setView("simple",true);
+$("viewFull").onclick=()=>setView("full",true);
+setView(root.getAttribute("data-view")==="full"?"full":"simple",false);
+const tabs=[...document.querySelectorAll('.tabs [role="tab"]')];
+function showTab(t){
+  root.setAttribute("data-tab",t);
+  tabs.forEach(b=>{const on=b.dataset.tab===t; b.setAttribute("aria-selected",on); b.tabIndex=on?0:-1;});
+}
+window.__showTab=showTab;
+tabs.forEach((b,i)=>{
+  b.onclick=()=>showTab(b.dataset.tab);
+  b.onkeydown=e=>{ if(e.key!=="ArrowRight"&&e.key!=="ArrowLeft") return; e.preventDefault();
+    const n=tabs[(i+(e.key==="ArrowRight"?1:tabs.length-1))%tabs.length]; showTab(n.dataset.tab); n.focus(); };
+});
+document.querySelectorAll(".disc-btn").forEach(b=>{ b.onclick=()=>{
+  const box=$(b.getAttribute("aria-controls")), open=!box.classList.contains("open");
+  box.classList.toggle("open",open); b.setAttribute("aria-expanded",open);
+  if(b.dataset.show) b.textContent=open?b.dataset.hide:b.dataset.show;
+}; });
+})();
+</script>
+
+</body></html>

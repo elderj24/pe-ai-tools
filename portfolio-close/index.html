@@ -1,0 +1,309 @@
+<!doctype html><html><head><meta charset=utf8><meta name="robots" content="noindex,nofollow"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PE Toolkit - Portfolio Close</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Schibsted+Grotesk:wght@600;700&display=swap">
+<style>
+/* Concept: a CFO's month-end control room. Which packages are in and clean, where covenant cushion is thin,
+   and whether management's commentary matches its own numbers. Blue for data, status colors only for state with icon + word. */
+:root{
+  --bg:#f6f6f4; --surface:#fcfcfb; --raised:#fff; --ink:#111315; --ink2:#52514e; --muted:#6f6d67; --axis:#898781;
+  --line:#e1e0d9; --line2:#c3c2b7; --accent:#256abf; --accent-ink:#fff; --accent-soft:#e6f0fc; --s1:#2a78d6; --s2:#eb6834;
+  --good:#0a6b0a; --good-bg:#e4f3e4; --warn:#7a4f00; --warn-bg:#fdf1d3; --ser:#9a3b12; --ser-bg:#fde6da; --crit:#b02a2a; --crit-bg:#fbe5e3;
+  --f-head:"Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-body:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d0d0d; --surface:#1a1a19; --raised:#222220; --ink:#f0efec; --ink2:#c3c2b7; --muted:#a3a198; --axis:#898781;
+  --line:#2c2c2a; --line2:#383835; --accent:#6da7ec; --accent-ink:#0d0d0d; --accent-soft:#16263a; --s1:#3987e5; --s2:#d95926;
+  --good:#5fd35f; --good-bg:#12301a; --warn:#f0b948; --warn-bg:#33270b; --ser:#f3a07c; --ser-bg:#3a2216; --crit:#f08a85; --crit-bg:#3a1816; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d0d0d; --surface:#1a1a19; --raised:#222220; --ink:#f0efec; --ink2:#c3c2b7; --muted:#a3a198; --axis:#898781;
+  --line:#2c2c2a; --line2:#383835; --accent:#6da7ec; --accent-ink:#0d0d0d; --accent-soft:#16263a; --s1:#3987e5; --s2:#d95926;
+  --good:#5fd35f; --good-bg:#12301a; --warn:#f0b948; --warn-bg:#33270b; --ser:#f3a07c; --ser-bg:#3a2216; --crit:#f08a85; --crit-bg:#3a1816; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--f-body);margin:0;padding-block:0 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-head);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:26px;line-height:1.15;font-weight:700} h2{font-size:18px;font-weight:600} h3{font-size:14px;font-weight:600}
+button,select,input{font:inherit;color:inherit}
+.wrap{max-width:1360px;margin:0 auto}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500}
+header{padding:28px 0 14px;display:flex;flex-wrap:wrap;gap:10px 30px;justify-content:space-between;align-items:flex-end} header p{margin:6px 0 0;color:var(--ink2);max-width:72ch}
+.banner{background:var(--warn-bg);color:var(--warn);border:1px solid var(--line);border-radius:6px;padding:8px 12px;font-size:12.5px;margin-bottom:14px}
+nav.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto}
+nav.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:10px 14px;cursor:pointer;color:var(--ink2);font-weight:500;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+section[hidden]{display:none!important}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.hint{font-size:12px;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.kpi .l{font-size:12px;color:var(--muted)} .kpi .v{font-family:var(--f-head);font-size:24px;font-weight:600;line-height:1.2;margin-top:2px} .kpi .s{font-size:12px;color:var(--ink2)}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 430px;gap:16px;align-items:start}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:500;text-align:left;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+td.r,th.r{text-align:right}
+tbody tr.pick{cursor:pointer} tbody tr.pick:hover,tbody tr[aria-selected="true"]{background:var(--accent-soft)}
+.sub{display:block;color:var(--muted);font-size:12px}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:500;white-space:nowrap}
+.st-good{background:var(--good-bg);color:var(--good)} .st-warn{background:var(--warn-bg);color:var(--warn)} .st-ser{background:var(--ser-bg);color:var(--ser)} .st-crit{background:var(--crit-bg);color:var(--crit)} .st-off{background:var(--line);color:var(--muted)}
+.chk{display:inline-flex;gap:3px}
+.chk i{width:10px;height:10px;border-radius:2px;display:inline-block;background:var(--good)} .chk i.f{background:var(--crit)}
+.chk i.n{background:var(--line2)}
+.detail{position:sticky;top:12px}
+.exc{border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:6px;padding:8px 10px;margin:8px 0;font-size:13px}
+.exc.crit{border-left-color:var(--crit)} .exc.ok{border-left-color:var(--good)}
+.exc b{display:block}
+.map{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}
+.btn{background:var(--surface);border:1px solid var(--line2);border-radius:6px;padding:5px 11px;cursor:pointer;font-weight:500;font-size:13px}
+.btn:hover{border-color:var(--ink2)} .btn.small{padding:3px 9px;font-size:12px}
+.btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chart{position:relative} .chart svg{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--ink2);margin:6px 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.tip{position:absolute;pointer-events:none;background:var(--raised);border:1px solid var(--line2);border-radius:6px;padding:7px 10px;font-size:12.5px;box-shadow:0 4px 14px rgba(0,0,0,.12);z-index:5;min-width:170px}
+.tip .t{font-weight:600;margin-bottom:3px}.tip .r{display:flex;justify-content:space-between;gap:14px}
+.claims td{white-space:normal;vertical-align:top}
+.draft{background:var(--raised);border:1px solid var(--line2);border-radius:6px;padding:12px 14px;font-size:13.5px;line-height:1.6}
+.draft .n{font-family:var(--f-mono);font-size:12.5px;background:var(--accent-soft);border-radius:3px;padding:0 3px}
+.draft .m{color:var(--ink2)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px}
+ul.clean{margin:6px 0;padding-left:18px} ul.clean li{margin:3px 0}
+.flow{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.step{flex:1 1 150px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.step b{display:block;font-family:var(--f-head);margin-bottom:2px}.step small{color:var(--ink2);display:block}
+.step.mock{border-style:dashed}
+.tag{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.tag.real{color:var(--good)} .tag.mockt{color:var(--warn)}
+.cosel{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+select{background:var(--surface);border:1px solid var(--line2);border-radius:6px;padding:6px 10px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:max(18px,env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:13px;z-index:50}
+footer{color:var(--muted);font-size:12px;margin-top:24px;max-width:90ch}
+@media (max-width:1000px){.main{grid-template-columns:minmax(0,1fr)}.detail{position:static}}
+@media (max-width:560px){h1{font-size:22px}}
+</style>
+
+<div class="wrap">
+<header>
+  <div>
+    <div class="eyebrow">Beta · finance</div>
+    <h1>Portfolio month-end close and covenant monitor</h1>
+    <p>Monthly packages, covenant cushion and management commentary, checked in one place.</p>
+  </div>
+  <div class="hint num">September 2026 close · demo date Oct 15 (business day 11)</div>
+</header>
+<div class="banner" role="note"><b>Synthetic data.</b> Companies, people and figures are invented.</div>
+
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <button role="tab" id="t-close" aria-selected="true" aria-controls="p-close">Close status</button>
+  <button role="tab" id="t-cov" aria-selected="false" aria-controls="p-cov">Covenants</button>
+  <button role="tab" id="t-com" aria-selected="false" aria-controls="p-com">Commentary check</button>
+</nav>
+
+<section id="p-close" role="tabpanel" aria-labelledby="t-close">
+  <div class="kpis" id="kpis"></div>
+  <div class="main">
+    <div class="card"><h2>Package status</h2><p class="hint" style="margin:2px 0 8px">Packages are due by business day 10. Checks: balance sheet balances · trial balance ties to P&amp;L · cash ties to bank · intercompany nets to zero.</p><div class="tablewrap" id="closetbl"></div></div>
+    <aside class="card detail" id="closedetail" aria-live="polite"></aside>
+  </div>
+</section>
+
+<section id="p-cov" role="tabpanel" aria-labelledby="t-cov" hidden>
+  <div class="main">
+    <div class="card">
+      <h2>Covenant cushion: how far EBITDA can fall before a breach</h2>
+      <p class="hint" style="margin:2px 0 4px">Net leverage test. Cushion = 1 − (leverage ÷ covenant maximum). Next quarter assumes the last quarter's EBITDA trend continues, debt is flat, and any scheduled step-down applies.</p>
+      <div class="legend"><span><svg width="18" height="10"><rect width="18" height="10" rx="2" fill="var(--s1)"/></svg>Now (Q3 2026)</span><span><svg width="12" height="12"><circle cx="6" cy="6" r="4.5" fill="var(--surface)" stroke="var(--s2)" stroke-width="2.5"/></svg>Next quarter forecast</span><span class="hint">Line at 10% = watch threshold</span></div>
+      <div class="chart" id="covchart"></div>
+      <button class="btn small" id="tg-cov" type="button" style="margin-top:6px">Show table</button><div id="covtbl" hidden></div>
+    </div>
+    <aside class="card detail" id="covdetail" aria-live="polite"></aside>
+  </div>
+</section>
+
+<section id="p-com" role="tabpanel" aria-labelledby="t-com" hidden>
+  <div class="cosel"><label for="comsel" class="hint">Company</label><select id="comsel"></select><button class="btn" id="copyall" type="button">Copy portfolio update (all companies)</button></div>
+  <div class="grid2">
+    <div class="card"><h2>Management's claims, checked</h2><p class="hint" style="margin:2px 0 8px">Every number management states is recomputed from the package. Claims that can't be checked are marked, not assumed.</p><div class="tablewrap" id="claims"></div></div>
+    <div class="card"><h2>Draft for the quarterly update</h2><p class="hint" style="margin:2px 0 8px">Figures in boxes are computed from the package, never typed by a model. Gray text is management's explanation, quoted.</p><div id="draft"></div></div>
+  </div>
+</section>
+
+<footer>Portfolio Close · prototype prepared by JD Elder · invented data to show the workflow. Figures are illustrative; covenant math is simplified to a single net leverage test. <a href="../" style="color:inherit">Part of PE AI &amp; Data Tools</a></footer>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function(){
+"use strict";
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2200)}
+function copyText(txt,ok){const fb=()=>{const ta=document.createElement("textarea");ta.value=txt;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();let r=false;try{r=document.execCommand("copy")}catch(e){}ta.remove();toast(r?ok:"Select the text and copy it manually")};if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>toast(ok)).catch(fb);else fb()}
+const TODAY_BD=11, DUE_BD=10;
+const Q=["Q2 25","Q3 25","Q4 25","Q1 26","Q2 26","Q3 26"], QN="Q4 26";
+// $K monthly; $M for LTM EBITDA and net debt. chk: [bs,tb,cash,ic] 1 pass, 0 fail, null not run
+const C=[
+ {n:"Aspen",t:"Multi-site dental",bd:7,rev:[9840,9600,8710],eb:[1620,1590,1380],ltm:[16.8,17.4,18.0,18.5,19.1,19.6],nd:[98,97,99,101,100,99],max:6.25,maxN:6.0,chk:[1,1,1,1],unm:[],
+  claims:[["Revenue up 13% on last September","revPY",13],["Same-store visits up 4%",null,4]],why:"Visits ran ahead of budget at the newer sites; collections per visit were slightly lower."},
+ {n:"Birch",t:"Infusion centers",bd:9,rev:[6210,6450,5600],eb:[1010,1120,905],ltm:[11.2,11.6,12.0,12.3,12.5,12.6],nd:[60,61,63,64,64,65],max:5.75,maxN:5.5,chk:[1,1,0,1],cashDiff:38,unm:[],
+  claims:[["EBITDA 4% below budget","ebB",-4],["Revenue up 11% on last September","revPY",11]],why:"Two payers slowed authorizations for a high-volume therapy; nursing overtime ran above plan."},
+ {n:"Cypress",t:"Residential HVAC and plumbing",bd:6,rev:[7420,7700,7050],eb:[860,1040,980],ltm:[14.9,14.6,14.2,13.8,13.3,12.9],nd:[78,78,79,79,80,80],max:6.5,maxN:6.25,chk:[1,1,1,1],unm:[],
+  claims:[["EBITDA down 12% on last September","ebPY",-12],["Jobs completed per day flat to budget",null,0]],why:"Technician vacancies were filled with subcontractors at higher cost; average ticket slipped."},
+ {n:"Dogwood",t:"Specialty food distribution",bd:8,rev:[14900,14200,12800],eb:[1190,1150,1020],ltm:[12.0,12.4,12.9,13.4,13.8,14.2],nd:[70,69,68,67,66,65],max:6.0,maxN:6.0,chk:[1,1,1,1],unm:[],
+  claims:[["Revenue 5% ahead of budget","revB",5],["Gross margin held at 27%",null,27]],why:"An exclusive brand added in the summer ramped faster than planned."},
+ {n:"Elm",t:"Precision components manufacturing",bd:10,rev:[5300,5500,4100],eb:[1150,1210,880],ltm:[17.0,17.3,17.5,20.9,21.4,21.6],nd:[95,94,93,118,117,116],max:6.0,maxN:5.75,chk:[1,1,1,0],icDiff:12,unm:[["6195","Integration consulting - add-on","Transaction and integration costs (add-back)",0.86,"Moves $85K below adjusted EBITDA: needs deal-team approval"]],
+  claims:[["Revenue up 29% on last September, including the add-on","revPY",29],["EBITDA 5% below budget","ebB",-5]],why:"Add-on revenue landed as planned; a supplier delay pushed two orders into October."},
+ {n:"Fir",t:"Receivables management services",bd:5,rev:[4480,4300,3900],eb:[1060,980,850],ltm:[8.1,8.5,8.9,9.3,9.8,10.2],nd:[40,40,41,41,42,42],max:5.5,maxN:5.5,chk:[1,1,1,1],unm:[],addback:{amt:160,label:"One-time recruiting and signing bonuses"},
+  claims:[["Adjusted EBITDA 8% ahead of budget","ebB",8],["Recovery per FTE up 6%",null,6]],why:"New enterprise contracts started on schedule; hiring ahead of volume was treated as one-time."},
+ {n:"Ginkgo",t:"Testing and inspection services",bd:9,rev:[3900,4250,3600],eb:[520,640,470],ltm:[5.0,5.3,5.6,5.9,6.0,6.0],nd:[30,30,31,31,32,33],max:6.0,maxN:6.0,chk:[1,1,1,1],unm:[],
+  claims:[["Revenue 8% below budget because of project start delays","revB",-8],["Backlog up 15% on last year",null,15]],why:"Two large client programs slipped their start dates by a quarter."},
+ {n:"Hawthorn",t:"Food contract manufacturing",bd:8,rev:[8600,8400,7900],eb:[1540,1480,1350],ltm:[16.0,16.4,16.9,17.3,17.8,18.2],nd:[80,79,78,77,76,75],max:5.5,maxN:5.25,chk:[1,1,1,1],
+  unm:[["6420","Temp labor - agency","Contract labor (operating expense)",0.94,"Inside EBITDA: no change to adjusted EBITDA"],["7115","Tooling amortization","Depreciation and amortization",0.88,"Below EBITDA: raises EBITDA by $42K if accepted; confirm against the credit agreement definition"],["5590","Freight-in surcharge","Cost of goods sold: freight",0.81,"Inside EBITDA: moves cost into gross margin"]],
+  claims:[["EBITDA 4% ahead of budget","ebB",4],["Revenue up 9% on last September","revPY",9]],why:"A new customer line came up to rate; freight surcharges partly offset."},
+ {n:"Ivy",t:"Behavioral health",bd:null,rev:null,eb:null,ltm:[6.4,6.6,6.9,7.1,7.2,null],nd:[38,39,40,40,41,41],max:6.0,maxN:6.0,chk:[null,null,null,null],unm:[],claims:[],why:""},
+ {n:"Juniper",t:"Marketing services",bd:4,rev:[5200,5450,5300],eb:[880,1000,950],ltm:[12.5,12.6,12.4,12.2,12.0,11.7],nd:[52,51,51,50,50,49],max:5.0,maxN:5.0,chk:[1,1,1,1],unm:[],
+  claims:[["Revenue down 2% on last September","revPY",-2],["EBITDA 6% below budget","ebB",-6]],why:"Two clients moved project work into the fourth quarter; utilization dipped."}
+];
+const pct=(a,b)=>(a/b-1)*100;
+const f1=x=>(x>=0?"+":"")+x.toFixed(1)+"%";
+const K=n=>"$"+(n/1000).toFixed(2)+"M";
+const KK=n=>"$"+Math.round(n).toLocaleString("en-US")+"K";
+C.forEach(c=>{
+  const ltm=c.ltm[5]!=null?c.ltm[5]:c.ltm[4];
+  c.ltmNow=ltm; c.lev=c.nd[5]/ltm; c.cush=1-c.lev/c.max;
+  const prev=c.ltm[5]!=null?c.ltm[4]:c.ltm[3]; const trend=ltm-prev;
+  c.ltmN=ltm+trend; c.levN=c.nd[5]/c.ltmN; c.cushN=1-c.levN/c.maxN;
+  c.levHist=c.nd.map((d,i)=>c.ltm[i]!=null?d/c.ltm[i]:null);
+  c.maxHist=Q.map(()=>c.max);
+  c.miss=c.bd==null; c.late=c.miss?TODAY_BD-DUE_BD:Math.max(0,c.bd-DUE_BD);
+  c.fails=c.chk.filter(x=>x===0).length;
+  c.val={revB:c.rev?pct(c.rev[0],c.rev[1]):null,revPY:c.rev?pct(c.rev[0],c.rev[2]):null,ebB:c.eb?pct(c.eb[0],c.eb[1]):null,ebPY:c.eb?pct(c.eb[0],c.eb[2]):null};
+});
+const covState=x=>x<0?"crit":x<0.10?"ser":x<0.20?"warn":"good";
+const CS={good:["✓","Comfortable","st-good"],warn:["!","Watch","st-warn"],ser:["◆","Thin","st-ser"],crit:["▲","Breach","st-crit"]};
+let MAP={};try{MAP=JSON.parse(localStorage.getItem("pc-map")||"{}")}catch(e){MAP={}}
+const saveMap=()=>{try{localStorage.setItem("pc-map",JSON.stringify(MAP))}catch(e){}};
+function excs(c){
+  const e=[];
+  if(c.miss)e.push(["crit","Package not received","Due business day "+DUE_BD+"; now day "+TODAY_BD+". Using June quarter figures for covenant estimates until it arrives."]);
+  else if(c.late)e.push(["warn","Package arrived on the due date","Received business day "+c.bd+"."]);
+  if(c.chk[2]===0)e.push(["crit","Cash does not tie to the bank statement","Difference of $"+c.cashDiff+"K between the ledger and the September bank statement. Ask the controller for the reconciliation."]);
+  if(c.chk[3]===0)e.push(["warn","Intercompany does not net to zero","$"+c.icDiff+"K difference between the platform and the add-on, likely a timing item from the first month combined."]);
+  if(c.addback)e.push(["crit","New EBITDA adjustment this month","$"+c.addback.amt+"K labeled \""+c.addback.label+"\" is not in the closing definition of adjusted EBITDA. Without it, EBITDA is "+KK(c.eb[0]-c.addback.amt)+", "+f1(pct(c.eb[0]-c.addback.amt,c.eb[1]))+" against budget."]);
+  c.unm.forEach(u=>{if(!MAP[c.n+u[0]])e.push(["warn","New account "+u[0]+" not mapped","\""+u[1]+"\""])});
+  if(c.cushN<0.10)e.push([c.cushN<0?"crit":"warn","Covenant cushion "+(c.cushN<0?"breaks":"thin")+" next quarter","Forecast cushion "+(c.cushN*100).toFixed(1)+"% against "+c.maxN.toFixed(2)+"x."]);
+  c.claims.forEach(cl=>{const chk=claimChk(c,cl);if(chk.s==="bad")e.push(["warn","Commentary doesn't match the numbers","\""+cl[0]+"\": the package shows "+f1(chk.v)+"."])});
+  return e;
+}
+function claimChk(c,cl){if(!cl[1])return{s:"na"};const v=c.val[cl[1]];return{s:Math.abs(v-cl[2])<=1.0?"ok":"bad",v}}
+let SEL="Birch";
+function drawKpis(){
+  const rec=C.filter(c=>!c.miss),clean=C.filter(c=>!c.miss&&!c.fails&&!c.unm.some(u=>!MAP[c.n+u[0]])&&!c.addback);
+  const ex=C.reduce((a,c)=>a+excs(c).length,0);
+  const avg=rec.reduce((a,c)=>a+c.bd,0)/rec.length;
+  const thin=C.filter(c=>c.cushN<0.10).length;
+  $("#kpis").innerHTML=[["Packages received",rec.length+" of "+C.length,"average business day "+avg.toFixed(1)],["Clean and ready",clean.length+" of "+C.length,"all checks pass, nothing to approve"],["Open exceptions",ex,"across "+C.filter(c=>excs(c).length).length+" companies"],["Thin cushion next quarter",thin+" companies","under 10% EBITDA cushion"]]
+   .map(k=>`<div class="kpi"><div class="l">${k[0]}</div><div class="v num">${k[1]}</div><div class="s">${k[2]}</div></div>`).join("");
+}
+function chkHtml(c){return `<span class="chk" aria-label="${c.miss?"not run":c.fails?c.fails+" failed":"all passed"}">${c.chk.map(x=>`<i class="${x===null?"n":x?"":"f"}"></i>`).join("")}</span>`}
+function drawClose(){
+  $("#closetbl").innerHTML=`<table><thead><tr><th>Company</th><th>Received</th><th>Checks</th><th class="r">Mapped</th><th class="r">Revenue vs budget</th><th class="r">EBITDA vs budget</th><th class="r">Exceptions</th></tr></thead><tbody>${C.map(c=>{
+    const mp=c.miss?"-":c.unm.length?Math.round((1-c.unm.filter(u=>!MAP[c.n+u[0]]).length/40)*1000)/10+"%":"100%";const ex=excs(c);
+    return `<tr class="pick" tabindex="0" data-n="${c.n}" aria-selected="${c.n===SEL}"><td><b>${c.n}</b><span class="sub">${esc(c.t)}</span></td>
+     <td>${c.miss?'<span class="pill st-crit">▲ Missing</span>':c.late?`<span class="pill st-warn">! Day ${c.bd}</span>`:`<span class="pill st-good">✓ Day ${c.bd}</span>`}</td>
+     <td>${chkHtml(c)}</td><td class="r num">${mp}</td>
+     <td class="r num">${c.rev?f1(c.val.revB):"-"}</td><td class="r num">${c.eb?f1(c.val.ebB):"-"}</td>
+     <td class="r">${ex.length?`<span class="pill ${ex.some(x=>x[0]==="crit")?"st-crit":"st-warn"}">${ex.some(x=>x[0]==="crit")?"▲":"!"} ${ex.length}</span>`:'<span class="pill st-good">✓ 0</span>'}</td></tr>`}).join("")}</tbody></table>`;
+  $("#closetbl").querySelectorAll("tr.pick").forEach(tr=>{const go=()=>{SEL=tr.dataset.n;drawAll()};tr.addEventListener("click",go);tr.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}})});
+}
+function drawCloseDetail(){
+  const c=C.find(x=>x.n===SEL),ex=excs(c);
+  let h=`<div class="eyebrow">${esc(c.t)}</div><h2>${c.n}</h2>`;
+  if(c.rev)h+=`<div class="tablewrap" style="margin-top:8px"><table><thead><tr><th>September</th><th class="r">Actual</th><th class="r">Budget</th><th class="r">Last year</th></tr></thead><tbody><tr><td>Revenue</td><td class="r num">${KK(c.rev[0])}</td><td class="r num">${KK(c.rev[1])}</td><td class="r num">${KK(c.rev[2])}</td></tr><tr><td>Adj. EBITDA</td><td class="r num">${KK(c.eb[0])}</td><td class="r num">${KK(c.eb[1])}</td><td class="r num">${KK(c.eb[2])}</td></tr></tbody></table></div>`;
+  h+=`<h3 style="margin-top:14px">Exceptions (${ex.length})</h3>`+(ex.length?ex.map(x=>`<div class="exc ${x[0]==="crit"?"crit":""}"><b>${x[0]==="crit"?"▲":"!"} ${esc(x[1])}</b>${esc(x[2])}</div>`).join(""):'<div class="exc ok"><b>✓ Clean</b>All four checks pass and every account is mapped.</div>');
+  if(c.unm.length){h+=`<h3 style="margin-top:14px">New accounts: suggested mappings</h3><p class="hint" style="margin:2px 0">Suggested from the account name and how similar accounts were mapped across the portfolio. A person accepts each one.</p>`+c.unm.map(u=>{const k=c.n+u[0],st=MAP[k];return `<div class="exc ${st==="ok"?"ok":""}"><b class="num">${u[0]} · ${esc(u[1])}</b>→ ${esc(u[2])} <span class="hint num">(confidence ${Math.round(u[3]*100)}%)</span><br><span class="hint">${esc(u[4])}</span><div class="map">${st?`<span class="pill ${st==="ok"?"st-good":"st-off"}">${st==="ok"?"✓ Accepted":"Sent back to the company"}</span><button class="btn small" data-k="${k}" data-v="">Undo</button>`:`<button class="btn small" data-k="${k}" data-v="ok">Accept</button><button class="btn small" data-k="${k}" data-v="no">Send back</button>`}</div></div>`}).join("")}
+  $("#closedetail").innerHTML=h;
+  $("#closedetail").querySelectorAll(".map button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.v)MAP[b.dataset.k]=b.dataset.v;else delete MAP[b.dataset.k];saveMap();drawAll()}));
+}
+function drawCov(){
+  const rows=C.slice().sort((a,b)=>a.cushN-b.cushN);
+  const W=640,rh=32,m={l:150,r:66,t:22,b:26},H=m.t+m.b+rows.length*rh,lo=-0.1,hi=0.35;
+  const x=v=>m.l+(Math.max(lo,Math.min(hi,v))-lo)/(hi-lo)*(W-m.l-m.r);
+  let g="";
+  [-0.1,0,0.1,0.2,0.3].forEach(v=>{g+=`<line x1="${x(v)}" x2="${x(v)}" y1="${m.t}" y2="${H-m.b}" stroke="${v===0?"var(--axis)":v===0.1?"var(--line2)":"var(--line)"}"/><text x="${x(v)}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--axis)">${Math.round(v*100)}%</text>`});
+  g+=`<text x="${W-m.r+8}" y="12" font-size="10.5" fill="var(--muted)">NEXT QTR</text>`;
+  rows.forEach((c,i)=>{const y=m.t+i*rh+7,h=18,st=CS[covState(c.cushN)];
+    const x0=x(0),x1=x(c.cush),w=Math.abs(x1-x0);
+    g+=`<text x="${m.l-10}" y="${y+13}" text-anchor="end" font-size="12.5" fill="var(--ink2)">${c.n}${c.miss?" (Q2)":""}</text>`;
+    g+=`<rect x="${Math.min(x0,x1)}" y="${y}" width="${Math.max(2,w)}" height="${h}" rx="3" fill="var(--s1)"/>`;
+    g+=`<circle cx="${x(c.cushN)}" cy="${y+h/2}" r="5" fill="var(--surface)" stroke="var(--s2)" stroke-width="2.5"/>`;
+    g+=`<text x="${W-m.r+8}" y="${y+13}" font-size="11.5" fill="var(--ink2)">${st[0]} ${st[1]}</text>`;
+    g+=`<rect class="hb" data-n="${c.n}" x="0" y="${m.t+i*rh}" width="${W}" height="${rh}" fill="transparent" style="cursor:pointer"/>`;
+    if(c.n===SEL)g+=`<rect x="2" y="${m.t+i*rh+1}" width="${W-4}" height="${rh-2}" fill="none" stroke="var(--accent)" rx="4"/>`;
+  });
+  $("#covchart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Covenant cushion now and next quarter by company">${g}</svg><div class="tip" hidden></div>`;
+  const tip=$("#covchart .tip");
+  $("#covchart").querySelectorAll(".hb").forEach(r=>{const c=C.find(z=>z.n===r.dataset.n);
+    r.addEventListener("pointermove",ev=>{tip.hidden=false;tip.textContent="";const t=document.createElement("div");t.className="t";t.textContent=c.n;tip.appendChild(t);
+      [["Leverage now",c.lev.toFixed(2)+"x of "+c.max.toFixed(2)+"x"],["Cushion now",(c.cush*100).toFixed(1)+"%"],["Next quarter",c.levN.toFixed(2)+"x of "+c.maxN.toFixed(2)+"x"],["Cushion next",(c.cushN*100).toFixed(1)+"%"]].forEach(a=>{const rr=document.createElement("div");rr.className="r";const k=document.createElement("span");k.textContent=a[0];const v=document.createElement("b");v.className="num";v.style.fontWeight="500";v.textContent=a[1];rr.appendChild(k);rr.appendChild(v);tip.appendChild(rr)});
+      const box=$("#covchart").getBoundingClientRect();tip.style.left=Math.min(ev.clientX-box.left+14,box.width-200)+"px";tip.style.top=(ev.clientY-box.top+12)+"px"});
+    r.addEventListener("pointerleave",()=>tip.hidden=true);
+    r.addEventListener("click",()=>{SEL=c.n;drawAll()});
+  });
+  $("#covtbl").innerHTML=`<div class="tablewrap"><table><thead><tr><th>Company</th><th class="r">LTM EBITDA</th><th class="r">Net debt</th><th class="r">Leverage</th><th class="r">Max</th><th class="r">Cushion</th><th class="r">Next qtr</th></tr></thead><tbody>${rows.map(c=>`<tr><td>${c.n}</td><td class="r num">$${c.ltmNow.toFixed(1)}M</td><td class="r num">$${c.nd[5]}M</td><td class="r num">${c.lev.toFixed(2)}x</td><td class="r num">${c.max.toFixed(2)}x</td><td class="r num">${(c.cush*100).toFixed(1)}%</td><td class="r num">${(c.cushN*100).toFixed(1)}%</td></tr>`).join("")}</tbody></table></div>`;
+}
+function drawCovDetail(){
+  const c=C.find(x=>x.n===SEL),st=CS[covState(c.cushN)];
+  const W=400,H=210,m={l:40,r:52,t:14,b:26};const pts=c.levHist.concat([c.levN]);const mx=c.maxHist.concat([c.maxN]);
+  const lab=Q.concat([QN]);const all=pts.filter(v=>v!=null).concat(mx);
+  const lo=Math.floor(Math.min(...all)-0.3),hi=Math.ceil(Math.max(...all)+0.2);
+  const x=i=>m.l+i*(W-m.l-m.r)/6,y=v=>H-m.b-(v-lo)/(hi-lo)*(H-m.t-m.b);
+  let g="";for(let v=lo;v<=hi;v+=0.5){g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${m.l-6}" y="${y(v)+4}" text-anchor="end" font-size="10.5" fill="var(--axis)">${v.toFixed(1)}x</text>`}
+  lab.forEach((l,i)=>g+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle" font-size="10" fill="var(--axis)">${l}</text>`);
+  let step="";mx.forEach((v,i)=>{step+=(i?`L${x(i)} ${y(mx[i-1])}L${x(i)} ${y(v)}`:`M${x(0)} ${y(v)}`)});step+=`L${x(6)+14} ${y(mx[6])}`;
+  g+=`<path d="${step}" fill="none" stroke="var(--s2)" stroke-width="2"/>`;
+  const real=pts.map((v,i)=>v==null?null:[x(i),y(v)]);const seg=real.slice(0,6).filter(Boolean);
+  g+=`<polyline points="${seg.map(p=>p.join(",")).join(" ")}" fill="none" stroke="var(--s1)" stroke-width="2"/>`;
+  seg.forEach(p=>g+=`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/>`);
+  const lastReal=seg[seg.length-1];g+=`<line x1="${lastReal[0]}" y1="${lastReal[1]}" x2="${x(6)}" y2="${y(c.levN)}" stroke="var(--s1)" stroke-width="2" stroke-dasharray="4 3"/><circle cx="${x(6)}" cy="${y(c.levN)}" r="4.5" fill="var(--surface)" stroke="var(--s1)" stroke-width="2"/>`;
+  g+=`<text x="${x(6)+16}" y="${y(mx[6])+4}" font-size="11" fill="var(--ink2)">Max</text><text x="${x(6)+8}" y="${y(c.levN)+(c.levN>mx[6]?-8:14)}" font-size="11" fill="var(--ink2)">${c.levN.toFixed(2)}x</text>`;
+  $("#covdetail").innerHTML=`<div class="eyebrow">${esc(c.t)}</div><h2>${c.n}</h2><div style="margin-top:6px"><span class="pill ${st[2]}">${st[0]} ${st[1]} next quarter</span></div>
+   <div class="legend" style="margin-top:10px"><span><svg width="18" height="4"><rect width="18" height="2" y="1" fill="var(--s1)"/></svg>Net leverage</span><span><svg width="18" height="4"><rect width="18" height="2" y="1" fill="var(--s2)"/></svg>Covenant maximum</span><span class="hint">hollow point = forecast</span></div>
+   <div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Net leverage against covenant maximum by quarter">${g}</svg></div>
+   <p style="margin:8px 0 0">${c.miss?"September package missing; leverage uses the June quarter. ":""}LTM EBITDA $${c.ltmNow.toFixed(1)}M and net debt $${c.nd[5]}M give ${c.lev.toFixed(2)}x against ${c.max.toFixed(2)}x. If the last quarter's EBITDA trend continues${c.maxN<c.max?" and the step-down to "+c.maxN.toFixed(2)+"x applies":""}, cushion moves from ${(c.cush*100).toFixed(1)}% to ${(c.cushN*100).toFixed(1)}%.</p>
+   ${c.cushN<0.10?`<div class="exc ${c.cushN<0?"crit":""}" style="margin-top:10px"><b>Suggested next step</b>${c.cushN<0?"Open a conversation with the lender group now about an amendment or equity cure; model the cure amount.":"Put on the watch list; ask management for a monthly cash and covenant forecast until cushion recovers."}</div>`:""}`;
+}
+function drawCom(){
+  const c=C.find(x=>x.n===SEL);$("#comsel").value=c.n;
+  if(c.miss){$("#claims").innerHTML='<p class="hint">No September package yet, so there is nothing to check.</p>';$("#draft").innerHTML='<div class="draft">Ivy\'s September package has not been received (due business day 10). The update will be drafted when it arrives.</div>';return}
+  $("#claims").innerHTML=`<table class="claims"><thead><tr><th>Management said</th><th>Package shows</th><th>Result</th></tr></thead><tbody>${c.claims.map(cl=>{const r=claimChk(c,cl);return `<tr><td>"${esc(cl[0])}"</td><td class="num">${r.s==="na"?"Not in the package":f1(r.v)}</td><td>${r.s==="ok"?'<span class="pill st-good">✓ Matches</span>':r.s==="bad"?'<span class="pill st-crit">▲ Doesn\'t match</span>':'<span class="pill st-off">Can\'t verify</span>'}</td></tr>`}).join("")}${c.addback?`<tr><td>"Adjusted EBITDA" includes a new $${c.addback.amt}K adjustment</td><td class="num">${KK(c.eb[0]-c.addback.amt)} without it</td><td><span class="pill st-warn">! Needs a decision</span></td></tr>`:""}</tbody></table><p class="hint" style="margin-top:8px">Tolerance: within one percentage point. "Can't verify" items need a KPI file the company doesn't send yet.</p>`;
+  $("#draft").innerHTML=`<div class="draft">${draftHtml(c)}</div><p style="margin-top:8px"><button class="btn small" id="copyone" type="button">Copy this paragraph</button></p>`;
+  $("#copyone").addEventListener("click",()=>copyText(draftText(c),"Paragraph copied"));
+}
+function parts(c){
+  const st=CS[covState(c.cushN)];
+  return [["",c.n+": September revenue of "],["n",K(c.rev[0])],[""," was "],["n",f1(c.val.revB)],[""," against budget and "],["n",f1(c.val.revPY)],[""," against last year. Adjusted EBITDA of "],["n",K(c.eb[0])],[""," was "],["n",f1(c.val.ebB)],[""," against budget"+(c.addback?" and includes a new ":".")],...(c.addback?[["n","$"+c.addback.amt+"K"],[""," adjustment not in the closing definition; without it, EBITDA was "],["n",f1(pct(c.eb[0]-c.addback.amt,c.eb[1]))],[""," against budget."]]:[]),
+    [""," Management: "],["m","\""+c.why+"\""],[""," Net leverage is "],["n",c.lev.toFixed(2)+"x"],[""," against a "],["n",c.max.toFixed(2)+"x"],[""," covenant ("],["n",(c.cush*100).toFixed(0)+"%"],[""," cushion; "+st[1].toLowerCase()+" next quarter)."]];
+}
+const draftHtml=c=>parts(c).map(p=>p[0]==="n"?`<span class="n">${esc(p[1])}</span>`:p[0]==="m"?`<span class="m">${esc(p[1])}</span>`:esc(p[1])).join("");
+const draftText=c=>c.miss?c.n+": September package not yet received.":parts(c).map(p=>p[1]).join("");
+$("#comsel").innerHTML=C.map(c=>`<option>${c.n}</option>`).join("");
+$("#comsel").addEventListener("change",e=>{SEL=e.target.value;drawAll()});
+$("#copyall").addEventListener("click",()=>copyText(["Portfolio update, September 2026 (synthetic data)",""].concat(C.map(draftText)).join("\n\n"),"Portfolio update copied"));
+$("#tg-cov").addEventListener("click",()=>{const t=$("#covtbl"),h=t.hidden;t.hidden=!h;$("#covchart").hidden=h;$("#tg-cov").textContent=h?"Show chart":"Show table"});
+function drawAll(){drawKpis();drawClose();drawCloseDetail();drawCov();drawCovDetail();drawCom()}
+const TABS=["close","cov","com"];
+function showTab(n){TABS.forEach(t=>{$("#p-"+t).hidden=t!==n;$("#t-"+t).setAttribute("aria-selected",t===n)})}
+TABS.forEach(t=>$("#t-"+t).addEventListener("click",()=>showTab(t)));
+drawAll();
+window.__c=C.map(c=>[c.n,c.lev.toFixed(2),(c.cush*100).toFixed(1),(c.cushN*100).toFixed(1),excs(c).length]);
+})();
+</script>
+
+</body></html>
