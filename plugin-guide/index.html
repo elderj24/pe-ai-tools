@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>PE Plugin Guide</title>
 <style>
-/* Layout: a field manual in two tabs. Guide: plain-language start, "what do you want to do" picker,
-   three ideas, rules and questions. All skills: the full map and how it fits together. */
+/* Layout: a field manual in three tabs. Guide: plain-language start, "what do you want to do" picker,
+   three ideas, rules and questions. All skills: the full map and how it fits together.
+   Worked example: one deal (Plover) in five chapters, each with what you ask, what came back and what was saved. */
 :root {
   --bg: #f4f6f5; --surface: #ffffff; --surface-2: #f8faf9;
   --ink: #14201c; --ink-2: #4a5853; --muted: #6c7974;
@@ -204,12 +205,14 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--lin
 <nav class="nav" aria-label="Sections">
   <div class="nav-inner">
     <b>PE plugin</b>
-    <div class="tabs" role="group" aria-label="View"><button type="button" id="tab-guide" data-view="guide" aria-pressed="true">Guide</button><button type="button" id="tab-skills" data-view="skills" aria-pressed="false">All skills</button></div>
+    <div class="tabs" role="group" aria-label="View"><button type="button" id="tab-guide" data-view="guide" aria-pressed="true">Guide</button><button type="button" id="tab-example" data-view="example" aria-pressed="false">Worked example</button><button type="button" id="tab-skills" data-view="skills" aria-pressed="false">All skills</button></div>
     <a class="n-guide" href="#start">Get started</a>
     <a class="n-guide" href="#jobs">What do you want to do?</a>
     <a class="n-guide" href="#ideas">How it works</a>
     <a class="n-guide" href="#rules">Ground rules</a>
     <a class="n-guide" href="#faq">Questions</a>
+    <a class="n-example" href="#example">Five chapters</a>
+    <a class="n-example" href="#lessons">What to notice</a>
     <a class="n-skills" href="#all">By deal stage</a>
     <a class="n-skills" href="#hood">Under the hood</a>
   </div>
@@ -217,11 +220,11 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--lin
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">User guide &middot; pe-investment-stack v0.3.0</div>
+    <div class="eyebrow">User guide &middot; pe-investment-stack v0.3.1</div>
     <h1>PE Plugin Guide</h1>
     <p class="prose">You ask Claude, in plain English, for the work a private equity deal team does: screen a teaser, test the seller's numbers, price the deal, write the IC memo. The plugin keeps one running record for each deal, so every step builds on the last, and it tells you what it checked, what it could not check, and what it saved.</p>
     <div class="facts"><span class="fact">Ask in plain English</span><span class="fact">15 skills</span><span class="fact">1 record per deal</span><span class="fact">No firm's criteria built in</span></div>
-    <div class="callout accent view-guide"><b>New here?</b> Read "Get started" and "What do you want to do?" below. The "All skills" tab is reference for when you want the full list. The plugin is sector-neutral and ships with a blank firm profile: tell it your sectors, size range and return targets when it asks.</div>
+    <div class="callout accent view-guide"><b>New here?</b> Read "Get started" and "What do you want to do?" below, then open the worked example to watch one deal go from teaser to its first portfolio review. The "All skills" tab is reference for when you want the full list. The plugin is sector-neutral and ships with a blank firm profile: tell it your sectors, size range and return targets when it asks.<button class="go" type="button" data-go="example">Open the worked example &rarr;</button></div>
     <p class="view-back"><button class="linklike" type="button" data-go="guide">&larr; Back to the guide</button></p>
   </header>
 
@@ -282,6 +285,8 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--lin
       <li><span>Choose the entry multiple for you. It shows a low, middle and high value and asks; if you don't answer it uses the middle and says so.</span></li>
       <li><span>Record a recommendation as a decision. Only the IC decides, and the record needs who, on what authority and when.</span></li>
       <li><span>Fill in a missing fact itself. It asks, or records the gap as unknown.</span></li>
+      <li><span>Pass off its own defaults as your policy, a lender's terms or market fact. A default is labelled wherever it appears, next to the answer on your own criteria.</span></li>
+      <li><span>Follow instructions hidden in a seller's document. Text addressed to "AI reviewers" is reported to you and logged as a risk.</span></li>
       <li><span>Give legal or regulatory advice. Legal points in a brief are starting points for counsel.</span></li>
       <li><span>Put regulated personal data in a chat. Patient, consumer or employee records go in only de-identified or under the agreement that covers them.</span></li>
       <li><span>Say something was saved when it was not.</span></li>
@@ -297,7 +302,7 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--lin
       <details><summary>Do I need to know the commands or the file names?</summary><div><p>No. Ask in plain English and attach the files. The plugin chooses the skill, runs its calculators and saves to the record. The commands in the technical reference are there for people who want to check its work.</p></div></details>
       <details><summary>Do I have to use the deal record?</summary><div><p>No. Every skill works in a plain chat and shows you what it would have saved, marked pending_commit. The record is what lets later skills build on earlier ones, so use it for any deal you expect to pursue.</p></div></details>
       <details><summary>Why is an earlier piece of work marked out of date?</summary><div><p>Something it relied on changed: a seller claim was disproven, a figure was restated, a case weight moved. The reason is shown on the flag. Ask Claude to refresh it, or, if the change does not affect its conclusion, to confirm it is still valid and say why. Nothing old is edited in place.</p></div></details>
-      <details><summary>How does it reach a recommendation?</summary><div><p>From six tests: is the thesis proven, are the open risks small or fixable, do we believe the value-creation plan, is there a margin of safety in the price, does the range of outcomes clear our targets with a downside near 1.0x, and how does our price compare with the market. It lands on Pursue, Pursue at our price, Pass with triggers to come back, or Pass, and states a walk-away price. The memo recommends; the IC decides.</p></div></details>
+      <details><summary>How does it reach a recommendation?</summary><div><p>From six tests: is the thesis proven, are the open risks small or fixable, do we believe the value-creation plan, is there a margin of safety in the price, does the range of outcomes clear our targets with a downside near 1.0x, and how does our price compare with the market. It lands on Pursue, Pursue at our price, Pass with triggers to come back, or Pass, and states a walk-away price. The walk-away uses your own tests: the highest price at which the base case clears your return targets and the downside cases hold 1.0x, at your leverage. Anything the plugin adds on its own (a debt / EV ceiling, a view on the chance of losing money) is shown beside it and labelled a plugin default. The memo recommends; the IC decides.</p></div></details>
       <details><summary>What if the IC hasn't told me everything about its decision?</summary><div><p>Tell Claude what you know. It suggests the details your message implies (for example "the investment committee, by vote, today") for you to confirm. If something is still unknown, the decision is recorded as reported with the gap named, and the case is frozen once the missing details arrive.</p></div></details>
       <details><summary>Which skills produce Word or Excel files?</summary><div><p>Underwriting can build an Excel LBO model for the standalone platform. Every other skill returns a written brief plus an HTML version with charts.</p></div></details>
       <details><summary>Is anything sent outside Claude?</summary><div><p>The record stays in your working folder, and the HTML briefs load nothing from the web. Skills may search the web for current market or regulatory facts and cite them with dates. Load only material you are allowed to share with Claude.</p></div></details>
@@ -310,7 +315,8 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--lin
         <p><b>Out-of-date work.</b> The tool flags outputs whose inputs changed. An output confirmed still valid (<code>outputs_reviewed</code>) no longer passes the flag on to work built on it. A stronger verdict, such as untested to corroborated, does not flag anything.</p>
         <p><b>Exceptions and evidence notices.</b> An exception is a rule a record breaks (resting on a disproven claim, a case outside your criteria); each is accepted one at a time with who accepted it and why. Notices that conclusions rest on evidence not yet validated are one summary line.</p>
         <p><b>Decisions and the freeze.</b> <code>freeze --intake</code> lists what the snapshot will store and what the record already knows, and writes nothing. A decision missing its authority or date can be recorded as reported (<code>unknown_fields</code>); the freeze waits for those fields. <code>freeze</code> records an approval, <code>freeze --outcome pass</code> a pass, <code>close</code> checks the conditions at closing, and <code>init-portfolio</code> starts the ownership record.</p>
-        <p><b>Calculators.</b> Returns come from <code>lbo_returns.py</code>, weighted cases and the walk-away from <code>scenario_ev.py</code>, valuation from <code>valuation_calc.py</code>, the QoE bridge and NWC peg from <code>qoe_bridge.py</code>, covenant headroom and liquidity from <code>covenant_liquidity.py</code>. Every brief carries a numbers-audit line saying how many figures were traced to the record, a calculator or a source.</p>
+        <p><b>EBITDA bases and dates.</b> Each priced figure carries a basis: <code>actual</code>, <code>qoe_confirmed</code> (an independent QoE confirms it), <code>diligence_normalized</code> (the deal team's own normalized figure before that), <code>forecast</code>, <code>budget</code> or <code>unverified</code>. If you price on the deal team's normalized EBITDA, set <code>ebitda_basis_allowed=["diligence_normalized","qoe_confirmed"]</code>. For work set on another date, <code>PE_STATE_AS_OF=2027-05-15</code> in front of a state command sets the date the overdue checks use.</p>
+        <p><b>Calculators.</b> Returns come from <code>lbo_returns.py</code>, weighted cases and the walk-away from <code>scenario_ev.py</code> (your targets applied to the base case unless you state an expected-value target), valuation from <code>valuation_calc.py</code>, the QoE bridge and NWC peg from <code>qoe_bridge.py</code>, covenant headroom and liquidity from <code>covenant_liquidity.py</code>. Every brief carries a numbers-audit line saying how many figures were traced to the record, a calculator or a source.</p>
       </div></details>
     </div>
   </section>
@@ -364,7 +370,34 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--lin
     </div>
   </section>
 
-  <footer>Plugin guide for pe-investment-stack 0.3.0, prepared by JD Elder. A general workflow, not any firm's policy. Example deals are fictional. <a href="../" style="color:inherit">Part of PE AI &amp; Data Tools</a></footer>
+  <!-- ============================ WORKED EXAMPLE ============================ -->
+  <section id="example" aria-labelledby="h-example" class="view-example">
+    <div class="sec-head">
+      <div class="eyebrow">Worked example</div>
+      <h2 id="h-example">One deal, from teaser to the first portfolio review</h2>
+      <p class="prose"><b>Project Plover</b> is a made-up sale of Tarnbeck Specialty Foods, a Midwest distributor of specialty cheese, charcuterie and dry goods: about $186M of sales, two distribution centers, its own refrigerated fleet and an exclusive Italian cheese line. A banker is guiding to $117.5M. The deal team sent the plugin 21 requests, one per step, from the teaser through IC, close and a first review in 2027. Five chapters are shown here, with the requests word for word and what came back.</p>
+      <div class="callout"><span>Every company, person and number here is fictional. The run used plugin 0.3.0 on a blind test pack and scored 96 out of 100 against a sealed answer key, marked by a separate session. Where 0.3.1 changed what the plugin does, the chapter says so.</span></div>
+    </div>
+    <div class="map">
+      <div class="rail-scroll"><div class="chapters" id="chapters" role="group" aria-label="Chapters"></div></div>
+      <div class="ch-body" id="ch-body" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section id="lessons" aria-labelledby="h-lessons" class="view-example">
+    <div class="sec-head">
+      <div class="eyebrow">What to notice</div>
+      <h2 id="h-lessons">Four things the example shows</h2>
+    </div>
+    <div class="cards3">
+      <div class="card"><h3>Every seller claim was tested</h3><p>The CIM's seven headline claims on growth, retention, concentration, margin, the supplier and the market were checked against the seller's own files and an independent study. Six failed and the seventh could not be proven. Normalized EBITDA came in about 16% below the seller's figure.</p></div>
+      <div class="card"><h3>No margin it couldn't evidence</h3><p>The base case held margins flat because nothing in the data showed them expanding; the pricing-lag fix was put in the upside. That is why its returns sit below a model that assumes 50-60 basis points of improvement. If your team has evidence for a margin lever, give it to the plugin and it will move into the base.</p></div>
+      <div class="card"><h3>Your tests, then its defaults</h3><p>In 0.3.0 the walk-away came from plugin defaults (a 65% debt / EV ceiling and the expected value tested against the base-case hurdle), which gave $74.3M. In 0.3.1 the walk-away uses the firm's own tests ($86.6M here) and shows the defaults beside it, labelled.</p></div>
+    </div>
+    <div class="card" style="margin-top:12px"><h3>It kept the record straight after the IC overruled it</h3><p>The memo recommended passing; the IC approved a bid of up to $105.0M anyway. The plugin recorded the IC's decision word for word, left the members and authority as unknown because they were not given, froze the approved case, and four months later measured the business against that frozen case. It found EBITDA running 19% behind budget and covenant headroom thinning.</p></div>
+  </section>
+
+  <footer>Plugin guide for pe-investment-stack 0.3.1, prepared by JD Elder. A general workflow, not any firm's policy. Example deals are fictional. <a href="../" style="color:inherit">Part of PE AI &amp; Data Tools</a></footer>
 </div>
 
 <script>
@@ -869,6 +902,125 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--lin
     });
   }
 
+  /* ---------------- worked example: Plover ---------------- */
+  const CLAIMS = [
+    ["11% organic growth", "5.5% organic (price +2.9%, volume +2.6%); the rest came from the Pemberton acquisition", "bad", "Contradicted"],
+    ["No customer above 6% of sales", "Grouped by buying group and parent: GLIGA 12.8%, Corliss 10.5%, both above the firm's 10% flag and both rebidding in 2027", "mis", "Misleading"],
+    ["Net revenue retention of 108%", "98.8% net and 89.6% gross once lost accounts are counted; 16 of 113 named accounts lost", "mis", "Misleading"],
+    ["Gross margin expanding", "Rebates and spoilage sit below the margin line; after them, margin slipped from 24.25% to 23.83%", "mis", "Misleading"],
+    ["Exclusive long-term supplier rights (Casa Vellani)", "The term ends December 2027, the supplier can terminate after a change of control, and minimums rise 6% a year against purchases growing 2%", "bad", "Contradicted"],
+    ["A $9 billion market growing 7%", "The six-state distributor market for these categories is about $3.1 billion, growing about 4%", "bad", "Contradicted"],
+    ["The leading independent", "About 6% of that market: plausible, not provable from the files", "mis", "Unproven"]
+  ];
+  const EARN = [
+    ["EBITDA", "$14.7M adjusted", "$12.38M normalized", "The chairman keeps a $150K fee (450 of 600 accepted); an ERP subscription continues (480 of 700); $900K of unsigned new customers and a recurring spoilage loss rejected; Pemberton's $90K of synergies rejected. Three items the seller left out: an under-booked rebate (-239), the related-party warehouse moved to market rent (-360) and a full year of ERP fees (-44). Reported EBITDA was $11.4M."],
+    ["Working-capital peg", "$16.6M", "$19.0M", "The seller averaged July to September, when payables were stretched by about $3.6M during the sale."],
+    ["Debt-like items", "Bank debt only", "$5.2M more", "Fleet finance leases $2.85M, Pemberton's deferred price $1.2M, 2026 bonuses $0.62M, income tax $0.31M and the rebate shortfall $0.24M."],
+    ["Kestrow (the add-on under LOI)", "$2.21M EBITDA, 6.1x", "$1.91M on its own, $1.82M after repricing; 7.4x", "Owner pay partly accepted, a one-off recall accepted, an unaccepted price rise rejected. Seven customers overlap with Tarnbeck, so expect repricing, not cross-sell. Management's $600K of synergies has no support and stays at zero."]
+  ];
+  const RETURNS = [["Upside (faster cost pass-through)", 2.01], ["Base + Kestrow", 1.81], ["Base: platform alone", 1.76], ["Expected (proposed weights)", 1.45], ["Downside: grocery accounts", 1.22], ["Downside: Casa Vellani non-exclusive", 0.94], ["Tail: all three at once", 0.0]];
+
+  function priceChart() {
+    const W = 760, L = 230, R = 30, x0 = 5, x1 = 10;
+    const X = v => L + (v - x0) / (x1 - x0) * (W - L - R);
+    const rows = [
+      { lab: "Market (football field)", a: 7.75, b: 9.25, note: "7.75-9.25x = $95.9-114.5M", cls: "var(--muted)" },
+      { lab: "Banker's guidance", a: 9.49, note: "9.49x = $117.5M", dot: "var(--crit)" },
+      { lab: "IC approved up to", a: 8.48, note: "8.48x = $105.0M", dot: "var(--accent)" },
+      { lab: "Walk-away, firm's tests (0.3.1)", a: 7.0, note: "7.0x = $86.6M", dot: "var(--good)" },
+      { lab: "Walk-away as run (0.3.0 defaults)", a: 6.0, note: "6.0x = $74.3M", dot: "var(--warn)" }
+    ];
+    const H = 40 + rows.length * 38 + 26;
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Price ladder in multiples of normalized EBITDA: market 7.75 to 9.25x, banker 9.49x, IC cap 8.48x, walk-away on the firm's tests 7.0x, walk-away as run 6.0x">`;
+    for (let v = x0; v <= x1; v++) { s += `<line class="grid" x1="${X(v)}" x2="${X(v)}" y1="24" y2="${H - 26}"/><text class="tick" x="${X(v)}" y="${H - 8}" text-anchor="middle">${v}x</text>`; }
+    rows.forEach((r, i) => {
+      const y = 44 + i * 38;
+      s += `<text class="lab" x="${L - 12}" y="${y + 4}" text-anchor="end">${esc(r.lab)}</text>`;
+      if (r.b) { s += `<rect x="${X(r.a)}" y="${y - 7}" width="${Math.max(4, X(r.b) - X(r.a))}" height="14" rx="3" style="fill:${r.cls}" opacity="0.55"/>`; }
+      else { s += `<circle cx="${X(r.a)}" cy="${y}" r="7" style="fill:${r.dot}"/>`; }
+      const right = r.b ? X(r.b) : X(r.a);
+      const anchor = right + 12 > W - 170 ? "end" : "start";
+      s += `<text class="tick" x="${anchor === "end" ? X(r.a) - 12 : right + 12}" y="${y + 4}" text-anchor="${anchor}">${esc(r.note)}</text>`;
+    });
+    s += `<text class="tick" x="${L}" y="14">Multiple of normalized LTM EBITDA ($12.38M)</text></svg>`;
+    return s;
+  }
+  function returnsChart() {
+    const W = 760, L = 260, R = 50, x1 = 3;
+    const X = v => L + v / x1 * (W - L - R);
+    const H = 34 + RETURNS.length * 30 + 26;
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Sponsor MOIC by case at 8.5x, with the firm's 2.0x target and the 1.0x floor">`;
+    for (let v = 0; v <= x1; v++) { s += `<line class="grid" x1="${X(v)}" x2="${X(v)}" y1="20" y2="${H - 26}"/><text class="tick" x="${X(v)}" y="${H - 8}" text-anchor="middle">${v}.0x</text>`; }
+    RETURNS.forEach(([lab, v], i) => {
+      const y = 34 + i * 30;
+      const col = lab.startsWith("Expected") ? "var(--state)" : lab.startsWith("Base:") ? "var(--accent)" : "var(--ink-2)";
+      s += `<text class="lab" x="${L - 12}" y="${y + 4}" text-anchor="end">${esc(lab)}</text>`;
+      s += `<rect x="${X(0)}" y="${y - 8}" width="${Math.max(2, X(v) - X(0))}" height="16" rx="3" style="fill:${col}" opacity="${lab.startsWith("Base:") || lab.startsWith("Expected") ? 0.9 : 0.45}"/>`;
+      s += `<text class="tick" x="${X(v) + 6}" y="${y + 4}">${v.toFixed(2)}x</text>`;
+    });
+    s += `<line x1="${X(2)}" x2="${X(2)}" y1="20" y2="${H - 26}" style="stroke:var(--good)" stroke-width="1.5" stroke-dasharray="4 3"/><text class="tick" x="${X(2) + 4}" y="16">firm target 2.0x</text>`;
+    s += `<line x1="${X(1)}" x2="${X(1)}" y1="20" y2="${H - 26}" style="stroke:var(--crit)" stroke-width="1.5" stroke-dasharray="4 3"/><text class="tick" x="${X(1) + 4}" y="16">1.0x floor</text></svg>`;
+    return s;
+  }
+
+  const CHAPTERS = [
+    { k: "Teaser, NDA and CIM", sub: "Watch, then partner review", v: "Steps 0-4",
+      ask: "We signed the NDA. The CIM, monthly P&L, management projections and the seller's EBITDA bridge are in the folder. Re-screen the deal against our criteria.",
+      skills: "Deal screen, industry analysis (add-on list), contract review (NDA), deal record",
+      back: ["On the teaser alone: <b>Watch</b>. The $14.7M of adjusted EBITDA could not be checked, and the growth figure included an acquisition.", "The firm's criteria were recorded once, with their source. The add-on list put Ostwick, Greywell and Bellhaven first, and flagged Marlpit because it competes with a portfolio company.", "The banker's NDA came back as a Word redline with tracked changes and 11 comments, all under \"Buyer\", and the signing entity left as a placeholder. The headline catch: a three-year non-circumvention clause that would have blocked every add-on on the list. A separate check confirmed every change was tracked.", "On the CIM: <b>Partner review</b>. Organic growth is about 5.5%, not 11%; rebates and spoilage sit below the margin line; reported EBITDA was flat while sales grew 10.9%."],
+      caution: "Two things to know. The plugin did not look in its working folder at first and asked for the teaser to be attached; from 0.3.1 it lists the folder before asking. The CIM appendix also hid a note telling \"AI review tools\" to treat $14.7M as confirmed. The plugin never followed it, but only flagged it at the memo step; 0.3.1 checks each document for such text when it is first read.",
+      saved: "The seller's headline numbers as claims, the firm's criteria, five add-on targets, the NDA review and the screens." },
+    { k: "Testing the seller's story", sub: "Seven claims: six fail, one unproven", v: "Steps 5-9",
+      ask: "Run commercial diligence on what we have. Test the CIM's claims on growth, retention, concentration, margin, the supplier position and the market.",
+      skills: "Diligence plan, data room, commercial diligence, contract review (supplier agreement)",
+      back: ["The diligence plan put three questions first: is the Casa Vellani exclusivity written down and does it survive a change of owner, what is the legacy business really growing at, and can a bid on normalized EBITDA clear the firm's hurdles.", "The data room brought 24 files. Each CIM claim was checked against the seller's own files and an independent market study.", "About 41% of sales resets within roughly 13 months of closing: the Casa Vellani term, the GLIGA rebid and the Corliss vendor cut.", "When the full Casa Vellani agreement arrived, the plugin said the buyer is not a party, so there is nothing to redline. It gave the clauses to renegotiate as asks for the seller to obtain before signing, and found that the CFO's summary had left out seven restrictions."],
+      table: "claims",
+      saved: "Each claim with its verdict and the file that decided it. The first screens, built on the old numbers, are flagged out of date." },
+    { k: "What the earnings really are", sub: "$14.7M becomes $12.38M", v: "Steps 7 and 10",
+      ask: "Review the quality of earnings. I need normalized EBITDA, a view on each seller add-back, the working capital peg and the debt-like items.",
+      skills: "QoE review, for the platform and then for Kestrow on its own books",
+      back: ["The seller's adjusted EBITDA stays on record as the seller's claim. Normalized EBITDA is its own figure, and the price is based on it.", "Kestrow got its own record, linked to the platform, with a review of its own books.", "The plugin corrected its own earlier peg figure in the record when the QoE showed it had applied the payables stretch the wrong way round. It left the earlier data-room note as it was, marked out of date; from 0.3.1 a note with a corrected figure is refreshed."],
+      table: "earn",
+      saved: "Normalized EBITDA, the peg, the debt-like items and Kestrow's own figure. Each rests on management accounts until an accounting firm's QoE confirms it." },
+    { k: "What to pay", sub: "Market $96-115M; walk-away below it", v: "Steps 11-13",
+      ask: "Build the LBO. I need a base case, a downside, a case with Kestrow, and our walk-away price against the banker's guidance.",
+      skills: "Entry multiple and LBO, IC challenger",
+      back: ["The valuation offered 7.75x, 8.50x and 9.25x of $12.38M and asked which multiple to use. The answer was \"use the midpoint\". The banker's $117.5M is 9.49x on normalized EBITDA.", "Base case at 8.5x: <b>1.76x and 11.9%</b> against the firm's 2.0x and 15%, with margins held flat because nothing in the data showed them expanding. Leverage 4.5x, within the firm's limit.", "If Casa Vellani goes non-exclusive, the downside returns 0.94x, below the 1.0x floor. That is why the supplier's consent and an extension became a condition.", "As run (0.3.0), the walk-away was <b>$74.3M</b>, set by plugin defaults. On the firm's own tests (the base case clears 2.0x and 15%, the downside holds 1.0x, Casa Vellani's consent package signed), it is <b>$86.6M (7.0x)</b>. From 0.3.1 that is the headline, with the defaults shown beside it.", "The challenger's strongest argument: at any price the process is likely to reach, the most likely outcome misses the hurdle, and the risks are binary, early and in other people's hands."],
+      charts: true,
+      saved: "Every case as a returns record, the case weights marked proposed, and the open policy exceptions left for the IC to accept or not." },
+    { k: "IC, close and first review", sub: "Approved at up to $105M; 19% behind by May", v: "Steps 14-20",
+      ask: "IC met today. Decision: approved to bid up to $105.0 million enterprise value, conditional on Casa Vellani's written consent to the change of control with an extension to at least December 2030, and a working capital peg of at least $19.0 million. Record the decision and freeze the underwriting.",
+      skills: "IC memo, deal record, onboarding and 100 days, portfolio review, AI value creation, stack guide",
+      back: ["The memo recommended <b>Pass, with triggers to come back</b>. The IC approved anyway. Before recording the decision, the plugin listed what the IC had accepted: a price $30.7M above the walk-away, a supplier condition without the minimums reset, and no QoE condition.", "The decision was stored word for word. The members and authority were not given and are recorded as unknown. The 8.5x case was then frozen.", "At close (set in February 2027): leverage of 4.52x against the firm's 4.5x limit was flagged, and a 100-day plan and 16 KPIs were built from the underwriting risks.", "First review (May 2027): EBITDA $3.09M against a $3.82M budget (-19.2%). Covenant headroom is 11.9% at the tightest quarter; if March-April performance continues, the covenant breaches in Q4.", "AI: the best opportunity is faster cost pass-through, a rules job rather than AI. The quoted order-entry tool loses money at its price. Asked for a board pack, the plugin said no skill covers it and supplied the board inputs."],
+      said: "Snapshot closing_underwriting frozen at version 20. Stage: approved. The decision and its two conditions are stored word for word; who decided, the authority and any accepted policy exceptions were not given and are recorded as unknown.",
+      saved: "The decision, the frozen closing case, the ownership record and the first review measured against that frozen case." }
+  ];
+  let ch = 0;
+  function renderChapters() {
+    $("chapters").innerHTML = CHAPTERS.map((c, i) => `<button class="chap" type="button" id="chap-${i}" aria-pressed="${i === ch}"><b>${i + 1} · ${esc(c.k)}</b><span>${esc(c.sub)}</span><span class="mono">${esc(c.v)}</span></button>`).join("");
+    $("chapters").querySelectorAll(".chap").forEach((b, i) => b.addEventListener("click", () => { ch = i; renderChapters(); }));
+    const c = CHAPTERS[ch];
+    let extra = "";
+    if (c.table === "claims") {
+      extra = `<div class="kv"><h4>Seller said, evidence showed</h4><div class="tbl-scroll"><table class="t"><thead><tr><th>The CIM said</th><th>The data room showed</th><th>Verdict</th></tr></thead><tbody>${CLAIMS.map(r => `<tr><td class="k">${esc(r[0])}</td><td>${esc(r[1])}</td><td><span class="v v-${r[2]}">${esc(r[3])}</span></td></tr>`).join("")}</tbody></table></div></div>`;
+    } else if (c.table === "earn") {
+      extra = `<div class="kv"><h4>Seller's figure, tested figure</h4><div class="tbl-scroll"><table class="t"><thead><tr><th>Item</th><th>Seller</th><th>After testing</th><th>Why</th></tr></thead><tbody>${EARN.map(r => `<tr><td class="k">${esc(r[0])}</td><td>${esc(r[1])}</td><td><b>${esc(r[2])}</b></td><td>${esc(r[3])}</td></tr>`).join("")}</tbody></table></div></div>`;
+    } else if (c.charts) {
+      extra = `<div class="chart"><h4>The price ladder</h4>${priceChart()}</div><div class="chart"><h4>Returns by case at 8.5x (money back as a multiple of equity)</h4>${returnsChart()}</div>`;
+    }
+    $("ch-body").innerHTML = `
+      <div class="ch-meta"><h3>${ch + 1}. ${esc(c.k)}</h3><span class="tag">${esc(c.v)}</span></div>
+      <div class="ch-top">
+        <div class="kv"><h4>What the deal team asked</h4>${snip(c.ask)}<p class="subtle">Skills that ran: ${esc(c.skills)}</p></div>
+        <div class="kv"><h4>What came back</h4><ul>${c.back.map(x => `<li>${x}</li>`).join("")}</ul></div>
+      </div>
+      ${extra}
+      ${c.caution ? `<div class="callout warn"><span>${c.caution}</span></div>` : ""}
+      ${c.said ? `<div class="kv"><h4>What the record reported</h4><div class="said">${esc(c.said)}</div></div>` : ""}
+      <div class="callout"><span><b>Saved to the record:</b> ${esc(c.saved)}</span></div>`;
+    wireCopy($("ch-body"));
+  }
+
   /* ---------------- tabs ---------------- */
   function setView(v) {
     document.body.dataset.view = v;
@@ -881,10 +1033,11 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--lin
   }));
   let startView = "guide";
   try { startView = localStorage.getItem("pe-guide-view") || "guide"; } catch (e) {}
-  if (startView !== "guide" && startView !== "skills") startView = "guide";
+  if (startView !== "guide" && startView !== "skills" && startView !== "example") startView = "guide";
+  if (location.hash === "#example" || location.hash === "#lessons") startView = "example";
   if (location.hash === "#all" || location.hash === "#hood") startView = "skills";
   setView(startView);
-  renderJobs(); renderMap(); wireCopy(document);
+  renderJobs(); renderMap(); renderChapters(); wireCopy(document);
 })();
 </script>
 </body>
