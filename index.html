@@ -135,7 +135,7 @@ details.more ul{margin-top:10px}
   <div>
     <div class="eyebrow">Discussion materials &middot; private equity AI and data</div>
     <h1>PE AI &amp; Data Tools</h1>
-    <p>Start with First look: three tools to open in a few minutes. Every tool also has a short manual covering what it is for, how to use it and what to watch.</p>
+    <p>Every tool has a short manual covering what it is for, how to use it and what to watch.</p>
   </div>
   <div class="meta">Prepared by JD Elder &middot; Nov 2026 &middot; invented data</div>
 </header>
@@ -162,33 +162,22 @@ const USES={"thesis-sourcer": ["crm", "public"], "sourcing-watchlist": ["crm", "
 const INSIDE=["margin-leak"];
 const CONTROLS=[["Data tiers", "Public, firm confidential, restricted and regulated. Each tool is approved for named tiers only, and no model is trained on firm data."], ["Company data stays at the company", "Tools inside a portfolio company run in its environment under its agreements; the firm sees aggregates only. Regulated data, such as patient records, needs a covered path."], ["Competitive information", "Customer and pricing data from a target goes through a clean team when the firm owns a competitor; access is by role and logged."], ["Human sign-off", "Investment, legal, regulatory and employment decisions stay with people. Nothing goes to a banker, founder, lender, LP or candidate without a person approving it."], ["Audit trail", "Every figure traces to a source. LP reports and the closing case are frozen snapshots, and later changes raise a flag instead of overwriting them."]];
 const DATA=[["Sourcing Watchlist", "Sponsor holdings, fund vintages and debt maturities from a licensed provider; CRM relationships; current platform list", "Weekly", "Deal team, business development"], ["Thesis Sourcer", "CRM and PitchBook or Grata exports; conference rosters; portfolio list", "Weekly", "Deal team"], ["Deal Triage", "Shared deals mailbox; past screens and the portfolio list from the CRM", "Daily", "Deal team"], ["Contract Reader", "Data-room agreements; draft advertising or promotion with its substantiation file", "Per deal or per piece", "Deal team, counsel"], ["IC Pre-Read Tracker", "IC memo, member questions, the deal record", "Per IC", "Deal team, IC chair"], ["Portfolio Close", "Monthly packages, budgets, credit agreements", "Monthly", "Fund finance"], ["COA Mapper and KPI pack", "Add-on trial balances; platform chart and KPI definitions; QoE adjustments", "At signing, then monthly", "Platform CFO"], ["Fund Metrics Hub", "Administrator marks and cash flows; company KPI packs; past LP reports", "Monthly; LP snapshot frozen each quarter", "Fund finance, investor relations"], ["AI Opportunity Ranker", "Company briefs; headcount by function; process volumes; system inventory", "Quarterly", "Operating partners"], ["Value Creation Tracker", "Monthly reports and board decks; the value-creation plan at close", "Monthly", "Operating partners"], ["Leadership Bench", "Quarterly talent reviews; pay data; a market pay survey", "Quarterly", "Human capital"], ["Executive Assessment", "Scorecards, panel ratings and reference notes for one search", "Per search", "Hiring panel"], ["Margin Leak Finder", "A year of invoice lines with list price, discount and cost, inside the company", "Quarterly", "Company CFO"], ["Plugin deal records", "Everything above, registered as graded sources", "As evidence arrives", "Deal team"]];
-const ORDER=["first-look","overview"].concat(...GROUPS.filter(g=>g[0]!=="start").map(g=>TOOLS.filter(t=>t.g===g[0]).map(t=>t.id))).concat(["architecture"]);
-const FIRST=[
- {id:"sourcing-watchlist",look:"The top company is already selected. Read its \u201cWhy now\u201d list, then click another company."},
- {id:"contract-reader",look:"The example agreement has already been read. Start with the headline finding, then click a finding to see the clause it comes from."},
- {id:"ai-ranker",look:"The map opens on the Balanced preset. Read the top company, then try Fastest wins and Build once to see the order change."}];
+const ORDER=["overview"].concat(...GROUPS.filter(g=>g[0]!=="start").map(g=>TOOLS.filter(t=>t.g===g[0]).map(t=>t.id))).concat(["architecture"]);
 const gname=g=>GROUPS.find(x=>x[0]===g)[1];
 
 /* nav */
 let nav="";
 GROUPS.forEach(([g,label])=>{
-  const items=g==="start"?[{id:"first-look",n:"First look"},{id:"overview",n:"All tools"}]:TOOLS.filter(t=>t.g===g);
+  const items=g==="start"?[{id:"overview",n:"All tools"}]:TOOLS.filter(t=>t.g===g);
   nav+=`<div class="grp" role="presentation"><div class="gl" aria-hidden="true">${esc(label)}</div>${items.map(t=>`<button class="tab" role="tab" id="tab-${t.id}" aria-controls="p-${t.id}" data-id="${t.id}" aria-selected="false" tabindex="-1">${esc(t.n)}</button>`).join("")}</div>`;
 });
 nav+=`<div class="grp" role="presentation"><div class="gl" aria-hidden="true">Go deeper</div><button class="tab" role="tab" id="tab-architecture" aria-controls="p-architecture" data-id="architecture" aria-selected="false" tabindex="-1">Architecture</button></div>`;
 $("#side").innerHTML=nav;
 
 /* panels */
-function pager(id){const i=ORDER.indexOf(id),p=ORDER[i-1],n=ORDER[i+1];const nm=x=>x==="first-look"?"First look":x==="overview"?"All tools":x==="architecture"?"Architecture":TOOLS.find(t=>t.id===x).n;
+function pager(id){const i=ORDER.indexOf(id),p=ORDER[i-1],n=ORDER[i+1];const nm=x=>x==="overview"?"All tools":x==="architecture"?"Architecture":TOOLS.find(t=>t.id===x).n;
   return `<div class="pager"><button type="button" data-go="${p||""}" ${p?"":"hidden"}>&larr; ${p?esc(nm(p)):""}</button><button type="button" data-go="${n||""}" ${n?"":"hidden"}>${n?esc(nm(n)):""} &rarr;</button></div>`}
-let html=`<section class="panel" role="tabpanel" id="p-first-look" aria-labelledby="tab-first-look">
-  <div class="eyebrow">First look</div><h2>Three tools to open first</h2>
-  <p class="lead">Each opens on an invented example with the answer already on screen, so nothing needs to be typed to see how it works. Allow about two minutes each.</p>
-  <div class="picks">${FIRST.map((f,i)=>{const t=TOOLS.find(x=>x.id===f.id);return `<article class="pick"><div class="eyebrow">${i+1} &middot; ${esc(gname(t.g))}</div><h3>${esc(t.n)}</h3><p class="pq">${esc(t.q)}</p><p class="pl"><b>What to look at:</b> ${esc(f.look)}</p><div class="pa"><a class="open" href="${t.url}">${esc(t.open)} &nearr;</a><button type="button" class="link" data-go="${t.id}">Read the manual</button></div></article>`}).join("")}</div>
-  <div class="note"><span class="lbl">After these</span>Ten more tools, and the plugin that connects the deal workflow, each have a short manual in the tabs. <button type="button" class="link" data-go="overview">See all tools</button></div>
-  ${pager("first-look")}
-</section>
-<section class="panel" role="tabpanel" id="p-overview" aria-labelledby="tab-overview" hidden>
+let html=`<section class="panel" role="tabpanel" id="p-overview" aria-labelledby="tab-overview" hidden>
   <div class="eyebrow">Overview</div><h2>${esc(OVERVIEW.h2)}</h2>
   <p class="lead">${esc(OVERVIEW.lead)}</p>
   <h3>Three rules apply to every tool</h3>
@@ -288,7 +277,7 @@ if(document.fonts)document.fonts.ready.then(()=>{if(!$("#p-architecture").hidden
 /* switching */
 const tabs=[...document.querySelectorAll(".tab")];
 function show(id,focus,scroll){
-  if(!ORDER.includes(id))id="first-look";
+  if(!ORDER.includes(id))id="overview";
   ORDER.forEach(x=>{$("#p-"+x).hidden=x!==id});
   if(id==="architecture")requestAnimationFrame(drawArch);
   tabs.forEach(b=>{const on=b.dataset.id===id;b.setAttribute("aria-selected",on);b.tabIndex=on?0:-1;if(on&&focus)b.focus();if(on&&b.scrollIntoView)b.scrollIntoView({block:"nearest",inline:"nearest"})});
